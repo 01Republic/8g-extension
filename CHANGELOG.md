@@ -1,3 +1,12 @@
+# [1.4.0](https://github.com/01Republic/8g-extension/compare/v1.3.0...v1.4.0) (2025-09-21)
+
+
+### Features
+
+* Include Selector in BlockResult ([66be3fe](https://github.com/01Republic/8g-extension/commit/66be3fead6a4feafc1c3f5c34475a3215f7e7e3f))
+
+
+
 # [1.3.0](https://github.com/01Republic/8g-extension/compare/v1.2.9...v1.3.0) (2025-09-21)
 
 
