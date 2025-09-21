@@ -1,5 +1,6 @@
 import { CollectDataRequest, CollectDataResult } from './types';
 import type { 
+  Block,
   GetTextBlock,
   GetAttributeValueBlock,
   GetValueFormsBlock,
@@ -43,7 +44,7 @@ export class EightGClient {
     });
   }
 
-  // Overloads
+  // Overloads for single block
   async collectData(request: { targetUrl: string; block: GetTextBlock }): Promise<CollectDataResult<string | string[]>>;
   async collectData(request: { targetUrl: string; block: GetAttributeValueBlock }): Promise<CollectDataResult<string | string[] | null>>;
   async collectData(request: { targetUrl: string; block: GetValueFormsBlock }): Promise<CollectDataResult<string | boolean | null>>;
@@ -53,6 +54,11 @@ export class EightGClient {
   async collectData(request: { targetUrl: string; block: EventClickBlock }): Promise<CollectDataResult<boolean>>;
   async collectData(request: { targetUrl: string; block: SaveAssetsBlock }): Promise<CollectDataResult<string[] | null>>;
   async collectData(request: { targetUrl: string; block: GetElementDataBlock }): Promise<CollectDataResult<ElementData | ElementData[]>>;
+  
+  // Overload for multiple blocks (순차 실행)
+  async collectData(request: { targetUrl: string; block: Block[] }): Promise<CollectDataResult<any[]>>;
+  
+  // Generic overload
   async collectData(request: CollectDataRequest): Promise<CollectDataResult>;
 
   /**
@@ -89,6 +95,7 @@ export class EightGClient {
         block: request.block,
         closeTabAfterCollection: true,
         activateTab: false,
+        blockDelay: request.blockDelay || 500, // 기본값 500ms
       }, '*');
     });
   }

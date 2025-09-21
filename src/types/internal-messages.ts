@@ -12,9 +12,10 @@ export interface CollectDataNewTabMessage {
   type: 'COLLECT_DATA_NEW_TAB';
   data: {
     targetUrl: string;
-    block: Block;
+    block: Block | Block[]; // 단일 블록 또는 블록 배열 지원
     closeTabAfterCollection?: boolean;
     activateTab?: boolean;
+    blockDelay?: number; // 블록 간 지연 시간 (ms) - 기본값: 500ms
   };
 }
 
@@ -37,7 +38,7 @@ export interface BackgroundStepResponse<T> {
   success: true;
   targetUrl: string;
   tabId: number;
-  result: BlockResult<T>;
+  result: BlockResult<T> | BlockResult<T>[]; // 단일 또는 배열 결과
   timestamp: string;
   closeTabAfterCollection: boolean;
 }

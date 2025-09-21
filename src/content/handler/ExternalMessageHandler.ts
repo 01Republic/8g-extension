@@ -69,6 +69,7 @@ export class ExternalMessageHandler {
           block: message.block,
           closeTabAfterCollection: message.closeTabAfterCollection !== false,
           activateTab: message.activateTab === true,
+          blockDelay: message.blockDelay || 500, // 기본값 500ms
         },
       };
 

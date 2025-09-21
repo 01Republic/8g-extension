@@ -9,9 +9,10 @@ export interface CollectDataMessage {
   type: '8G_COLLECT_DATA';
   requestId: string;
   targetUrl: string;
-  block: Block;
+  block: Block | Block[]; // 단일 블록 또는 블록 배열 지원
   closeTabAfterCollection?: boolean;
   activateTab?: boolean;
+  blockDelay?: number; // 블록 간 지연 시간 (ms) - 기본값: 500ms
 }
 
 export interface ExtensionResponseMessage {

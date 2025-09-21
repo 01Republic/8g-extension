@@ -99,20 +99,77 @@ export class BackgroundManager {
   private async stepExecuteBlock(
     requestData: CollectDataNewTabMessage['data'],
     tab: chrome.tabs.Tab
-  ): Promise<BackgroundStepResponse> {
-    console.log('[8G Background] Step 3: Executing block in tab:', tab.id);
+  ): Promise<BackgroundStepResponse<any>> {
+    console.log('[8G Background] Step 3: Executing block(s) in tab:', tab.id);
 
-    const blockResult = await this.tabManager.executeBlock(requestData.block, tab.id!);
-    console.log('[8G Background] Block execution result:', blockResult);
+    // 단일 블록인지 배열인지 확인
+    if (Array.isArray(requestData.block)) {
+      // 여러 블록 순차 실행 (설정 가능한 지연 시간)
+      const blockDelay = requestData.blockDelay || 500; // 기본값 500ms
+      const blockResults = await this.stepExecuteBlockList(requestData.block, tab.id!, blockDelay);
+      console.log('[8G Background] Block list execution results:', blockResults);
 
-    return {
-      success: true,
-      targetUrl: requestData.targetUrl,
-      tabId: tab.id!,
-      result: blockResult,
-      timestamp: new Date().toISOString(),
-      closeTabAfterCollection: requestData.closeTabAfterCollection !== false,
-    };
+      return {
+        success: true,
+        targetUrl: requestData.targetUrl,
+        tabId: tab.id!,
+        result: blockResults,
+        timestamp: new Date().toISOString(),
+        closeTabAfterCollection: requestData.closeTabAfterCollection !== false,
+      };
+    } else {
+      // 단일 블록 실행
+      const blockResult = await this.tabManager.executeBlock(requestData.block, tab.id!);
+      console.log('[8G Background] Single block execution result:', blockResult);
+
+      return {
+        success: true,
+        targetUrl: requestData.targetUrl,
+        tabId: tab.id!,
+        result: blockResult,
+        timestamp: new Date().toISOString(),
+        closeTabAfterCollection: requestData.closeTabAfterCollection !== false,
+      };
+    }
+  }
+
+  // 블록 배열을 순차적으로 실행
+  private async stepExecuteBlockList(
+    blocks: any[],
+    tabId: number,
+    blockDelay: number = 500 // 기본 500ms, 설정 가능
+  ): Promise<any[]> {
+    const results: any[] = [];
+    
+    for (let i = 0; i < blocks.length; i++) {
+      const block = blocks[i];
+      console.log(`[8G Background] Executing block ${i + 1}/${blocks.length}:`, block.name);
+      
+      try {
+        const result = await this.tabManager.executeBlock(block, tabId);
+        results.push(result);
+        
+        // 블록 실행 후 대기 (DOM 업데이트 등) - 설정 가능한 지연 시간
+        if (i < blocks.length - 1 && blockDelay > 0) {
+          console.log(`[8G Background] Waiting ${blockDelay}ms before next block...`);
+          await new Promise(resolve => setTimeout(resolve, blockDelay));
+        }
+        
+        // 에러 발생 시 중단할지 결정 (현재는 계속 진행)
+        if (result.hasError) {
+          console.warn(`[8G Background] Block ${i + 1} failed but continuing:`, result.message);
+        }
+      } catch (error) {
+        console.error(`[8G Background] Block ${i + 1} execution error:`, error);
+        results.push({
+          hasError: true,
+          message: error instanceof Error ? error.message : 'Unknown error',
+          data: null,
+        });
+      }
+    }
+    
+    return results;
   }
 
   // Step 4: 정리 작업
