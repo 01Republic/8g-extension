@@ -1,3 +1,12 @@
+# [1.2.0](https://github.com/01Republic/8g-extension/compare/v1.1.1...v1.2.0) (2025-09-21)
+
+
+### Features
+
+* Type에러 수정 ([13f3ac5](https://github.com/01Republic/8g-extension/commit/13f3ac58d390cf03006b3ed262e03ca250e3519c))
+
+
+
 ## [1.1.1](https://github.com/01Republic/8g-extension/compare/v1.1.0...v1.1.1) (2025-09-21)
 
 
