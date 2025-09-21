@@ -1,4 +1,5 @@
-import { Block } from '@/blocks';
+import { Block } from '../blocks';
+export * from '../blocks';
 
 // Data collection request
 export interface CollectDataRequest {
