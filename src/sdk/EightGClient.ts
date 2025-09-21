@@ -60,7 +60,6 @@ export class EightGClient {
    */
   async collectData(request: CollectDataRequest): Promise<CollectDataResult> {
     return new Promise((resolve, reject) => {
-      this.validateRequest(request);
       const requestId = `8g_${Date.now()}_${Math.random()}`;
       const timeout = setTimeout(() => {
         reject(EightGError.requestTimeout());
@@ -92,24 +91,5 @@ export class EightGClient {
         activateTab: false,
       }, '*');
     });
-  }
-
-  /**
-   * 요청 유효성 검증
-   */
-  private validateRequest(request: CollectDataRequest): void {
-    if (!request.targetUrl) {
-      throw EightGError.invalidRequest('targetUrl is required');
-    }
-
-    if (!request.block) {
-      throw EightGError.invalidRequest('block is required');
-    }
-
-    try {
-      new URL(request.targetUrl);
-    } catch {
-      throw EightGError.invalidRequest('targetUrl must be a valid URL');
-    }
   }
 }
