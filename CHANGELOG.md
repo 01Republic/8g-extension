@@ -1,3 +1,12 @@
+## [1.2.4](https://github.com/01Republic/8g-extension/compare/v1.2.3...v1.2.4) (2025-09-21)
+
+
+### Bug Fixes
+
+* Fix Type to use in 8g ([2e099a9](https://github.com/01Republic/8g-extension/commit/2e099a943a8ce38ada1d00354b97c6a8165b4c1c))
+
+
+
 ## [1.2.3](https://github.com/01Republic/8g-extension/compare/v1.2.2...v1.2.3) (2025-09-21)
 
 
