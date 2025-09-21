@@ -59,9 +59,8 @@ export class EightGClient {
    * 데이터 수집 요청
    */
   async collectData(request: CollectDataRequest): Promise<CollectDataResult> {
-    this.validateRequest(request);
-
     return new Promise((resolve, reject) => {
+      this.validateRequest(request);
       const requestId = `8g_${Date.now()}_${Math.random()}`;
       const timeout = setTimeout(() => {
         reject(EightGError.requestTimeout());
