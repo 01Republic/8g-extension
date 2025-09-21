@@ -1,6 +1,6 @@
 /**
  * CSS 셀렉터 생성 유틸리티
- * 요소의 고유한 CSS 셀렉터를 생성합니다 (동적 ID/클래스 제외)
+ * 요소의 고유한 CSS 셀렉터를 생성합니다
  */
 export class CSSSelectorGenerator {
   /**
@@ -9,22 +9,7 @@ export class CSSSelectorGenerator {
    * @returns 생성된 CSS 셀렉터
    */
   static generate(element: Element): string {
-    // 1. 태그명과 nth-child 조합 (가장 안정적)
-    const tagName = element.tagName.toLowerCase();
-    const parent = element.parentElement;
-    
-    if (parent) {
-      const siblings = Array.from(parent.children).filter(child => 
-        child.tagName.toLowerCase() === tagName
-      );
-      
-      if (siblings.length > 1) {
-        const index = siblings.indexOf(element) + 1;
-        return `${tagName}:nth-child(${index})`;
-      }
-    }
-
-    // 2. 속성 기반 셀렉터 (정적 속성들만)
+    // 1. 속성 기반 셀렉터 (정적 속성들만) - 가장 구체적
     const staticAttributes = ['data-testid', 'aria-label', 'title', 'alt', 'role'];
     for (const attr of staticAttributes) {
       const value = element.getAttribute(attr);
@@ -33,7 +18,57 @@ export class CSSSelectorGenerator {
       }
     }
 
-    // 3. 마지막 수단: 태그명만
+    // 2. 태그명과 nth-child 조합 (모든 형제 요소 기준)
+    const tagName = element.tagName.toLowerCase();
+    const parent = element.parentElement;
+    
+    if (parent) {
+      // 모든 형제 요소 중에서의 위치 (같은 태그명만이 아님)
+      const siblings = Array.from(parent.children);
+      const index = siblings.indexOf(element) + 1;
+      
+      if (siblings.length > 1) {
+        return `${tagName}:nth-child(${index})`;
+      }
+    }
+
+    // 3. 부모와 함께 경로 생성
+    if (parent) {
+      const parentSelector = this.generateParentSelector(parent);
+      if (parentSelector) {
+        return `${parentSelector} > ${tagName}:nth-child(${Array.from(parent.children).indexOf(element) + 1})`;
+      }
+    }
+
+    // 4. 마지막 수단: 태그명만
+    return tagName;
+  }
+
+  /**
+   * 부모 요소의 셀렉터 생성
+   */
+  private static generateParentSelector(parent: Element): string | null {
+    const tagName = parent.tagName.toLowerCase();
+    
+    // 부모의 속성 기반 셀렉터 시도
+    const staticAttributes = ['data-testid', 'aria-label', 'title', 'alt', 'role'];
+    for (const attr of staticAttributes) {
+      const value = parent.getAttribute(attr);
+      if (value && !this.isDynamicValue(value)) {
+        return `[${attr}="${CSS.escape(value)}"]`;
+      }
+    }
+
+    // 부모의 nth-child 시도
+    const grandParent = parent.parentElement;
+    if (grandParent) {
+      const siblings = Array.from(grandParent.children);
+      const index = siblings.indexOf(parent) + 1;
+      if (siblings.length > 1) {
+        return `${tagName}:nth-child(${index})`;
+      }
+    }
+
     return tagName;
   }
 

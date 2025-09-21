@@ -2,11 +2,13 @@ import z from 'zod';
 import { Block, BlockResult, BaseBlockSchema } from './types';
 import { findElement } from '@/content/elements';
 import { CSSSelectorGenerator } from '@/content/elements/utils/CSSSelectorGenerator';
+import { XPathGenerator } from '@/content/elements/utils/XPathGenerator';
 
 export interface ElementData {
   text?: string;
   attributes?: Record<string, string | null>;
   selector?: string;        // 생성된 CSS 셀렉터
+  xpath?: string;           // 생성된 XPath
   [key: string]: any;
 }
 
@@ -21,8 +23,9 @@ export interface GetElementDataBlock extends Block {
   suffixText?: string;
   // Attribute extraction options
   attributes?: string[];
-  // CSS selector generation option
+  // Selector generation options
   includeSelector?: boolean;
+  includeXPath?: boolean;
 }
 
 export const GetElementDataBlockSchema = BaseBlockSchema.extend({
@@ -35,6 +38,7 @@ export const GetElementDataBlockSchema = BaseBlockSchema.extend({
   suffixText: z.string().optional(),
   attributes: z.array(z.string()).optional(),
   includeSelector: z.boolean().optional(),
+  includeXPath: z.boolean().optional(),
 });
 
 export function validateGetElementDataBlock(data: unknown): GetElementDataBlock {
@@ -55,6 +59,7 @@ export async function handlerGetElementData(
       suffixText = '',
       attributes = [],
       includeSelector = false,
+      includeXPath = false,
       findBy = 'cssSelector',
       option,
     } = data;
@@ -81,7 +86,8 @@ export async function handlerGetElementData(
       prefixText,
       suffixText,
       attributes,
-      includeSelector
+      includeSelector,
+      includeXPath
     );
 
     if (Array.isArray(elements)) {
@@ -108,7 +114,8 @@ function createElementDataExtractor(
   prefixText = '',
   suffixText = '',
   attributes: string[] = [],
-  includeSelector: boolean = false
+  includeSelector: boolean = false,
+  includeXPath: boolean = false
 ) {
   return (element: Element): ElementData => {
     const result: ElementData = {};
@@ -151,6 +158,11 @@ function createElementDataExtractor(
     // Generate CSS selector if requested
     if (includeSelector) {
       result.selector = CSSSelectorGenerator.generate(element);
+    }
+
+    // Generate XPath if requested
+    if (includeXPath) {
+      result.xpath = XPathGenerator.generate(element);
     }
 
     return result;
