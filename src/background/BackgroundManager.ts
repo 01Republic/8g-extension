@@ -11,6 +11,7 @@ export class BackgroundManager {
   constructor(private tabManager: TabManager) {}
 
   initHandler() {
+    // Chrome runtime message handler (internal communication)
     chrome.runtime.onMessage.addListener((message: BackgroundMessage, _sender, sendResponse) => {
       if (!isCollectDataNewTabMessage(message)) {
         sendResponse({

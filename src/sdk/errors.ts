@@ -22,4 +22,8 @@ export class EightGError extends Error {
   static collectionFailed(error: string) {
     return new EightGError(`Data collection failed: ${error}`, 'COLLECTION_FAILED');
   }
+
+  static requestTimeout() {
+    return new EightGError('Request timeout - Extension did not respond within 30 seconds', 'REQUEST_TIMEOUT');
+  }
 }

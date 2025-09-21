@@ -61,26 +61,38 @@ export class EightGClient {
   async collectData(request: CollectDataRequest): Promise<CollectDataResult> {
     this.validateRequest(request);
 
-    // Chrome extension으로 직접 메시지 전송
-    if (typeof chrome !== 'undefined' && chrome.runtime) {
-      const response = await chrome.runtime.sendMessage({
-        type: 'COLLECT_DATA_NEW_TAB',
-        data: {
-          targetUrl: request.targetUrl,
-          block: request.block,
-        },
-      });
+    return new Promise((resolve, reject) => {
+      const requestId = `8g_${Date.now()}_${Math.random()}`;
+      const timeout = setTimeout(() => {
+        reject(EightGError.requestTimeout());
+      }, 30000);
 
-      return {
-        success: response.success || !response.$isError,
-        data: response.result || response,
-        error: response.message || null,
-        timestamp: new Date().toISOString(),
-        targetUrl: request.targetUrl,
+      const handleResponse = (event: MessageEvent) => {
+        if (event.data?.type === '8G_COLLECT_RESPONSE' && event.data.requestId === requestId) {
+          clearTimeout(timeout);
+          window.removeEventListener('message', handleResponse);
+          
+          const response = event.data;
+          resolve({
+            success: response.success,
+            data: response.result,
+            error: response.success ? undefined : 'Collection failed',
+            timestamp: new Date().toISOString(),
+            targetUrl: request.targetUrl,
+          });
+        }
       };
-    } else {
-      throw EightGError.extensionNotInstalled();
-    }
+
+      window.addEventListener('message', handleResponse);
+      window.postMessage({
+        type: '8G_COLLECT_DATA',
+        requestId,
+        targetUrl: request.targetUrl,
+        block: request.block,
+        closeTabAfterCollection: true,
+        activateTab: false,
+      }, '*');
+    });
   }
 
   /**
