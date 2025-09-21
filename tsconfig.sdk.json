@@ -16,6 +16,6 @@
     "skipLibCheck": true,
     "isolatedModules": true
   },
-  "include": ["src/sdk/**/*"],
+  "include": ["src/sdk/**/*", "src/blocks/**/*", "src/types/**/*"],
   "exclude": ["src/**/*.test.ts", "src/**/*.spec.ts"]
 }
