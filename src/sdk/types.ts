@@ -1,4 +1,4 @@
-import { Block } from '../blocks';
+import { Block, BlockResult } from '../blocks';
 export * from '../blocks';
 
 // Data collection request
@@ -8,9 +8,8 @@ export interface CollectDataRequest {
 }
 
 // Collection result
-export interface CollectDataResult {
+export interface CollectDataResult<T = any> extends BlockResult<T> {
   success: boolean;
-  data?: any;
   error?: string;
   timestamp: string;
   targetUrl: string;

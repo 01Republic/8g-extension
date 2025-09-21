@@ -2,6 +2,17 @@
 export type { Block, BlockResult } from './types';
 export { BaseBlockSchema } from './types';
 
+// Re-export all block types
+export type { GetTextBlock } from './GetTextBlock';
+export type { GetAttributeValueBlock } from './GetAttributeValueBlock';
+export type { GetValueFormsBlock } from './GetValueFormBlock';
+export type { SetValueFormsBlock } from './SetValueFormBlock';
+export type { ClearValueFormsBlock } from './ClearValueFormBlock';
+export type { ElementExistsBlock } from './ElementExistsBlock';
+export type { EventClickBlock } from './EventClickBlock';
+export type { SaveAssetsBlock } from './SaveAssetsBlock';
+export type { GetElementDataBlock, ElementData } from './GetElementDataBlock';
+
 // Import block handlers and types
 import { handlerGetText, GetTextBlock, validateGetTextBlock } from './GetTextBlock';
 import {

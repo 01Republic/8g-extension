@@ -1,4 +1,16 @@
 import { CollectDataRequest, CollectDataResult } from './types';
+import type { 
+  GetTextBlock,
+  GetAttributeValueBlock,
+  GetValueFormsBlock,
+  SetValueFormsBlock,
+  ClearValueFormsBlock,
+  ElementExistsBlock,
+  EventClickBlock,
+  SaveAssetsBlock,
+  GetElementDataBlock,
+  ElementData
+} from '../blocks';
 import { EightGError } from './errors';
 import { ExtensionResponseMessage, isExtensionResponseMessage } from '@/types/external-messages';
 
@@ -30,6 +42,18 @@ export class EightGClient {
       window.postMessage({ type: '8G_EXTENSION_CHECK' }, '*');
     });
   }
+
+  // Overloads
+  async collectData(request: { targetUrl: string; block: GetTextBlock }): Promise<CollectDataResult<string | string[]>>;
+  async collectData(request: { targetUrl: string; block: GetAttributeValueBlock }): Promise<CollectDataResult<string | string[] | null>>;
+  async collectData(request: { targetUrl: string; block: GetValueFormsBlock }): Promise<CollectDataResult<string | boolean | null>>;
+  async collectData(request: { targetUrl: string; block: SetValueFormsBlock }): Promise<CollectDataResult<string | null>>;
+  async collectData(request: { targetUrl: string; block: ClearValueFormsBlock }): Promise<CollectDataResult<string | null>>;
+  async collectData(request: { targetUrl: string; block: ElementExistsBlock }): Promise<CollectDataResult<boolean | null>>;
+  async collectData(request: { targetUrl: string; block: EventClickBlock }): Promise<CollectDataResult<boolean>>;
+  async collectData(request: { targetUrl: string; block: SaveAssetsBlock }): Promise<CollectDataResult<string[] | null>>;
+  async collectData(request: { targetUrl: string; block: GetElementDataBlock }): Promise<CollectDataResult<ElementData | ElementData[]>>;
+  async collectData(request: CollectDataRequest): Promise<CollectDataResult>;
 
   /**
    * 데이터 수집 요청
