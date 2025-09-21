@@ -16,7 +16,7 @@ describe('handlerEventClick 테스트', () => {
         <div class="disabled-element" style="pointer-events: none;">비활성화된 요소</div>
       </div>
     `;
-    // @ts-ignore
+    // @ts-expect-error
     window.clickCount = clickCount;
   });
 

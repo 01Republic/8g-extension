@@ -8,18 +8,18 @@ export default defineConfig({
       entry: resolve(__dirname, 'src/sdk/index.ts'),
       name: '8g-extension',
       fileName: () => 'index.js',
-      formats: ['es']
+      formats: ['es'],
     },
     rollupOptions: {
       external: ['react', 'react-dom'],
       output: {
         globals: {
           react: 'React',
-          'react-dom': 'ReactDOM'
-        }
-      }
+          'react-dom': 'ReactDOM',
+        },
+      },
     },
-    outDir: 'dist'
+    outDir: 'dist',
   },
   resolve: {
     alias: {

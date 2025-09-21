@@ -26,7 +26,7 @@ export type ContentMessage = ExecuteBlockMessage;
 export interface ErrorResponse {
   $isError: true;
   message: string;
-  data: {};
+  data: object;
 }
 
 // Block Execution Response (specifically for content script)

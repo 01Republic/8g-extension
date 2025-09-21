@@ -19,7 +19,7 @@ describe('handlerElementExists 테스트', () => {
     name: 'element-exists',
     selector: '.existing-element',
     findBy: 'cssSelector',
-    option: {}
+    option: {},
   };
 
   it('빈 선택자면 에러 반환', async () => {

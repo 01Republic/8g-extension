@@ -24,7 +24,7 @@ describe('handlerClearValueForm 테스트', () => {
     name: 'clear-value-form',
     selector: '.text-input',
     findBy: 'cssSelector',
-    option: {}
+    option: {},
   };
 
   describe('기본 테스트', () => {

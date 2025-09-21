@@ -101,13 +101,13 @@ export class BackgroundManager {
   ): Promise<BackgroundStepResponse> {
     console.log('[8G Background] Step 3: Executing block in tab:', tab.id);
 
-    const blockResult = await this.tabManager.executeBlock(requestData.block, tab.id!!);
+    const blockResult = await this.tabManager.executeBlock(requestData.block, tab.id!);
     console.log('[8G Background] Block execution result:', blockResult);
 
     return {
       success: true,
       targetUrl: requestData.targetUrl,
-      tabId: tab.id!!,
+      tabId: tab.id!,
       result: blockResult,
       timestamp: new Date().toISOString(),
       closeTabAfterCollection: requestData.closeTabAfterCollection !== false,
