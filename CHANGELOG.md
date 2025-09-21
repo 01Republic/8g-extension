@@ -1,3 +1,12 @@
+## [1.2.3](https://github.com/01Republic/8g-extension/compare/v1.2.2...v1.2.3) (2025-09-21)
+
+
+### Bug Fixes
+
+* export block type ([edc265e](https://github.com/01Republic/8g-extension/commit/edc265e57061c02ee26955aaf302636892308c88))
+
+
+
 ## [1.2.2](https://github.com/01Republic/8g-extension/compare/v1.2.1...v1.2.2) (2025-09-21)
 
 
