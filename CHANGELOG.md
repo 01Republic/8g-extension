@@ -1,3 +1,12 @@
+## [1.2.1](https://github.com/01Republic/8g-extension/compare/v1.2.0...v1.2.1) (2025-09-21)
+
+
+### Bug Fixes
+
+* 타입 path 수정 ([5e87994](https://github.com/01Republic/8g-extension/commit/5e87994cf0bfebc5a1c734dddc6535caccfca2f8))
+
+
+
 # [1.2.0](https://github.com/01Republic/8g-extension/compare/v1.1.1...v1.2.0) (2025-09-21)
 
 
