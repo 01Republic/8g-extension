@@ -1,3 +1,12 @@
+# [1.5.0](https://github.com/01Republic/8g-extension/compare/v1.4.0...v1.5.0) (2025-09-21)
+
+
+### Features
+
+* include xpath in Block Result ([141b1a8](https://github.com/01Republic/8g-extension/commit/141b1a8edb88eb5650b28d257ce381d4055a6380))
+
+
+
 # [1.4.0](https://github.com/01Republic/8g-extension/compare/v1.3.0...v1.4.0) (2025-09-21)
 
 
