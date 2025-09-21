@@ -1,3 +1,12 @@
+## [1.1.1](https://github.com/01Republic/8g-extension/compare/v1.1.0...v1.1.1) (2025-09-21)
+
+
+### Bug Fixes
+
+* Release 범위 수정 ([93e8625](https://github.com/01Republic/8g-extension/commit/93e86253500fc012195afb7f34cccb0ac9993e85))
+
+
+
 # 1.1.0 (2025-09-21)
 
 
