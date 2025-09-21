@@ -1,3 +1,12 @@
+# [1.3.0](https://github.com/01Republic/8g-extension/compare/v1.2.9...v1.3.0) (2025-09-21)
+
+
+### Features
+
+* Block List Spec 추가 ([3b63387](https://github.com/01Republic/8g-extension/commit/3b63387ef56aa942e44ca4264d6c7f4e05cc8ac9))
+
+
+
 ## [1.2.9](https://github.com/01Republic/8g-extension/compare/v1.2.8...v1.2.9) (2025-09-21)
 
 
