@@ -8,8 +8,9 @@ export interface CollectDataRequest {
 }
 
 // Collection result
-export interface CollectDataResult<T = any> extends BlockResult<T> {
+export interface CollectDataResult<T = any> {
   success: boolean;
+  data?:BlockResult<T>
   error?: string;
   timestamp: string;
   targetUrl: string;
