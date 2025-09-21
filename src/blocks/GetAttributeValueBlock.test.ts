@@ -22,7 +22,6 @@ describe('handlerGetAttributeValue 테스트', () => {
     findBy: 'cssSelector',
     attributeName: 'href',
     option: {},
-    isBlock: true,
   };
 
   it('빈 선택자면 에러 반환', async () => {

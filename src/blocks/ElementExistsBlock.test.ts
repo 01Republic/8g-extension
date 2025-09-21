@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { handlerElementExists } from './ElementExistsBlock';
-import { ElementExistsBlock } from '.';
+import { ElementExistsBlock, handlerElementExists } from './ElementExistsBlock';
 
 describe('handlerElementExists 테스트', () => {
   beforeEach(() => {
@@ -20,8 +19,7 @@ describe('handlerElementExists 테스트', () => {
     name: 'element-exists',
     selector: '.existing-element',
     findBy: 'cssSelector',
-    option: {},
-    isBlock: true,
+    option: {}
   };
 
   it('빈 선택자면 에러 반환', async () => {

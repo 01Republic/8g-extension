@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { handlerEventClick } from './EventClickBlock';
-import { EventClickBlock } from '.';
+import { EventClickBlock, handlerEventClick } from './EventClickBlock';
 
 describe('handlerEventClick 테스트', () => {
   let clickCount = 0;
@@ -26,7 +25,6 @@ describe('handlerEventClick 테스트', () => {
     selector: '.clickable-button',
     findBy: 'cssSelector',
     option: {},
-    isBlock: true,
   };
 
   it('빈 선택자면 에러 반환', async () => {

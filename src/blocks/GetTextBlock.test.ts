@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { handlerGetText } from './GetTextBlock';
-import { GetTextBlock } from '../blocks';
+import { GetTextBlock, handlerGetText } from './GetTextBlock';
 
 describe('handlerGetText 테스트', () => {
   beforeEach(() => {
@@ -30,7 +29,6 @@ describe('handlerGetText 테스트', () => {
     findBy: 'cssSelector',
     useTextContent: true,
     option: {},
-    isBlock: true,
   };
 
   describe('기본 텍스트 추출', () => {

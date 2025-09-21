@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { handlerSetValueForm } from './SetValueFormBlock';
-import { SetValueFormsBlock } from '../blocks';
+import { handlerSetValueForm, SetValueFormsBlock } from './SetValueFormBlock';
 
 describe('handlerSetValueForm 테스트', () => {
   beforeEach(() => {
@@ -26,7 +25,6 @@ describe('handlerSetValueForm 테스트', () => {
     selector: '.text-input',
     findBy: 'cssSelector',
     option: {},
-    isBlock: true,
     setValue: '',
   };
 

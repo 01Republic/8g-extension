@@ -20,7 +20,6 @@ describe('handlerGetElementData 테스트', () => {
       selector: '#btn1',
       findBy: 'cssSelector',
       option: {},
-      isBlock: true,
       includeText: true,
       useTextContent: true,
       attributes: ['id', 'class', 'data-action'],
@@ -45,7 +44,6 @@ describe('handlerGetElementData 테스트', () => {
       selector: '.item',
       findBy: 'cssSelector',
       option: { multiple: true },
-      isBlock: true,
       includeText: true,
       useTextContent: true,
       attributes: ['data-id'],
@@ -73,7 +71,6 @@ describe('handlerGetElementData 테스트', () => {
       selector: 'a',
       findBy: 'cssSelector',
       option: {},
-      isBlock: true,
       includeText: false,
       attributes: ['href', 'title'],
     };
@@ -95,7 +92,6 @@ describe('handlerGetElementData 테스트', () => {
       selector: '#btn2',
       findBy: 'cssSelector',
       option: {},
-      isBlock: true,
       includeText: true,
       useTextContent: true,
       attributes: [],
@@ -115,7 +111,6 @@ describe('handlerGetElementData 테스트', () => {
       selector: '#btn1',
       findBy: 'cssSelector',
       option: {},
-      isBlock: true,
       includeText: true,
       useTextContent: true,
       prefixText: '[',
@@ -138,7 +133,6 @@ describe('handlerGetElementData 테스트', () => {
       selector: '.non-existent',
       findBy: 'cssSelector',
       option: {},
-      isBlock: true,
       includeText: true,
       attributes: ['id'],
     };
@@ -155,7 +149,6 @@ describe('handlerGetElementData 테스트', () => {
       selector: '',
       findBy: 'cssSelector',
       option: {},
-      isBlock: true,
       includeText: true,
     };
 
@@ -171,7 +164,6 @@ describe('handlerGetElementData 테스트', () => {
       selector: '#btn1',
       findBy: 'cssSelector',
       option: {},
-      isBlock: true,
       includeText: false,
       attributes: [],
     };

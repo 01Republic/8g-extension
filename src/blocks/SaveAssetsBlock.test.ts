@@ -21,7 +21,6 @@ describe('handlerSaveAssets 테스트', () => {
     selector: 'img, video, audio, source',
     findBy: 'cssSelector',
     option: { multiple: true },
-    isBlock: true,
   };
 
   describe('기본 자산 추출', () => {
