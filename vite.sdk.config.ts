@@ -7,8 +7,8 @@ export default defineConfig({
     lib: {
       entry: resolve(__dirname, 'src/sdk/index.ts'),
       name: '8g-extension',
-      fileName: (format) => `8g-extension.${format}.js`,
-      formats: ['es', 'cjs']
+      fileName: () => 'index.js',
+      formats: ['es']
     },
     rollupOptions: {
       external: ['react', 'react-dom'],
