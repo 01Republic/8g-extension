@@ -45,3 +45,5 @@ function buildSelector(selector: string, findBy: 'cssSelector' | 'xpath') {
 
   return new CssSelector();
 }
+
+export { CSSSelectorGenerator } from './utils/CSSSelectorGenerator';

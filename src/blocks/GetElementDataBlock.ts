@@ -1,10 +1,12 @@
 import z from 'zod';
 import { Block, BlockResult, BaseBlockSchema } from './types';
 import { findElement } from '@/content/elements';
+import { CSSSelectorGenerator } from '@/content/elements/utils/CSSSelectorGenerator';
 
 export interface ElementData {
   text?: string;
   attributes?: Record<string, string | null>;
+  selector?: string;        // 생성된 CSS 셀렉터
   [key: string]: any;
 }
 
@@ -19,6 +21,8 @@ export interface GetElementDataBlock extends Block {
   suffixText?: string;
   // Attribute extraction options
   attributes?: string[];
+  // CSS selector generation option
+  includeSelector?: boolean;
 }
 
 export const GetElementDataBlockSchema = BaseBlockSchema.extend({
@@ -30,6 +34,7 @@ export const GetElementDataBlockSchema = BaseBlockSchema.extend({
   prefixText: z.string().optional(),
   suffixText: z.string().optional(),
   attributes: z.array(z.string()).optional(),
+  includeSelector: z.boolean().optional(),
 });
 
 export function validateGetElementDataBlock(data: unknown): GetElementDataBlock {
@@ -49,6 +54,7 @@ export async function handlerGetElementData(
       prefixText = '',
       suffixText = '',
       attributes = [],
+      includeSelector = false,
       findBy = 'cssSelector',
       option,
     } = data;
@@ -74,7 +80,8 @@ export async function handlerGetElementData(
       regex,
       prefixText,
       suffixText,
-      attributes
+      attributes,
+      includeSelector
     );
 
     if (Array.isArray(elements)) {
@@ -100,7 +107,8 @@ function createElementDataExtractor(
   regex?: string,
   prefixText = '',
   suffixText = '',
-  attributes: string[] = []
+  attributes: string[] = [],
+  includeSelector: boolean = false
 ) {
   return (element: Element): ElementData => {
     const result: ElementData = {};
@@ -138,6 +146,11 @@ function createElementDataExtractor(
       attributes.forEach((attrName) => {
         result.attributes![attrName] = element.getAttribute(attrName);
       });
+    }
+
+    // Generate CSS selector if requested
+    if (includeSelector) {
+      result.selector = CSSSelectorGenerator.generate(element);
     }
 
     return result;
