@@ -1,3 +1,12 @@
+## [1.2.6](https://github.com/01Republic/8g-extension/compare/v1.2.5...v1.2.6) (2025-09-21)
+
+
+### Bug Fixes
+
+* move to validation to Promise ([104f4a9](https://github.com/01Republic/8g-extension/commit/104f4a97a11e2ec36dc3530e03e18d3ca08449bc))
+
+
+
 ## [1.2.5](https://github.com/01Republic/8g-extension/compare/v1.2.4...v1.2.5) (2025-09-21)
 
 
