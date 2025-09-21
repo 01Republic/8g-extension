@@ -1,3 +1,12 @@
+## [1.2.8](https://github.com/01Republic/8g-extension/compare/v1.2.7...v1.2.8) (2025-09-21)
+
+
+### Bug Fixes
+
+* Fix CollectDataResult  Type ([0e83853](https://github.com/01Republic/8g-extension/commit/0e838537485d524ae3a46591d0cda39c2ea833d4))
+
+
+
 ## [1.2.7](https://github.com/01Republic/8g-extension/compare/v1.2.6...v1.2.7) (2025-09-21)
 
 
