@@ -1,3 +1,12 @@
+## [1.2.2](https://github.com/01Republic/8g-extension/compare/v1.2.1...v1.2.2) (2025-09-21)
+
+
+### Bug Fixes
+
+* change build order ([0a0c6e1](https://github.com/01Republic/8g-extension/commit/0a0c6e1417bf45de3de607c81dcd6e7e5f2f8281))
+
+
+
 ## [1.2.1](https://github.com/01Republic/8g-extension/compare/v1.2.0...v1.2.1) (2025-09-21)
 
 
