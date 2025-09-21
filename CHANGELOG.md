@@ -1,3 +1,12 @@
+## [1.2.7](https://github.com/01Republic/8g-extension/compare/v1.2.6...v1.2.7) (2025-09-21)
+
+
+### Bug Fixes
+
+* Delete Validation REquest ([14e2509](https://github.com/01Republic/8g-extension/commit/14e2509ed534dcc7f603f9aabfcebf408cd2e0dc))
+
+
+
 ## [1.2.6](https://github.com/01Republic/8g-extension/compare/v1.2.5...v1.2.6) (2025-09-21)
 
 
