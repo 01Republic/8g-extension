@@ -1,3 +1,12 @@
+## [1.2.5](https://github.com/01Republic/8g-extension/compare/v1.2.4...v1.2.5) (2025-09-21)
+
+
+### Bug Fixes
+
+* window message 안쓰던 핵심 버그 수정 ([fbd46c2](https://github.com/01Republic/8g-extension/commit/fbd46c2299ef15b13cbcb2bde41a787cd7288f58))
+
+
+
 ## [1.2.4](https://github.com/01Republic/8g-extension/compare/v1.2.3...v1.2.4) (2025-09-21)
 
 
