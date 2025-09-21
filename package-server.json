@@ -1,0 +1,12 @@
+{
+  "name": "websocket-server",
+  "version": "1.0.0",
+  "description": "Simple WebSocket server for extension data collection",
+  "main": "websocket-server.js",
+  "scripts": {
+    "start": "node websocket-server.js"
+  },
+  "dependencies": {
+    "ws": "^8.14.2"
+  }
+}
