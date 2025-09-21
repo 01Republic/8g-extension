@@ -1,4 +1,5 @@
-import { Block, BlockResult } from '../blocks';
+import { BackgroundStepResponse } from '../types';
+import { Block } from '../blocks';
 export * from '../blocks';
 
 // Data collection request
@@ -10,7 +11,7 @@ export interface CollectDataRequest {
 // Collection result
 export interface CollectDataResult<T = any> {
   success: boolean;
-  data?:BlockResult<T>
+  data?:BackgroundStepResponse<T>
   error?: string;
   timestamp: string;
   targetUrl: string;

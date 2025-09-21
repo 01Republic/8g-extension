@@ -33,11 +33,11 @@ export interface ErrorResponse {
 export type BlockExecutionResponse = BlockResult | ErrorResponse;
 
 // Background Step Response
-export interface BackgroundStepResponse {
+export interface BackgroundStepResponse<T> {
   success: true;
   targetUrl: string;
   tabId: number;
-  result: BlockResult;
+  result: BlockResult<T>;
   timestamp: string;
   closeTabAfterCollection: boolean;
 }
