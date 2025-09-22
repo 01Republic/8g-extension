@@ -1,3 +1,12 @@
+# [1.6.0](https://github.com/01Republic/8g-extension/compare/v1.5.0...v1.6.0) (2025-09-22)
+
+
+### Features
+
+* multi text list spec ([a3e0046](https://github.com/01Republic/8g-extension/commit/a3e0046f543659e89f372bde65e6604f09b4c1e2))
+
+
+
 # [1.5.0](https://github.com/01Republic/8g-extension/compare/v1.4.0...v1.5.0) (2025-09-21)
 
 
