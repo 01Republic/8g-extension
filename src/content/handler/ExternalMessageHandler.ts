@@ -2,8 +2,9 @@ import {
   WindowMessage,
   CollectDataMessage,
   ExtensionResponseMessage,
+  CollectWorkflowMessage,
 } from '@/types/external-messages';
-import { CollectDataNewTabMessage } from '@/types/internal-messages';
+import { CollectDataNewTabMessage, CollectWorkflowNewTabMessage } from '@/types/internal-messages';
 import { MessageKernel } from '../kernel/MessageKernel';
 
 /**
@@ -35,6 +36,10 @@ export class ExternalMessageHandler {
 
       case '8G_COLLECT_DATA':
         await this.handleCollectData(message);
+        break;
+
+      case '8G_COLLECT_WORKFLOW':
+        await this.handleCollectWorkflow(message as CollectWorkflowMessage);
         break;
 
       default:
@@ -87,6 +92,49 @@ export class ExternalMessageHandler {
     } catch (error) {
       const errorResponse = this.kernel.createErrorResponse(message.requestId, error);
       this.kernel.sendToWebpage(errorResponse);
+    }
+  }
+
+  /**
+   * 워크플로우 수집 요청 처리
+   */
+  private async handleCollectWorkflow(message: CollectWorkflowMessage): Promise<void> {
+    try {
+      this.validateCollectWorkflowMessage(message);
+
+      const backgroundMessage: CollectWorkflowNewTabMessage = {
+        type: 'COLLECT_WORKFLOW_NEW_TAB',
+        data: {
+          targetUrl: message.targetUrl,
+          workflow: message.workflow,
+          closeTabAfterCollection: message.closeTabAfterCollection !== false,
+          activateTab: message.activateTab === true,
+        },
+      };
+
+      try {
+        const response = await this.kernel.sendToBackground(backgroundMessage);
+        const successResponse = this.kernel.createSuccessResponse(message.requestId, response);
+        this.kernel.sendToWebpage(successResponse);
+      } catch (error) {
+        const errorResponse = this.kernel.createErrorResponse(message.requestId, error);
+        this.kernel.sendToWebpage(errorResponse);
+      }
+    } catch (error) {
+      const errorResponse = this.kernel.createErrorResponse(message.requestId, error);
+      this.kernel.sendToWebpage(errorResponse);
+    }
+  }
+
+  private validateCollectWorkflowMessage(message: CollectWorkflowMessage): void {
+    if (!message.targetUrl) {
+      throw new Error('Target URL is required');
+    }
+    if (!message.workflow) {
+      throw new Error('Workflow is required');
+    }
+    if (!message.workflow.start || !Array.isArray(message.workflow.steps)) {
+      throw new Error('Workflow must have start and steps');
     }
   }
 

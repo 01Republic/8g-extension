@@ -2,10 +2,12 @@ import { TabManager } from './TabManager';
 import {
   BackgroundMessage,
   CollectDataNewTabMessage,
+  CollectWorkflowNewTabMessage,
   isCollectDataNewTabMessage,
   ErrorResponse,
   BackgroundStepResponse,
 } from '@/types/internal-messages';
+import { WorkflowRunner } from './WorkflowRunner';
 
 export class BackgroundManager {
   constructor(private tabManager: TabManager) {}
@@ -13,22 +15,22 @@ export class BackgroundManager {
   initHandler() {
     // Chrome runtime message handler (internal communication)
     chrome.runtime.onMessage.addListener((message: BackgroundMessage, _sender, sendResponse) => {
-      if (!isCollectDataNewTabMessage(message)) {
-        sendResponse({
-          $isError: true,
-          message: 'Invalid message type',
-          data: {},
-        } as ErrorResponse);
-        return false;
+      if ((message as any).type === 'COLLECT_DATA_NEW_TAB' && isCollectDataNewTabMessage(message)) {
+        this.handleAsyncCollectData(message.data, sendResponse);
+        return true;
       }
 
-      // async 함수를 별도로 실행
-      this.handleAsyncMessage(message.data, sendResponse);
-      return true;
+      if ((message as any).type === 'COLLECT_WORKFLOW_NEW_TAB') {
+        this.handleAsyncCollectWorkflow((message as CollectWorkflowNewTabMessage).data, sendResponse);
+        return true;
+      }
+
+      sendResponse({ $isError: true, message: 'Invalid message type', data: {} } as ErrorResponse);
+      return false;
     });
   }
 
-  private async handleAsyncMessage(
+  private async handleAsyncCollectData(
     requestData: CollectDataNewTabMessage['data'],
     sendResponse: (response: any) => void
   ) {
@@ -61,6 +63,39 @@ export class BackgroundManager {
         message: error.message,
         data: {},
       } as ErrorResponse);
+    } finally {
+      await this.stepCleanup(tab.id);
+    }
+  }
+
+  private async handleAsyncCollectWorkflow(
+    requestData: CollectWorkflowNewTabMessage['data'],
+    sendResponse: (response: any) => void
+  ) {
+    // 1) 유효성 검증
+    if (!requestData.targetUrl) {
+      sendResponse({ $isError: true, message: 'Target URL is required for workflow', data: {} } as ErrorResponse);
+      return;
+    }
+    if (!requestData.workflow) {
+      sendResponse({ $isError: true, message: 'Workflow is required', data: {} } as ErrorResponse);
+      return;
+    }
+
+    // 2) 탭 생성
+    const tab = await this.tabManager.createTab(requestData.targetUrl, requestData.activateTab === true);
+    if (tab.id === undefined) {
+      sendResponse({ $isError: true, message: 'Failed to create tab or tab ID is missing', data: {} } as ErrorResponse);
+      return;
+    }
+
+    try {
+      // 3) 워크플로우 실행 (별도 러너 사용)
+      const runner = new WorkflowRunner(this.tabManager);
+      const result = await runner.run(requestData.workflow, tab.id!);
+      sendResponse({ success: true, targetUrl: requestData.targetUrl, tabId: tab.id!, result, timestamp: new Date().toISOString(), closeTabAfterCollection: requestData.closeTabAfterCollection !== false });
+    } catch (error: any) {
+      sendResponse({ $isError: true, message: error.message, data: {} } as ErrorResponse);
     } finally {
       await this.stepCleanup(tab.id);
     }

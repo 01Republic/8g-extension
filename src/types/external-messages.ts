@@ -1,4 +1,5 @@
 import { Block } from '@/blocks';
+import type { Workflow } from '@/sdk/types';
 
 // Window Messages (for webpage communication)
 export interface ExtensionCheckMessage {
@@ -28,10 +29,20 @@ export interface CollectResponseMessage {
   result: any;
 }
 
+export interface CollectWorkflowMessage {
+  type: '8G_COLLECT_WORKFLOW';
+  requestId: string;
+  targetUrl: string;
+  workflow: Workflow;
+  closeTabAfterCollection?: boolean;
+  activateTab?: boolean;
+}
+
 // External Message Union Type
 export type WindowMessage =
   | ExtensionCheckMessage
   | CollectDataMessage
+  | CollectWorkflowMessage
   | ExtensionResponseMessage
   | CollectResponseMessage;
 
@@ -42,6 +53,10 @@ export function isExtensionCheckMessage(message: any): message is ExtensionCheck
 
 export function isCollectDataMessage(message: any): message is CollectDataMessage {
   return message && message.type === '8G_COLLECT_DATA';
+}
+
+export function isCollectWorkflowMessage(message: any): message is CollectWorkflowMessage {
+  return message && message.type === '8G_COLLECT_WORKFLOW';
 }
 
 export function isExtensionResponseMessage(message: any): message is ExtensionResponseMessage {

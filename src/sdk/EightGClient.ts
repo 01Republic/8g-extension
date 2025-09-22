@@ -1,4 +1,4 @@
-import { CollectDataRequest, CollectDataResult } from './types';
+import { CollectDataRequest, CollectDataResult, CollectWorkflowRequest, CollectWorkflowResult } from './types';
 import type { 
   Block,
   GetTextBlock,
@@ -96,6 +96,48 @@ export class EightGClient {
         closeTabAfterCollection: true,
         activateTab: false,
         blockDelay: request.blockDelay || 500, // 기본값 500ms
+      }, '*');
+    });
+  }
+
+  /**
+   * 워크플로우 실행 요청
+   */
+  async collectWorkflow(request: CollectWorkflowRequest): Promise<CollectWorkflowResult> {
+    return new Promise((resolve, reject) => {
+      const requestId = `8g_wf_${Date.now()}_${Math.random()}`;
+      const timeout = setTimeout(() => {
+        reject(EightGError.requestTimeout());
+      }, 60000);
+
+      const handleResponse = (event: MessageEvent) => {
+        if (event.data?.type === '8G_COLLECT_RESPONSE' && event.data.requestId === requestId) {
+          clearTimeout(timeout);
+          window.removeEventListener('message', handleResponse);
+
+          const response = event.data as any;
+          const steps =
+            response?.result?.steps ?? // 케이스 A: result가 steps를 직접 포함
+            response?.result?.result?.steps ?? // 케이스 B: Background 응답 내 중첩된 result.steps
+            [];
+          resolve({
+            success: response.success,
+            steps,
+            error: response.success ? undefined : 'Workflow failed',
+            timestamp: new Date().toISOString(),
+            targetUrl: request.targetUrl,
+          });
+        }
+      };
+
+      window.addEventListener('message', handleResponse);
+      window.postMessage({
+        type: '8G_COLLECT_WORKFLOW',
+        requestId,
+        targetUrl: request.targetUrl,
+        workflow: request.workflow,
+        closeTabAfterCollection: request.closeTabAfterCollection !== false,
+        activateTab: request.activateTab === true,
       }, '*');
     });
   }

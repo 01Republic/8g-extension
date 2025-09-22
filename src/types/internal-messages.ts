@@ -1,4 +1,5 @@
 import { Block, BlockResult } from '@/blocks';
+import type { Workflow } from '@/sdk/types';
 
 // Background -> Content Script Messages
 export interface ExecuteBlockMessage {
@@ -19,8 +20,18 @@ export interface CollectDataNewTabMessage {
   };
 }
 
+export interface CollectWorkflowNewTabMessage {
+  type: 'COLLECT_WORKFLOW_NEW_TAB';
+  data: {
+    targetUrl: string;
+    workflow: Workflow;
+    closeTabAfterCollection?: boolean;
+    activateTab?: boolean;
+  };
+}
+
 // Internal Message Union Types
-export type BackgroundMessage = CollectDataNewTabMessage;
+export type BackgroundMessage = CollectDataNewTabMessage | CollectWorkflowNewTabMessage;
 export type ContentMessage = ExecuteBlockMessage;
 
 // Response Types for Internal Communication

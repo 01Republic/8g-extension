@@ -1,6 +1,7 @@
 import { Block, BlockResult } from '@/blocks';
 import {
   CollectDataNewTabMessage,
+  CollectWorkflowNewTabMessage,
   ErrorResponse,
   isErrorResponse,
 } from '@/types/internal-messages';
@@ -14,7 +15,7 @@ export class MessageKernel {
   /**
    * Background script로 메시지 전송
    */
-  async sendToBackground(message: CollectDataNewTabMessage): Promise<any> {
+  async sendToBackground(message: CollectDataNewTabMessage | CollectWorkflowNewTabMessage): Promise<any> {
     return new Promise((resolve, reject) => {
       chrome.runtime.sendMessage(message, (response) => {
         if (chrome.runtime.lastError) {
