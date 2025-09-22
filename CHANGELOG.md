@@ -1,3 +1,12 @@
+# [1.7.0](https://github.com/01Republic/8g-extension/compare/v1.6.0...v1.7.0) (2025-09-22)
+
+
+### Features
+
+* Workflow 기능 추가 ([de2d6ec](https://github.com/01Republic/8g-extension/commit/de2d6ecfbdac788c0299ae23f70b932742e79507))
+
+
+
 # [1.6.0](https://github.com/01Republic/8g-extension/compare/v1.5.0...v1.6.0) (2025-09-22)
 
 
