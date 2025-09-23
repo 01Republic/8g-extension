@@ -117,9 +117,10 @@ export class EightGClient {
 
           const response = event.data as any;
           const steps =
-            response?.result?.steps ?? // 케이스 A: result가 steps를 직접 포함
-            response?.result?.result?.steps ?? // 케이스 B: Background 응답 내 중첩된 result.steps
+            response?.result?.steps ??
+            response?.result?.result?.steps ??
             [];
+
           resolve({
             success: response.success,
             steps,

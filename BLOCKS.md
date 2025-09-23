@@ -11,6 +11,14 @@
 
 ---
 
+- 설치(npm)
+  - `npm install 8g-extension` 또는 `yarn add 8g-extension`
+- 임포트(ESM)
+  - `import { EightGClient } from '8g-extension'`
+  - React는 SDK 사용에 필요하지 않습니다.
+
+---
+
 ## get-text
 DOM 요소의 텍스트를 추출합니다.
 
@@ -46,6 +54,7 @@ DOM 요소의 텍스트를 추출합니다.
 ```
 
 ---
+
 
 ## attribute-value
 요소의 특정 속성 값을 읽습니다.

@@ -9,7 +9,6 @@ export class WorkflowRunner {
     const stepsById = new Map(workflow.steps.map((s) => [s.id, s]));
     let currentId: string | undefined = workflow.start;
     const results: any[] = [];
-
     while (currentId) {
       const step = stepsById.get(currentId);
       if (!step) break;
@@ -56,15 +55,38 @@ export class WorkflowRunner {
 
       if (step.switch && step.switch.length > 0) {
         const matched = step.switch.find((c) => this.evaluateWhen(c.when, context));
-        if (matched) { currentId = matched.next; continue; }
+        if (matched) {
+          if (!skipped && typeof step.delayAfterMs === 'number' && step.delayAfterMs > 0) {
+            await new Promise((r) => setTimeout(r, step.delayAfterMs));
+          }
+          currentId = matched.next;
+          continue;
+        }
       }
-      if (success && step.onSuccess) { currentId = step.onSuccess; continue; }
-      if (!success && step.onFailure) { currentId = step.onFailure; continue; }
-      if (step.next) { currentId = step.next; continue; }
+      if (success && step.onSuccess) {
+        if (!skipped && typeof step.delayAfterMs === 'number' && step.delayAfterMs > 0) {
+          await new Promise((r) => setTimeout(r, step.delayAfterMs));
+        }
+        currentId = step.onSuccess;
+        continue;
+      }
+      if (!success && step.onFailure) {
+        if (!skipped && typeof step.delayAfterMs === 'number' && step.delayAfterMs > 0) {
+          await new Promise((r) => setTimeout(r, step.delayAfterMs));
+        }
+        currentId = step.onFailure;
+        continue;
+      }
+      if (step.next) {
+        if (!skipped && typeof step.delayAfterMs === 'number' && step.delayAfterMs > 0) {
+          await new Promise((r) => setTimeout(r, step.delayAfterMs));
+        }
+        currentId = step.next;
+        continue;
+      }
 
       break;
     }
-
     return { steps: results };
   }
 
