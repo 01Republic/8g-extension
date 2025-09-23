@@ -1,3 +1,12 @@
+## [1.7.1](https://github.com/01Republic/8g-extension/compare/v1.7.0...v1.7.1) (2025-09-23)
+
+
+### Bug Fixes
+
+* delay 스펙 수정 ([cbcbb1c](https://github.com/01Republic/8g-extension/commit/cbcbb1c4b68c5bf8bac61d606016b3293bcdea9e))
+
+
+
 # [1.7.0](https://github.com/01Republic/8g-extension/compare/v1.6.0...v1.7.0) (2025-09-22)
 
 
