@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>8G Workflow + Network Capture (Notion)</title>
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; padding: 24px; }
+      h1 { margin-top: 0; }
+      .row { display: flex; gap: 12px; margin: 12px 0; flex-wrap: wrap; }
+      button { padding: 8px 12px; font-size: 14px; cursor: pointer; }
+      pre { background: #0b1020; color: #bde3ff; padding: 12px; border-radius: 6px; max-height: 360px; overflow: auto; }
+      .muted { color: #666; }
+      .hint { font-size: 13px; color: #555; }
+      label { font-size: 13px; color: #333; }
+      input[type="text"] { width: 520px; padding: 6px 8px; }
+    </style>
+  </head>
+  <body>
+    <h1>8G Workflow + Network Capture (Notion)</h1>
+    <p class="muted">이 페이지에서 버튼을 클릭하면 새 탭으로 <code>https://www.notion.so/</code> 를 열고, 지정된 셀렉터를 클릭하는 워크플로우를 실행합니다. 실행 동안 발생한 네트워크 이벤트는 아래 결과에 표시됩니다.</p>
+
+    <div class="row">
+      <button id="btn-run">Run Workflow on Notion (Click + Capture)</button>
+      <span class="hint">Notion에 로그인되어 있어야 UI가 정상 표시되며, 셀렉터는 동적 변경될 수 있습니다.</span>
+    </div>
+
+    <div class="row">
+      <label for="selector">CSS Selector:</label>
+      <input id="selector" type="text" value="#notion-app > div > div > div:nth-child(1) > div > nav > div > div > div > div:nth-child(4) > div:nth-child(1) > div > div:nth-child(1) > div > div:nth-child(1)" />
+    </div>
+
+    <h3>Result</h3>
+    <pre id="log">[ready]</pre>
+
+    <script type="module">
+      import { EightGClient } from './dist/index.js';
+
+      const $log = document.getElementById('log');
+      const $selector = document.getElementById('selector');
+      const log = (obj) => {
+        try { $log.textContent = typeof obj === 'string' ? obj : JSON.stringify(obj, null, 2); }
+        catch { $log.textContent = String(obj); }
+      };
+
+      const client = new EightGClient();
+
+      // Extension 체크 정보 출력
+      client.checkExtension().then((info) => {
+        log(`[8G] installed: ${info.installed}, version: ${info.version}`);
+      }).catch(() => log('[8G] Extension not detected'));
+
+      async function runWorkflow() {
+        try {
+          log('Starting workflow on Notion...');
+
+          const selector = $selector.value.trim();
+          const workflow = {
+            version: '1.0',
+            start: 'clickTarget',
+            steps: [
+              {
+                id: 'clickTarget',
+                title: 'Click target element',
+                block: {
+                  name: 'event-click',
+                  selector,
+                  findBy: 'cssSelector',
+                  option: { waitForSelector: true, waitSelectorTimeout: 15000 }
+                },
+                // Notion이 비동기로 UI를 갱신하므로 실패 시 재시도 권장
+                retry: { attempts: 3, delayMs: 1000, backoffFactor: 1.5 },
+                delayAfterMs: 500,
+                next: 'clickSettingButton'
+              },
+              {
+                id: 'clickSettingButton',
+                title: 'Click setting button',
+                block: {
+                  name: 'event-click',
+                  selector: '#notion-app > div > div > div.notion-overlay-container.notion-default-overlay-container > div:nth-child(2) > div > div > div:nth-child(2) > div:nth-child(2) > div > div > div > div > div:nth-child(1) > div:nth-child(2) > div:nth-child(1)',
+                  findBy: 'cssSelector',
+                  option: { waitForSelector: true, waitSelectorTimeout: 15000 }
+                },
+                delayAfterMs: 500,
+                next: 'clickTeamMemberTab'
+              },
+              {
+                id: 'clickTeamMemberTab',
+                title: 'Click team member tab',
+                block: {
+                  name: 'event-click',
+                  selector: '#settings-tab-members',
+                  findBy: 'cssSelector',
+                  option: { waitForSelector: true, waitSelectorTimeout: 15000 }
+                },
+                delayAfterMs: 500,
+                next: 'checkTeamMemberTab'
+              },
+              {
+                id: 'checkTeamMemberTab',
+                title: 'Check team member tab',
+                block: {
+                  name: 'get-text',
+                  selector: '#settings-tabpanel-members > div:nth-child(1) > div > div:nth-child(4) > div.hide-scrollbar > div:nth-child(1)',
+                  findBy: 'cssSelector',
+                  option: { waitForSelector: true, waitSelectorTimeout: 15000 }
+                },
+                delayAfterMs: 500,
+                switch: [
+                  { when: { 
+                    or: [
+                      { contains: { value: "$.steps.checkTeamMemberTab.result.data", search: "멤버" } },
+                      { contains: { value: "$.steps.checkTeamMemberTab.result.data", search: "Members" } }
+                    ]
+                    }, next: 'clickTeamMemberTabWithFirstTab' },
+                  { 
+                    when: {
+                      or: [
+                        { contains: { value: "$.steps.checkTeamMemberTab.result.data", search: "게스트" } } ,
+                        { contains: { value: "$.steps.checkTeamMemberTab.result.data", search: "Guests" } } 
+                      ]
+                    }, next: 'clickTeamMemberTabWithSecondTab' 
+                  }
+                ]
+              },
+              {
+                id: 'clickTeamMemberTabWithFirstTab',
+                title: 'Click team member tab with first tab',
+                block: {
+                  name: 'event-click',
+                  selector: '#settings-tabpanel-members > div:nth-child(1) > div > div:nth-child(4) > div.hide-scrollbar > div:nth-child(1) > div',
+                  findBy: 'cssSelector',
+                  option: { waitForSelector: true, waitSelectorTimeout: 15000 }
+                },
+                delayAfterMs: 500,
+                next: 'getTestData'
+              },
+              {
+                id: 'clickTeamMemberTabWithSecondTab',
+                title: 'Click team member tab with second tab',
+                block: {
+                  name: 'event-click',
+                  selector: '#settings-tabpanel-members > div:nth-child(1) > div > div:nth-child(4) > div.hide-scrollbar > div:nth-child(2) > div',
+                  findBy: 'cssSelector',
+                  option: { waitForSelector: true, waitSelectorTimeout: 15000 }
+                },
+                delayAfterMs: 3000,
+                next: 'getTestData'
+              },
+              {
+                id: 'getTestData',
+                title: 'Get test data',
+                block: {
+                  name: 'get-text',
+                  selector: '#settings-tabpanel-members > div:nth-child(1) > div > div:nth-child(4) > div',
+                  findBy: 'cssSelector',
+                  option: { waitForSelector: true, waitSelectorTimeout: 15000, multiple: true }
+                },
+                delayAfterMs: 500,
+              }
+            ],
+          };
+
+          const result = await client.collectWorkflow({
+            targetUrl: 'https://www.notion.so/',
+            workflow,
+            closeTabAfterCollection: true,
+            activateTab: true,
+          });
+
+          log({
+            success: result.success,
+            steps: result.steps,
+            targetUrl: result.targetUrl,
+            timestamp: result.timestamp,
+          });
+        } catch (e) {
+          log({ error: e?.message || String(e) });
+        }
+      }
+
+      document.getElementById('btn-run').addEventListener('click', () => {
+        runWorkflow();
+      });
+    </script>
+  </body>
+  </html>
+
