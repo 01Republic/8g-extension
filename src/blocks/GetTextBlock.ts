@@ -9,6 +9,7 @@ export interface GetTextBlock extends Block {
   regex?: string;
   prefixText?: string;
   suffixText?: string;
+  isTest?:boolean;
 }
 
 export const GetTextBlockSchema = BaseBlockSchema.extend({
@@ -18,6 +19,7 @@ export const GetTextBlockSchema = BaseBlockSchema.extend({
   regex: z.string().optional(),
   prefixText: z.string().optional(),
   suffixText: z.string().optional(),
+  isTest: z.boolean().optional(),
 });
 
 export function validateGetTextBlock(data: unknown): GetTextBlock {
