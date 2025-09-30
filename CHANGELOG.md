@@ -1,3 +1,12 @@
+## [1.7.3](https://github.com/01Republic/8g-extension/compare/v1.7.2...v1.7.3) (2025-09-30)
+
+
+### Bug Fixes
+
+* add test colmn ([bc5e05f](https://github.com/01Republic/8g-extension/commit/bc5e05f8a7351ad0a682828eb23958f6675fc36e))
+
+
+
 ## [1.7.2](https://github.com/01Republic/8g-extension/compare/v1.7.1...v1.7.2) (2025-09-30)
 
 
