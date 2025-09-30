@@ -13,6 +13,17 @@ export type { EventClickBlock } from './EventClickBlock';
 export type { SaveAssetsBlock } from './SaveAssetsBlock';
 export type { GetElementDataBlock, ElementData } from './GetElementDataBlock';
 
+// Export all block schemas
+export { GetTextBlockSchema } from './GetTextBlock';
+export { GetAttributeValueBlockSchema } from './GetAttributeValueBlock';
+export { GetValueFormsBlockSchema } from './GetValueFormBlock';
+export { SetValueFormsBlockSchema } from './SetValueFormBlock';
+export { ClearValueFormsBlockSchema } from './ClearValueFormBlock';
+export { ElementExistsBlockSchema } from './ElementExistsBlock';
+export { EventClickBlockSchema } from './EventClickBlock';
+export { SaveAssetsBlockSchema } from './SaveAssetsBlock';
+export { GetElementDataBlockSchema } from './GetElementDataBlock';
+
 // Import block handlers and types
 import { handlerGetText, GetTextBlock, validateGetTextBlock } from './GetTextBlock';
 import {
@@ -49,6 +60,28 @@ import {
   ElementData,
 } from './GetElementDataBlock';
 import { Block, BlockResult } from './types';
+import { GetTextBlockSchema } from './GetTextBlock';
+import { GetAttributeValueBlockSchema } from './GetAttributeValueBlock';
+import { GetValueFormsBlockSchema } from './GetValueFormBlock';
+import { SetValueFormsBlockSchema } from './SetValueFormBlock';
+import { ClearValueFormsBlockSchema } from './ClearValueFormBlock';
+import { ElementExistsBlockSchema } from './ElementExistsBlock';
+import { EventClickBlockSchema } from './EventClickBlock';
+import { SaveAssetsBlockSchema } from './SaveAssetsBlock';
+import { GetElementDataBlockSchema } from './GetElementDataBlock';
+
+// All block schemas mapped by block name
+export const AllBlockSchemas = {
+  'get-text': GetTextBlockSchema,
+  'attribute-value': GetAttributeValueBlockSchema,
+  'get-value-form': GetValueFormsBlockSchema,
+  'set-value-form': SetValueFormsBlockSchema,
+  'clear-value-form': ClearValueFormsBlockSchema,
+  'element-exists': ElementExistsBlockSchema,
+  'event-click': EventClickBlockSchema,
+  'save-assets': SaveAssetsBlockSchema,
+  'get-element-data': GetElementDataBlockSchema,
+} as const;
 
 export class BlockHandler {
   // Overloads
