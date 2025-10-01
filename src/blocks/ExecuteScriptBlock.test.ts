@@ -3,24 +3,35 @@ import { handlerExecuteScript, validateExecuteScriptBlock } from './ExecuteScrip
 
 describe('ExecuteScriptBlock', () => {
   describe('validateExecuteScriptBlock', () => {
-    it('should validate a valid execute-script block', () => {
+    it('should validate a valid execute-script block with string script', () => {
       const block = {
         name: 'execute-script',
-        selector: '',
-        findBy: 'cssSelector' as const,
-        option: {},
         script: 'const result = 1 + 1;',
       };
 
-      expect(() => validateExecuteScriptBlock(block)).not.toThrow();
+      const result = validateExecuteScriptBlock(block);
+      expect(result).toBeDefined();
+      expect(result.name).toBe('execute-script');
+    });
+
+    it('should validate a valid execute-script block with array script', () => {
+      const block = {
+        name: 'execute-script',
+        script: [
+          'const a = 1;',
+          'const b = 2;',
+          'const result = a + b;',
+        ],
+      };
+
+      const result = validateExecuteScriptBlock(block);
+      expect(result).toBeDefined();
+      expect(result.script).toEqual(['const a = 1;', 'const b = 2;', 'const result = a + b;']);
     });
 
     it('should throw error for invalid block name', () => {
       const block = {
         name: 'invalid-name',
-        selector: '',
-        findBy: 'cssSelector' as const,
-        option: {},
         script: 'const result = 1 + 1;',
       };
 
@@ -32,9 +43,6 @@ describe('ExecuteScriptBlock', () => {
     it('should execute simple script and return result', async () => {
       const block = {
         name: 'execute-script' as const,
-        selector: '',
-        findBy: 'cssSelector' as const,
-        option: {},
         script: 'const result = 1 + 1;',
       };
 
@@ -44,12 +52,25 @@ describe('ExecuteScriptBlock', () => {
       expect(response.data).toBe(2);
     });
 
+    it('should execute script array (multiline)', async () => {
+      const block = {
+        name: 'execute-script' as const,
+        script: [
+          'const a = 10;',
+          'const b = 20;',
+          'const result = a + b;',
+        ],
+      };
+
+      const response = await handlerExecuteScript(block);
+
+      expect(response.hasError).toBeUndefined();
+      expect(response.data).toBe(30);
+    });
+
     it('should execute script with context data', async () => {
       const block = {
         name: 'execute-script' as const,
-        selector: '',
-        findBy: 'cssSelector' as const,
-        option: {},
         script: `
           const result = {
             id: data.id,
@@ -72,43 +93,22 @@ describe('ExecuteScriptBlock', () => {
       });
     });
 
-    it('should parse JSON from text', async () => {
+    it('should parse workflow result array', async () => {
       const block = {
         name: 'execute-script' as const,
-        selector: '',
-        findBy: 'cssSelector' as const,
-        option: {},
-        script: `
-          const match = text.match(/id:\\s*"([^"]+)".*name:\\s*"([^"]+)"/);
-          const result = match ? { id: match[1], name: match[2] } : null;
-        `,
+        script: [
+          'const result = data',
+          '  .filter(item => item.attributes.id !== null)',
+          '  .map(item => ({',
+          '    elementId: item.attributes.id,',
+          '    elementText: item.text',
+          '  }));',
+        ],
         context: {
-          text: 'id: "user123" name: "John Doe"',
-        },
-      };
-
-      const response = await handlerExecuteScript(block);
-
-      expect(response.hasError).toBeUndefined();
-      expect(response.data).toEqual({ id: 'user123', name: 'John Doe' });
-    });
-
-    it('should handle array transformation', async () => {
-      const block = {
-        name: 'execute-script' as const,
-        selector: '',
-        findBy: 'cssSelector' as const,
-        option: {},
-        script: `
-          const result = items.map(item => ({
-            id: item.id,
-            displayName: item.name.toUpperCase()
-          }));
-        `,
-        context: {
-          items: [
-            { id: 1, name: 'apple' },
-            { id: 2, name: 'banana' },
+          data: [
+            { text: '01Republic', attributes: { id: '01republic' } },
+            { text: 'kerrys', attributes: { id: 'kerryshq' } },
+            { text: '', attributes: { id: null } },
           ],
         },
       };
@@ -117,17 +117,44 @@ describe('ExecuteScriptBlock', () => {
 
       expect(response.hasError).toBeUndefined();
       expect(response.data).toEqual([
-        { id: 1, displayName: 'APPLE' },
-        { id: 2, displayName: 'BANANA' },
+        { elementId: '01republic', elementText: '01Republic' },
+        { elementId: 'kerryshq', elementText: 'kerrys' },
+      ]);
+    });
+
+    it('should handle complex data transformation', async () => {
+      const block = {
+        name: 'execute-script' as const,
+        script: `
+          const result = items.map(item => ({
+            id: item.id,
+            displayName: item.name.toUpperCase(),
+            metadata: {
+              length: item.name.length,
+              hasSpace: item.name.includes(' ')
+            }
+          }));
+        `,
+        context: {
+          items: [
+            { id: 1, name: 'apple' },
+            { id: 2, name: 'banana split' },
+          ],
+        },
+      };
+
+      const response = await handlerExecuteScript(block);
+
+      expect(response.hasError).toBeUndefined();
+      expect(response.data).toEqual([
+        { id: 1, displayName: 'APPLE', metadata: { length: 5, hasSpace: false } },
+        { id: 2, displayName: 'BANANA SPLIT', metadata: { length: 12, hasSpace: true } },
       ]);
     });
 
     it('should use custom return variable', async () => {
       const block = {
         name: 'execute-script' as const,
-        selector: '',
-        findBy: 'cssSelector' as const,
-        option: {},
         script: `
           const output = { customValue: 42 };
         `,
@@ -143,9 +170,6 @@ describe('ExecuteScriptBlock', () => {
     it('should handle errors in script execution', async () => {
       const block = {
         name: 'execute-script' as const,
-        selector: '',
-        findBy: 'cssSelector' as const,
-        option: {},
         script: 'const result = undefinedVariable.someMethod();',
       };
 
@@ -159,9 +183,6 @@ describe('ExecuteScriptBlock', () => {
     it('should return error when script is empty', async () => {
       const block = {
         name: 'execute-script' as const,
-        selector: '',
-        findBy: 'cssSelector' as const,
-        option: {},
         script: '',
       };
 
@@ -171,48 +192,52 @@ describe('ExecuteScriptBlock', () => {
       expect(response.message).toBe('Script is required for execute-script block');
     });
 
-    it('should handle complex JSON transformation', async () => {
+    it('should handle array methods and filtering', async () => {
       const block = {
         name: 'execute-script' as const,
-        selector: '',
-        findBy: 'cssSelector' as const,
-        option: {},
-        script: `
-          // div에서 추출한 데이터를 가공
-          const result = {
-            id: elementData.attributes.id,
-            name: elementData.attributes['data-name'],
-            text: elementData.text.trim(),
-            metadata: {
-              selector: elementData.selector,
-              hasChildren: elementData.text.includes('child')
-            }
-          };
-        `,
+        script: [
+          '// Filter and transform array',
+          'const filtered = items.filter(x => x.score > 50);',
+          'const result = filtered.map(x => x.name);',
+        ],
         context: {
-          elementData: {
-            text: 'Some text with child elements',
-            attributes: {
-              id: 'div-123',
-              'data-name': 'Main Div',
-            },
-            selector: 'div#div-123',
-          },
+          items: [
+            { name: 'Alice', score: 80 },
+            { name: 'Bob', score: 45 },
+            { name: 'Charlie', score: 90 },
+          ],
         },
       };
 
       const response = await handlerExecuteScript(block);
 
       expect(response.hasError).toBeUndefined();
-      expect(response.data).toEqual({
-        id: 'div-123',
-        name: 'Main Div',
-        text: 'Some text with child elements',
-        metadata: {
-          selector: 'div#div-123',
-          hasChildren: true,
+      expect(response.data).toEqual(['Alice', 'Charlie']);
+    });
+
+    it('should support JSON.parse and JSON.stringify', async () => {
+      const block = {
+        name: 'execute-script' as const,
+        script: `
+          const parsed = JSON.parse(jsonStr);
+          const result = {
+            ...parsed,
+            processed: true,
+            timestamp: new Date().toISOString()
+          };
+        `,
+        context: {
+          jsonStr: '{"id":"123","name":"Test"}',
         },
-      });
+      };
+
+      const response = await handlerExecuteScript(block);
+
+      expect(response.hasError).toBeUndefined();
+      expect(response.data.id).toBe('123');
+      expect(response.data.name).toBe('Test');
+      expect(response.data.processed).toBe(true);
+      expect(response.data.timestamp).toBeDefined();
     });
   });
 });

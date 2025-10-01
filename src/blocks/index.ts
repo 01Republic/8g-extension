@@ -24,7 +24,7 @@ export { ElementExistsBlockSchema } from './ElementExistsBlock';
 export { EventClickBlockSchema } from './EventClickBlock';
 export { SaveAssetsBlockSchema } from './SaveAssetsBlock';
 export { GetElementDataBlockSchema } from './GetElementDataBlock';
-export { ExecuteScriptBlockSchema } from './ExecuteScriptBlock';
+export { ExecuteScriptBlockSchema, validateExecuteScriptBlock, handlerExecuteScript } from './ExecuteScriptBlock';
 
 // Import block handlers and types
 import { handlerGetText, GetTextBlock, validateGetTextBlock } from './GetTextBlock';
@@ -61,11 +61,6 @@ import {
   validateGetElementDataBlock,
   ElementData,
 } from './GetElementDataBlock';
-import {
-  handlerExecuteScript,
-  ExecuteScriptBlock,
-  validateExecuteScriptBlock,
-} from './ExecuteScriptBlock';
 import { Block, BlockResult } from './types';
 import { GetTextBlockSchema } from './GetTextBlock';
 import { GetAttributeValueBlockSchema } from './GetAttributeValueBlock';
@@ -92,6 +87,12 @@ export const AllBlockSchemas = {
   'execute-script': ExecuteScriptBlockSchema,
 } as const;
 
+/**
+ * BlockHandler - Content Script에서 실행되는 블록들을 처리
+ * 
+ * Note: execute-script는 여기서 처리하지 않습니다.
+ * Background의 WorkflowRunner에서 직접 실행됩니다. (CSP 제약 회피)
+ */
 export class BlockHandler {
   // Overloads
   static executeBlock(block: GetTextBlock): Promise<BlockResult<string | string[]>>;
@@ -107,7 +108,6 @@ export class BlockHandler {
   static executeBlock(
     block: GetElementDataBlock
   ): Promise<BlockResult<ElementData | ElementData[]>>;
-  static executeBlock(block: ExecuteScriptBlock): Promise<BlockResult<any>>;
   static executeBlock(block: Block): Promise<BlockResult>;
 
   // Implementation
@@ -159,10 +159,8 @@ export class BlockHandler {
           return await handlerGetElementData(validatedBlock);
         }
 
-        case 'execute-script': {
-          const validatedBlock = validateExecuteScriptBlock(block);
-          return await handlerExecuteScript(validatedBlock);
-        }
+        // Note: 'execute-script'는 Background의 WorkflowRunner에서 직접 처리됩니다.
+        // Content Script에서는 CSP 제약으로 실행 불가능하므로 여기서 처리하지 않습니다.
 
         default:
           return {

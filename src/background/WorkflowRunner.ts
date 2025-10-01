@@ -1,5 +1,6 @@
 import { TabManager } from './TabManager';
 import type { Workflow } from '@/sdk/types';
+import { handlerExecuteScript, validateExecuteScriptBlock } from '@/blocks/ExecuteScriptBlock';
 
 export class WorkflowRunner {
   constructor(private tabManager: TabManager) {}
@@ -31,7 +32,16 @@ export class WorkflowRunner {
           attempts++;
           try {
             const boundBlock = this.resolveBindings(step.block, context);
-            result = await this.runWithTimeout(() => this.tabManager.executeBlock(boundBlock as any, tabId), step.timeoutMs);
+            
+            // execute-script는 Background에서 직접 실행 (CSP 제약 없음)
+            if (boundBlock.name === 'execute-script') {
+              const validatedBlock = validateExecuteScriptBlock(boundBlock);
+              result = await this.runWithTimeout(() => handlerExecuteScript(validatedBlock), step.timeoutMs);
+            } else {
+              // 나머지 블록은 Content Script로 전송하여 실행
+              result = await this.runWithTimeout(() => this.tabManager.executeBlock(boundBlock as any, tabId), step.timeoutMs);
+            }
+            
             success = !result?.hasError;
             message = result?.message || '';
             if (success) break;
