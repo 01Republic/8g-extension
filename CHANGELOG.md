@@ -1,3 +1,12 @@
+# [1.8.0](https://github.com/01Republic/8g-extension/compare/v1.7.3...v1.8.0) (2025-10-01)
+
+
+### Features
+
+* Create ExecuteScriptBlock ([179e71a](https://github.com/01Republic/8g-extension/commit/179e71a666b3d9d949dc4de015725ba8a504d31d))
+
+
+
 ## [1.7.3](https://github.com/01Republic/8g-extension/compare/v1.7.2...v1.7.3) (2025-09-30)
 
 
