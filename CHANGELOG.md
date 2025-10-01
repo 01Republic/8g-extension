@@ -1,3 +1,12 @@
+## [1.8.1](https://github.com/01Republic/8g-extension/compare/v1.8.0...v1.8.1) (2025-10-01)
+
+
+### Bug Fixes
+
+* Script Block CSP 제약 ([3e40ef9](https://github.com/01Republic/8g-extension/commit/3e40ef992603c222093511d93b983b1e39db886a))
+
+
+
 # [1.8.0](https://github.com/01Republic/8g-extension/compare/v1.7.3...v1.8.0) (2025-10-01)
 
 
