@@ -9,6 +9,7 @@ export interface GetTextBlock extends Block {
   regex?: string;
   prefixText?: string;
   suffixText?: string;
+  filterEmpty?: boolean;
 }
 
 export const GetTextBlockSchema = BaseBlockSchema.extend({
@@ -18,6 +19,7 @@ export const GetTextBlockSchema = BaseBlockSchema.extend({
   regex: z.string().optional(),
   prefixText: z.string().optional(),
   suffixText: z.string().optional(),
+  filterEmpty: z.boolean().optional(),
 });
 
 export function validateGetTextBlock(data: unknown): GetTextBlock {
@@ -35,6 +37,7 @@ export async function handlerGetText(data: GetTextBlock): Promise<BlockResult<st
       suffixText = '',
       findBy = 'cssSelector',
       option,
+      filterEmpty = true,
     } = data;
 
     if (!selector) {
@@ -56,8 +59,9 @@ export async function handlerGetText(data: GetTextBlock): Promise<BlockResult<st
     );
 
     if (Array.isArray(elements)) {
-      const texts = elements.map(extractText).filter((text) => text.trim() !== '');
-      return { data: texts };
+      const texts = elements.map(extractText);
+      const filteredTexts = filterEmpty ? texts.filter((text) => text.trim() !== '') : texts;
+      return { data: filteredTexts };
     } else {
       const text = extractText(elements);
       return { data: text };

@@ -68,7 +68,7 @@ describe('handlerGetText 테스트', () => {
       expect(result.data).toBe('여백있는 텍스트');
     });
 
-    it('빈 요소들 필터링', async () => {
+    it('빈 요소들 필터링 (기본값)', async () => {
       const data = {
         ...baseData,
         selector: '.empty-element, .whitespace-only, .text-element',
@@ -77,6 +77,18 @@ describe('handlerGetText 테스트', () => {
       const result = await handlerGetText(data);
 
       expect(result.data).toEqual(['기본 텍스트']);
+    });
+
+    it('빈 요소들도 유지 (filterEmpty: false)', async () => {
+      const data = {
+        ...baseData,
+        selector: '.empty-element, .whitespace-only, .text-element',
+        option: { multiple: true },
+        filterEmpty: false,
+      };
+      const result = await handlerGetText(data);
+
+      expect(result.data).toEqual(['', '', '기본 텍스트']);
     });
   });
 
