@@ -12,6 +12,7 @@ export type { ElementExistsBlock } from './ElementExistsBlock';
 export type { EventClickBlock } from './EventClickBlock';
 export type { SaveAssetsBlock } from './SaveAssetsBlock';
 export type { GetElementDataBlock, ElementData } from './GetElementDataBlock';
+export type { ScrollBlock } from './ScrollBlock';
 
 // Export all block schemas
 export { GetTextBlockSchema } from './GetTextBlock';
@@ -23,6 +24,7 @@ export { ElementExistsBlockSchema } from './ElementExistsBlock';
 export { EventClickBlockSchema } from './EventClickBlock';
 export { SaveAssetsBlockSchema } from './SaveAssetsBlock';
 export { GetElementDataBlockSchema } from './GetElementDataBlock';
+export { ScrollBlockSchema } from './ScrollBlock';
 
 // Import block handlers and types
 import { handlerGetText, GetTextBlock, validateGetTextBlock } from './GetTextBlock';
@@ -59,6 +61,7 @@ import {
   validateGetElementDataBlock,
   ElementData,
 } from './GetElementDataBlock';
+import { handlerScroll, ScrollBlock, validateScrollBlock } from './ScrollBlock';
 import { Block, BlockResult } from './types';
 import { GetTextBlockSchema } from './GetTextBlock';
 import { GetAttributeValueBlockSchema } from './GetAttributeValueBlock';
@@ -69,6 +72,7 @@ import { ElementExistsBlockSchema } from './ElementExistsBlock';
 import { EventClickBlockSchema } from './EventClickBlock';
 import { SaveAssetsBlockSchema } from './SaveAssetsBlock';
 import { GetElementDataBlockSchema } from './GetElementDataBlock';
+import { ScrollBlockSchema } from './ScrollBlock';
 
 // All block schemas mapped by block name
 export const AllBlockSchemas = {
@@ -81,6 +85,7 @@ export const AllBlockSchemas = {
   'event-click': EventClickBlockSchema,
   'save-assets': SaveAssetsBlockSchema,
   'get-element-data': GetElementDataBlockSchema,
+  'scroll': ScrollBlockSchema,
 } as const;
 
 export class BlockHandler {
@@ -98,6 +103,7 @@ export class BlockHandler {
   static executeBlock(
     block: GetElementDataBlock
   ): Promise<BlockResult<ElementData | ElementData[]>>;
+  static executeBlock(block: ScrollBlock): Promise<BlockResult<boolean>>;
   static executeBlock(block: Block): Promise<BlockResult>;
 
   // Implementation
@@ -147,6 +153,11 @@ export class BlockHandler {
         case 'get-element-data': {
           const validatedBlock = validateGetElementDataBlock(block);
           return await handlerGetElementData(validatedBlock);
+        }
+
+        case 'scroll': {
+          const validatedBlock = validateScrollBlock(block);
+          return await handlerScroll(validatedBlock);
         }
 
         default:
