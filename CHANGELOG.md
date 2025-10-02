@@ -1,3 +1,12 @@
+# [1.8.0](https://github.com/01Republic/8g-extension/compare/v1.7.4...v1.8.0) (2025-10-02)
+
+
+### Features
+
+* Add ScollBlock ([d0aaed9](https://github.com/01Republic/8g-extension/commit/d0aaed9e9abfd1c6321464c57a014881550be727))
+
+
+
 ## [1.7.3](https://github.com/01Republic/8g-extension/compare/v1.7.2...v1.7.3) (2025-10-01)
 
 
