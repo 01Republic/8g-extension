@@ -1,5 +1,5 @@
 import z from 'zod';
-import { Block, BlockResult, BaseBlockSchema } from './types';
+import { Block, BlockResult } from './types';
 
 export interface KeypressBlock  extends Omit<Block, 'selector' | 'findBy' | 'option'> {
   readonly name: 'keypress';
@@ -9,7 +9,7 @@ export interface KeypressBlock  extends Omit<Block, 'selector' | 'findBy' | 'opt
   modifiers?: ('Alt' | 'Control' | 'Meta' | 'Shift')[];
 }
 
-export const KeypressBlockSchema = BaseBlockSchema.extend({
+export const KeypressBlockSchema = z.object({
   name: z.literal('keypress'),
   key: z.string(),
   code: z.string().optional(),

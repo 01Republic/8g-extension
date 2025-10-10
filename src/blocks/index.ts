@@ -11,6 +11,7 @@ export type { ClearValueFormsBlock } from './ClearValueFormBlock';
 export type { ElementExistsBlock } from './ElementExistsBlock';
 export type { EventClickBlock } from './EventClickBlock';
 export type { KeypressBlock } from './KeypressBlock';
+export type { WaitBlock } from './WaitBlock';
 export type { SaveAssetsBlock } from './SaveAssetsBlock';
 export type { GetElementDataBlock, ElementData } from './GetElementDataBlock';
 export type { ScrollBlock } from './ScrollBlock';
@@ -26,6 +27,7 @@ export { ClearValueFormsBlockSchema } from './ClearValueFormBlock';
 export { ElementExistsBlockSchema } from './ElementExistsBlock';
 export { EventClickBlockSchema } from './EventClickBlock';
 export { KeypressBlockSchema } from './KeypressBlock';
+export { WaitBlockSchema } from './WaitBlock';
 export { SaveAssetsBlockSchema } from './SaveAssetsBlock';
 export { GetElementDataBlockSchema } from './GetElementDataBlock';
 export { ScrollBlockSchema } from './ScrollBlock';
@@ -60,6 +62,7 @@ import {
 } from './ElementExistsBlock';
 import { handlerEventClick, EventClickBlock, validateEventClickBlock } from './EventClickBlock';
 import { handlerKeypress, KeypressBlock, validateKeypressBlock } from './KeypressBlock';
+import { handlerWait, WaitBlock, validateWaitBlock } from './WaitBlock';
 import { handlerSaveAssets, SaveAssetsBlock, validateSaveAssetsBlock } from './SaveAssetsBlock';
 import {
   handlerGetElementData,
@@ -78,6 +81,7 @@ import { ClearValueFormsBlockSchema } from './ClearValueFormBlock';
 import { ElementExistsBlockSchema } from './ElementExistsBlock';
 import { EventClickBlockSchema } from './EventClickBlock';
 import { KeypressBlockSchema } from './KeypressBlock';
+import { WaitBlockSchema } from './WaitBlock';
 import { SaveAssetsBlockSchema } from './SaveAssetsBlock';
 import { GetElementDataBlockSchema } from './GetElementDataBlock';
 import { ScrollBlockSchema } from './ScrollBlock';
@@ -93,6 +97,7 @@ export const AllBlockSchemas = {
   'element-exists': ElementExistsBlockSchema,
   'event-click': EventClickBlockSchema,
   'keypress': KeypressBlockSchema,
+  'wait': WaitBlockSchema,
   'save-assets': SaveAssetsBlockSchema,
   'get-element-data': GetElementDataBlockSchema,
   'scroll': ScrollBlockSchema,
@@ -111,6 +116,7 @@ export class BlockHandler {
   static executeBlock(block: ElementExistsBlock): Promise<BlockResult<boolean | null>>;
   static executeBlock(block: EventClickBlock): Promise<BlockResult<boolean>>;
   static executeBlock(block: KeypressBlock): Promise<BlockResult<boolean>>;
+  static executeBlock(block: WaitBlock): Promise<BlockResult<boolean>>;
   static executeBlock(block: SaveAssetsBlock): Promise<BlockResult<string[] | null>>;
   static executeBlock(
     block: GetElementDataBlock
@@ -120,7 +126,7 @@ export class BlockHandler {
   static executeBlock(block: Block): Promise<BlockResult>;
 
   // Implementation
-  static async executeBlock(block: Block | AiParseDataBlock | KeypressBlock): Promise<BlockResult> {
+  static async executeBlock(block: Block | AiParseDataBlock | KeypressBlock | WaitBlock): Promise<BlockResult> {
     try {
       switch (block.name) {
         case 'get-text': {
@@ -161,6 +167,11 @@ export class BlockHandler {
         case 'keypress': {
           const validatedBlock = validateKeypressBlock(block);
           return await handlerKeypress(validatedBlock);
+        }
+
+        case 'wait': {
+          const validatedBlock = validateWaitBlock(block);
+          return await handlerWait(validatedBlock);
         }
 
         case 'save-assets': {
