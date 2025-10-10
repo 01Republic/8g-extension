@@ -8,9 +8,14 @@ import {
   BackgroundStepResponse,
 } from '@/types/internal-messages';
 import { WorkflowRunner } from './WorkflowRunner';
+import { AiParsingService } from './AiParsingService';
 
 export class BackgroundManager {
-  constructor(private tabManager: TabManager) {}
+  private aiParsingService: AiParsingService;
+
+  constructor(private tabManager: TabManager) {
+    this.aiParsingService = new AiParsingService();
+  }
 
   initHandler() {
     // Chrome runtime message handler (internal communication)
@@ -22,6 +27,11 @@ export class BackgroundManager {
 
       if ((message as any).type === 'COLLECT_WORKFLOW_NEW_TAB') {
         this.handleAsyncCollectWorkflow((message as CollectWorkflowNewTabMessage).data, sendResponse);
+        return true;
+      }
+
+      if ((message as any).type === 'AI_PARSE_DATA') {
+        this.handleAsyncAiParseData((message as any).data, sendResponse);
         return true;
       }
 
@@ -213,5 +223,36 @@ export class BackgroundManager {
 
     await new Promise((resolve) => setTimeout(resolve, 1000));
     await this.tabManager.closeTab(tabId);
+  }
+
+  // AI 파싱 요청 처리
+  private async handleAsyncAiParseData(
+    requestData: any,
+    sendResponse: (response: any) => void
+  ) {
+    try {
+      console.log('[8G Background] AI Parse Data request:', requestData);
+
+      const result = await this.aiParsingService.parseData(requestData);
+
+      if (result.success) {
+        sendResponse({
+          success: true,
+          data: result.data,
+        });
+      } else {
+        sendResponse({
+          $isError: true,
+          message: result.error || 'AI parsing failed',
+          data: null,
+        } as ErrorResponse);
+      }
+    } catch (error) {
+      sendResponse({
+        $isError: true,
+        message: error instanceof Error ? error.message : 'Unknown error in AI parsing',
+        data: null,
+      } as ErrorResponse);
+    }
   }
 }

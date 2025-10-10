@@ -13,6 +13,8 @@ export type { EventClickBlock } from './EventClickBlock';
 export type { SaveAssetsBlock } from './SaveAssetsBlock';
 export type { GetElementDataBlock, ElementData } from './GetElementDataBlock';
 export type { ScrollBlock } from './ScrollBlock';
+export type { AiParseDataBlock, SchemaField, SchemaDefinition } from './AiParseDataBlock';
+export { createSchema, Schema } from './AiParseDataBlock';
 
 // Export all block schemas
 export { GetTextBlockSchema } from './GetTextBlock';
@@ -25,6 +27,7 @@ export { EventClickBlockSchema } from './EventClickBlock';
 export { SaveAssetsBlockSchema } from './SaveAssetsBlock';
 export { GetElementDataBlockSchema } from './GetElementDataBlock';
 export { ScrollBlockSchema } from './ScrollBlock';
+export { AiParseDataBlockSchema } from './AiParseDataBlock';
 
 // Import block handlers and types
 import { handlerGetText, GetTextBlock, validateGetTextBlock } from './GetTextBlock';
@@ -62,6 +65,7 @@ import {
   ElementData,
 } from './GetElementDataBlock';
 import { handlerScroll, ScrollBlock, validateScrollBlock } from './ScrollBlock';
+import { handlerAiParseData, AiParseDataBlock, validateAiParseDataBlock } from './AiParseDataBlock';
 import { Block, BlockResult } from './types';
 import { GetTextBlockSchema } from './GetTextBlock';
 import { GetAttributeValueBlockSchema } from './GetAttributeValueBlock';
@@ -73,6 +77,7 @@ import { EventClickBlockSchema } from './EventClickBlock';
 import { SaveAssetsBlockSchema } from './SaveAssetsBlock';
 import { GetElementDataBlockSchema } from './GetElementDataBlock';
 import { ScrollBlockSchema } from './ScrollBlock';
+import { AiParseDataBlockSchema } from './AiParseDataBlock';
 
 // All block schemas mapped by block name
 export const AllBlockSchemas = {
@@ -86,6 +91,7 @@ export const AllBlockSchemas = {
   'save-assets': SaveAssetsBlockSchema,
   'get-element-data': GetElementDataBlockSchema,
   'scroll': ScrollBlockSchema,
+  'ai-parse-data': AiParseDataBlockSchema,
 } as const;
 
 export class BlockHandler {
@@ -104,6 +110,7 @@ export class BlockHandler {
     block: GetElementDataBlock
   ): Promise<BlockResult<ElementData | ElementData[]>>;
   static executeBlock(block: ScrollBlock): Promise<BlockResult<boolean>>;
+  static executeBlock(block: AiParseDataBlock): Promise<BlockResult<any>>;
   static executeBlock(block: Block): Promise<BlockResult>;
 
   // Implementation
@@ -158,6 +165,11 @@ export class BlockHandler {
         case 'scroll': {
           const validatedBlock = validateScrollBlock(block);
           return await handlerScroll(validatedBlock);
+        }
+
+        case 'ai-parse-data': {
+          const validatedBlock = validateAiParseDataBlock(block);
+          return await handlerAiParseData(validatedBlock);
         }
 
         default:
