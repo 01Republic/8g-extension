@@ -14,11 +14,17 @@ export interface SchemaField {
 /**
  * 스키마 정의 (JSON 형식)
  */
-export interface SchemaDefinition {
-  type: 'object' | 'array';
-  shape?: Record<string, SchemaField>; // type이 'object'인 경우
-  items?: SchemaField; // type이 'array'인 경우
+export interface ObjectSchemaDefinition {
+  type: 'object';
+  shape: Record<string, SchemaField>;
 }
+
+export interface ArraySchemaDefinition {
+  type: 'array';
+  items: SchemaField;
+}
+
+export type SchemaDefinition = ObjectSchemaDefinition | ArraySchemaDefinition;
 
 export interface AiParseDataBlock extends Omit<Block, 'selector' | 'findBy' | 'option'> {
   readonly name: 'ai-parse-data';
@@ -29,15 +35,27 @@ export interface AiParseDataBlock extends Omit<Block, 'selector' | 'findBy' | 'o
   apiKey: string; // OpenAI API 키 (필수)
 }
 
+// Schema Definition Zod 스키마
+const ObjectSchemaDefinitionSchema = z.object({
+  type: z.literal('object'),
+  shape: z.record(z.string(), z.any()),
+});
+
+const ArraySchemaDefinitionSchema = z.object({
+  type: z.literal('array'),
+  items: z.any(),
+});
+
+const SchemaDefinitionSchema = z.discriminatedUnion('type', [
+  ObjectSchemaDefinitionSchema,
+  ArraySchemaDefinitionSchema,
+]);
+
 // AI 파싱 블록용 스키마 (검증용)
 export const AiParseDataBlockSchema = z.object({
   name: z.literal('ai-parse-data'),
   sourceData: z.any().optional(),
-  schemaDefinition: z.object({
-    type: z.enum(['object', 'array']),
-    shape: z.record(z.string(), z.any()).optional(),
-    items: z.any().optional(),
-  }),
+  schemaDefinition: SchemaDefinitionSchema,
   prompt: z.string().optional(),
   model: z.string().optional(),
   apiKey: z.string().min(1, 'OpenAI API key is required'), // 필수
@@ -122,14 +140,14 @@ export async function handlerAiParseData(data: AiParseDataBlock): Promise<BlockR
  *   }
  * });
  */
-export function createSchema(shape: Record<string, SchemaField>): SchemaDefinition {
+export function createSchema(shape: Record<string, SchemaField>): ObjectSchemaDefinition {
   return {
     type: 'object',
     shape,
   };
 }
 
-export function createArraySchema(items: SchemaField): SchemaDefinition {
+export function createArraySchema(items: SchemaField): ArraySchemaDefinition {
   return {
     type: 'array',
     items,
