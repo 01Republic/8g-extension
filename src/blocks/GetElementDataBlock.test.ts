@@ -175,4 +175,85 @@ describe('handlerGetElementData 테스트', () => {
       'Either includeText must be true or attributes must be provided'
     );
   });
+
+  it('부모 요소에 attribute 없으면 자식 요소에서 찾아야 함', async () => {
+    document.body.innerHTML = `
+      <div id="parent">
+        <span data-value="child-value">자식 텍스트</span>
+        <a href="/child-link" data-link="child-link">링크</a>
+      </div>
+    `;
+
+    const block: GetElementDataBlock = {
+      name: 'get-element-data',
+      selector: '#parent',
+      findBy: 'cssSelector',
+      option: {},
+      includeText: false,
+      attributes: ['data-value', 'href', 'data-link'],
+    };
+
+    const result = await handlerGetElementData(block);
+
+    expect(result.hasError).toBeFalsy();
+    expect(result.data).toEqual({
+      attributes: {
+        'data-value': 'child-value',  // span에서 찾음
+        'href': '/child-link',         // a에서 찾음
+        'data-link': 'child-link',     // a에서 찾음
+      },
+    });
+  });
+
+  it('부모에 attribute 있으면 자식 무시하고 부모 값만 반환해야 함', async () => {
+    document.body.innerHTML = `
+      <div id="parent" data-id="parent-id">
+        <span data-id="child-id">자식</span>
+      </div>
+    `;
+
+    const block: GetElementDataBlock = {
+      name: 'get-element-data',
+      selector: '#parent',
+      findBy: 'cssSelector',
+      option: {},
+      includeText: false,
+      attributes: ['data-id'],
+    };
+
+    const result = await handlerGetElementData(block);
+
+    expect(result.hasError).toBeFalsy();
+    expect(result.data).toEqual({
+      attributes: {
+        'data-id': 'parent-id',  // 부모 값만 반환
+      },
+    });
+  });
+
+  it('부모와 자식 모두 attribute 없으면 null 반환해야 함', async () => {
+    document.body.innerHTML = `
+      <div id="parent">
+        <span>자식</span>
+      </div>
+    `;
+
+    const block: GetElementDataBlock = {
+      name: 'get-element-data',
+      selector: '#parent',
+      findBy: 'cssSelector',
+      option: {},
+      includeText: false,
+      attributes: ['data-nonexistent'],
+    };
+
+    const result = await handlerGetElementData(block);
+
+    expect(result.hasError).toBeFalsy();
+    expect(result.data).toEqual({
+      attributes: {
+        'data-nonexistent': null,
+      },
+    });
+  });
 });

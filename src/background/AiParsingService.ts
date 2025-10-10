@@ -39,6 +39,10 @@ export class AiParsingService {
           error: 'OpenAI API key is required. Please provide it in the ai-parse-data block.',
         };
       }
+
+      // 배열 스키마인지 확인
+      const isArraySchema = schemaDefinition.type === 'array';
+
       // Zod 스키마 재구성
       const zodSchema = this.reconstructZodSchema(schemaDefinition);
 
@@ -58,9 +62,14 @@ export class AiParsingService {
       // AI 호출
       const result = await structuredLlm.invoke(systemPrompt);
 
+      // 배열 스키마인 경우 wrapper 제거
+      const finalResult = isArraySchema && result && typeof result === 'object' && 'items' in result
+        ? result.items
+        : result;
+
       return {
         success: true,
-        data: result,
+        data: finalResult,
       };
     } catch (error) {
       console.error('[AI Parsing Service] Parsing failed:', error);
@@ -76,9 +85,12 @@ export class AiParsingService {
    */
   private reconstructZodSchema(schemaDefinition: any): z.ZodType<any> {
     if (schemaDefinition.type === 'array' && schemaDefinition.items) {
-      // 배열 스키마
+      // OpenAI Structured Output은 최상위 레벨에서 array를 지원하지 않으므로
+      // 배열을 객체로 감싸서 처리
       const itemsType = this.buildZodType(schemaDefinition.items);
-      return z.array(itemsType);
+      return z.object({
+        items: z.array(itemsType),
+      });
     }
     
     if (schemaDefinition.type === 'object' && schemaDefinition.shape) {
@@ -146,6 +158,7 @@ export class AiParsingService {
       : JSON.stringify(sourceData, null, 2);
 
     const schemaDescription = this.describeSchema(schemaDefinition);
+    const isArraySchema = schemaDefinition.type === 'array';
 
     let prompt = `You are a data parsing assistant. Your task is to extract and structure data according to the provided schema.
 
@@ -159,7 +172,7 @@ ${schemaDescription}
 
 ${customPrompt ? `\nAdditional Instructions:\n${customPrompt}\n` : ''}
 
-Please parse the source data and return it in the exact format specified by the schema. Extract all relevant information and ensure the data types match the schema.`;
+Please parse the source data and return it in the exact format specified by the schema. Extract all relevant information and ensure the data types match the schema.${isArraySchema ? '\n\nIMPORTANT: Return the array in an object with "items" field: { items: [...your array here...] }' : ''}`;
 
     return prompt;
   }

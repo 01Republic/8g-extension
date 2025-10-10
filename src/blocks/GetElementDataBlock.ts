@@ -147,11 +147,23 @@ function createElementDataExtractor(
       result.text = text;
     }
 
-    // Extract attributes if requested
+    // Extract attributes if requested (부모 요소에 없으면 자식 요소들에서 찾음)
     if (attributes.length > 0) {
       result.attributes = {};
+      
       attributes.forEach((attrName) => {
-        result.attributes![attrName] = element.getAttribute(attrName);
+        // 먼저 부모 요소에서 확인
+        let attrValue = element.getAttribute(attrName);
+        
+        // 부모에 없으면 자식들 중에서 찾기
+        if (attrValue === null) {
+          const childWithAttr = element.querySelector(`[${attrName}]`);
+          if (childWithAttr) {
+            attrValue = childWithAttr.getAttribute(attrName);
+          }
+        }
+        
+        result.attributes![attrName] = attrValue;
       });
     }
 
