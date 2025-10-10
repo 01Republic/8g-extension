@@ -175,67 +175,31 @@ async function simulateClickElement(element: HTMLElement): Promise<void> {
   const centerX = rect.left + rect.width / 2;
   const centerY = rect.top + rect.height / 2;
   
-  // 4. Dispatch hover events first (mimics real user interaction)
-  const hoverEvents = [
-    new MouseEvent('mouseenter', { 
-      bubbles: true, 
-      cancelable: true,
-      clientX: centerX,
-      clientY: centerY,
-    }),
-    new MouseEvent('mouseover', { 
-      bubbles: true, 
-      cancelable: true,
-      clientX: centerX,
-      clientY: centerY,
-    }),
-  ];
-  
-  hoverEvents.forEach(event => element.dispatchEvent(event));
-  
-  // Small delay between hover and click
-  await new Promise(resolve => setTimeout(resolve, 10));
-  
-  // 5. Dispatch click events with coordinates
-  const mouseEvents = [
-    new MouseEvent('mousedown', {
-      bubbles: true,
-      cancelable: true,
-      button: 0,
-      clientX: centerX,
-      clientY: centerY,
-      screenX: window.screenX + centerX,
-      screenY: window.screenY + centerY,
-    }),
-    new MouseEvent('mouseup', {
-      bubbles: true,
-      cancelable: true,
-      button: 0,
-      clientX: centerX,
-      clientY: centerY,
-      screenX: window.screenX + centerX,
-      screenY: window.screenY + centerY,
-    }),
-    new MouseEvent('click', {
-      bubbles: true,
-      cancelable: true,
-      button: 0,
-      clientX: centerX,
-      clientY: centerY,
-      screenX: window.screenX + centerX,
-      screenY: window.screenY + centerY,
-    }),
-  ];
-
-  mouseEvents.forEach((event) => {
-    element.dispatchEvent(event);
-  });
-
-  // 6. Native click method as fallback
-  if (element.click) {
-    element.click();
+  // 4. Use CDP to click via background service (isTrusted: true)
+  // Note: tabId will be automatically detected by background service from sender.tab.id
+  try {
+    const response = await chrome.runtime.sendMessage({
+      type: 'CDP_CLICK',
+      data: {
+        x: centerX,
+        y: centerY,
+      },
+    });
+    
+    if (response && !response.$isError) {
+      console.log('[EventClick] CDP click successful:', response);
+    } else {
+      throw new Error(response?.message || 'CDP click failed');
+    }
+  } catch (error) {
+    console.error('[EventClick] CDP click failed, falling back to native click:', error);
+    
+    // Fallback: Use native click method
+    if (element.click) {
+      element.click();
+    }
   }
   
-  // 7. Small delay to ensure click is processed
+  // 5. Small delay to ensure click is processed
   await new Promise(resolve => setTimeout(resolve, 50));
 }

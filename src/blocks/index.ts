@@ -10,6 +10,7 @@ export type { SetValueFormsBlock } from './SetValueFormBlock';
 export type { ClearValueFormsBlock } from './ClearValueFormBlock';
 export type { ElementExistsBlock } from './ElementExistsBlock';
 export type { EventClickBlock } from './EventClickBlock';
+export type { KeypressBlock } from './KeypressBlock';
 export type { SaveAssetsBlock } from './SaveAssetsBlock';
 export type { GetElementDataBlock, ElementData } from './GetElementDataBlock';
 export type { ScrollBlock } from './ScrollBlock';
@@ -24,6 +25,7 @@ export { SetValueFormsBlockSchema } from './SetValueFormBlock';
 export { ClearValueFormsBlockSchema } from './ClearValueFormBlock';
 export { ElementExistsBlockSchema } from './ElementExistsBlock';
 export { EventClickBlockSchema } from './EventClickBlock';
+export { KeypressBlockSchema } from './KeypressBlock';
 export { SaveAssetsBlockSchema } from './SaveAssetsBlock';
 export { GetElementDataBlockSchema } from './GetElementDataBlock';
 export { ScrollBlockSchema } from './ScrollBlock';
@@ -57,6 +59,7 @@ import {
   validateElementExistsBlock,
 } from './ElementExistsBlock';
 import { handlerEventClick, EventClickBlock, validateEventClickBlock } from './EventClickBlock';
+import { handlerKeypress, KeypressBlock, validateKeypressBlock } from './KeypressBlock';
 import { handlerSaveAssets, SaveAssetsBlock, validateSaveAssetsBlock } from './SaveAssetsBlock';
 import {
   handlerGetElementData,
@@ -74,6 +77,7 @@ import { SetValueFormsBlockSchema } from './SetValueFormBlock';
 import { ClearValueFormsBlockSchema } from './ClearValueFormBlock';
 import { ElementExistsBlockSchema } from './ElementExistsBlock';
 import { EventClickBlockSchema } from './EventClickBlock';
+import { KeypressBlockSchema } from './KeypressBlock';
 import { SaveAssetsBlockSchema } from './SaveAssetsBlock';
 import { GetElementDataBlockSchema } from './GetElementDataBlock';
 import { ScrollBlockSchema } from './ScrollBlock';
@@ -88,6 +92,7 @@ export const AllBlockSchemas = {
   'clear-value-form': ClearValueFormsBlockSchema,
   'element-exists': ElementExistsBlockSchema,
   'event-click': EventClickBlockSchema,
+  'keypress': KeypressBlockSchema,
   'save-assets': SaveAssetsBlockSchema,
   'get-element-data': GetElementDataBlockSchema,
   'scroll': ScrollBlockSchema,
@@ -105,6 +110,7 @@ export class BlockHandler {
   static executeBlock(block: ClearValueFormsBlock): Promise<BlockResult<string | null>>;
   static executeBlock(block: ElementExistsBlock): Promise<BlockResult<boolean | null>>;
   static executeBlock(block: EventClickBlock): Promise<BlockResult<boolean>>;
+  static executeBlock(block: KeypressBlock): Promise<BlockResult<boolean>>;
   static executeBlock(block: SaveAssetsBlock): Promise<BlockResult<string[] | null>>;
   static executeBlock(
     block: GetElementDataBlock
@@ -114,7 +120,7 @@ export class BlockHandler {
   static executeBlock(block: Block): Promise<BlockResult>;
 
   // Implementation
-  static async executeBlock(block: Block | AiParseDataBlock): Promise<BlockResult> {
+  static async executeBlock(block: Block | AiParseDataBlock | KeypressBlock): Promise<BlockResult> {
     try {
       switch (block.name) {
         case 'get-text': {
@@ -150,6 +156,11 @@ export class BlockHandler {
         case 'event-click': {
           const validatedBlock = validateEventClickBlock(block);
           return await handlerEventClick(validatedBlock);
+        }
+
+        case 'keypress': {
+          const validatedBlock = validateKeypressBlock(block);
+          return await handlerKeypress(validatedBlock);
         }
 
         case 'save-assets': {

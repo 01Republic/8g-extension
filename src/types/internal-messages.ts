@@ -30,8 +30,26 @@ export interface CollectWorkflowNewTabMessage {
   };
 }
 
+export interface CdpClickMessage {
+  type: 'CDP_CLICK';
+  data: {
+    x: number;
+    y: number;
+  };
+}
+
+export interface CdpKeypressMessage {
+  type: 'CDP_KEYPRESS';
+  data: {
+    key: string;
+    code: string;
+    keyCode: number;
+    modifiers: string[];
+  };
+}
+
 // Internal Message Union Types
-export type BackgroundMessage = CollectDataNewTabMessage | CollectWorkflowNewTabMessage;
+export type BackgroundMessage = CollectDataNewTabMessage | CollectWorkflowNewTabMessage | CdpClickMessage | CdpKeypressMessage;
 export type ContentMessage = ExecuteBlockMessage;
 
 // Response Types for Internal Communication
@@ -61,6 +79,14 @@ export function isExecuteBlockMessage(message: any): message is ExecuteBlockMess
 
 export function isCollectDataNewTabMessage(message: any): message is CollectDataNewTabMessage {
   return message && message.type === 'COLLECT_DATA_NEW_TAB';
+}
+
+export function isCdpClickMessage(message: any): message is CdpClickMessage {
+  return message && message.type === 'CDP_CLICK';
+}
+
+export function isCdpKeypressMessage(message: any): message is CdpKeypressMessage {
+  return message && message.type === 'CDP_KEYPRESS';
 }
 
 export function isErrorResponse(response: any): response is ErrorResponse {

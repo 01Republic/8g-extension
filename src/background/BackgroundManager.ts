@@ -3,7 +3,11 @@ import {
   BackgroundMessage,
   CollectDataNewTabMessage,
   CollectWorkflowNewTabMessage,
+  CdpClickMessage,
+  CdpKeypressMessage,
   isCollectDataNewTabMessage,
+  isCdpClickMessage,
+  isCdpKeypressMessage,
   ErrorResponse,
   BackgroundStepResponse,
 } from '@/types/internal-messages';
@@ -19,7 +23,7 @@ export class BackgroundManager {
 
   initHandler() {
     // Chrome runtime message handler (internal communication)
-    chrome.runtime.onMessage.addListener((message: BackgroundMessage, _sender, sendResponse) => {
+    chrome.runtime.onMessage.addListener((message: BackgroundMessage, sender, sendResponse) => {
       if ((message as any).type === 'COLLECT_DATA_NEW_TAB' && isCollectDataNewTabMessage(message)) {
         this.handleAsyncCollectData(message.data, sendResponse);
         return true;
@@ -27,6 +31,28 @@ export class BackgroundManager {
 
       if ((message as any).type === 'COLLECT_WORKFLOW_NEW_TAB') {
         this.handleAsyncCollectWorkflow((message as CollectWorkflowNewTabMessage).data, sendResponse);
+        return true;
+      }
+
+      if ((message as any).type === 'CDP_CLICK' && isCdpClickMessage(message)) {
+        // Get tabId from sender
+        const tabId = sender.tab?.id;
+        if (!tabId) {
+          sendResponse({ $isError: true, message: 'Tab ID not found in sender', data: null } as ErrorResponse);
+          return false;
+        }
+        this.handleAsyncCdpClick({ ...message.data, tabId }, sendResponse);
+        return true;
+      }
+
+      if ((message as any).type === 'CDP_KEYPRESS' && isCdpKeypressMessage(message)) {
+        // Get tabId from sender
+        const tabId = sender.tab?.id;
+        if (!tabId) {
+          sendResponse({ $isError: true, message: 'Tab ID not found in sender', data: null } as ErrorResponse);
+          return false;
+        }
+        this.handleAsyncCdpKeypress({ ...message.data, tabId }, sendResponse);
         return true;
       }
 
@@ -223,6 +249,130 @@ export class BackgroundManager {
 
     await new Promise((resolve) => setTimeout(resolve, 1000));
     await this.tabManager.closeTab(tabId);
+  }
+
+  // CDP 클릭 요청 처리
+  private async handleAsyncCdpClick(
+    requestData: CdpClickMessage['data'] & { tabId: number },
+    sendResponse: (response: any) => void
+  ) {
+    try {
+      console.log('[8G Background] CDP Click request:', requestData);
+
+      const { tabId, x, y } = requestData;
+
+      // Debugger 연결
+      await chrome.debugger.attach({ tabId }, '1.3');
+      console.log('[8G Background] Debugger attached to tab:', tabId);
+
+      try {
+        // 1. Mouse move to position
+        await chrome.debugger.sendCommand({ tabId }, 'Input.dispatchMouseEvent', {
+          type: 'mouseMoved',
+          x,
+          y,
+          button: 'none',
+          clickCount: 0,
+        });
+
+        // 2. Mouse down
+        await chrome.debugger.sendCommand({ tabId }, 'Input.dispatchMouseEvent', {
+          type: 'mousePressed',
+          x,
+          y,
+          button: 'left',
+          clickCount: 1,
+        });
+
+        // 3. Mouse up
+        await chrome.debugger.sendCommand({ tabId }, 'Input.dispatchMouseEvent', {
+          type: 'mouseReleased',
+          x,
+          y,
+          button: 'left',
+          clickCount: 1,
+        });
+
+        console.log('[8G Background] CDP Click completed successfully');
+        sendResponse({ success: true, data: { clicked: true } });
+      } finally {
+        // Debugger 연결 해제
+        await chrome.debugger.detach({ tabId });
+        console.log('[8G Background] Debugger detached from tab:', tabId);
+      }
+    } catch (error) {
+      console.error('[8G Background] CDP Click error:', error);
+      sendResponse({
+        $isError: true,
+        message: error instanceof Error ? error.message : 'CDP click failed',
+        data: null,
+      } as ErrorResponse);
+    }
+  }
+
+  // CDP 키보드 입력 요청 처리
+  private async handleAsyncCdpKeypress(
+    requestData: CdpKeypressMessage['data'] & { tabId: number },
+    sendResponse: (response: any) => void
+  ) {
+    try {
+      console.log('[8G Background] CDP Keypress request:', requestData);
+
+      const { tabId, key, code, keyCode, modifiers } = requestData;
+
+      // Debugger 연결
+      await chrome.debugger.attach({ tabId }, '1.3');
+      console.log('[8G Background] Debugger attached to tab:', tabId);
+
+      try {
+        // Convert modifiers to CDP format
+        const cdpModifiers = this.convertModifiersToCdp(modifiers);
+
+        // 1. Key down
+        await chrome.debugger.sendCommand({ tabId }, 'Input.dispatchKeyEvent', {
+          type: 'keyDown',
+          key,
+          code,
+          windowsVirtualKeyCode: keyCode,
+          nativeVirtualKeyCode: keyCode,
+          modifiers: cdpModifiers,
+        });
+
+        // 2. Key up
+        await chrome.debugger.sendCommand({ tabId }, 'Input.dispatchKeyEvent', {
+          type: 'keyUp',
+          key,
+          code,
+          windowsVirtualKeyCode: keyCode,
+          nativeVirtualKeyCode: keyCode,
+          modifiers: cdpModifiers,
+        });
+
+        console.log('[8G Background] CDP Keypress completed successfully');
+        sendResponse({ success: true, data: { pressed: true } });
+      } finally {
+        // Debugger 연결 해제
+        await chrome.debugger.detach({ tabId });
+        console.log('[8G Background] Debugger detached from tab:', tabId);
+      }
+    } catch (error) {
+      console.error('[8G Background] CDP Keypress error:', error);
+      sendResponse({
+        $isError: true,
+        message: error instanceof Error ? error.message : 'CDP keypress failed',
+        data: null,
+      } as ErrorResponse);
+    }
+  }
+
+  // Convert modifier strings to CDP modifier bitmask
+  private convertModifiersToCdp(modifiers: string[]): number {
+    let mask = 0;
+    if (modifiers.includes('Alt')) mask |= 1;
+    if (modifiers.includes('Control')) mask |= 2;
+    if (modifiers.includes('Meta')) mask |= 4;
+    if (modifiers.includes('Shift')) mask |= 8;
+    return mask;
   }
 
   // AI 파싱 요청 처리
