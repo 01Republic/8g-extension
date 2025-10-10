@@ -1,3 +1,7 @@
+## [1.11.1](https://github.com/01Republic/8g-extension/compare/v1.11.0...v1.11.1) (2025-10-10)
+
+
+
 # [1.8.0](https://github.com/01Republic/8g-extension/compare/v1.7.4...v1.8.0) (2025-10-02)
 
 
