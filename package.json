@@ -1,7 +1,7 @@
 {
   "name": "8g-extension",
   "type": "module",
-  "version": "1.11.3",
+  "version": "1.11.4",
   "private": false,
   "main": "./dist/index.js",
   "module": "./dist/index.js",
