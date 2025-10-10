@@ -16,7 +16,7 @@ export type { SaveAssetsBlock } from './SaveAssetsBlock';
 export type { GetElementDataBlock, ElementData } from './GetElementDataBlock';
 export type { ScrollBlock } from './ScrollBlock';
 export type { AiParseDataBlock, SchemaField, SchemaDefinition } from './AiParseDataBlock';
-export { createSchema, Schema } from './AiParseDataBlock';
+export { createSchema, createArraySchema, Schema } from './AiParseDataBlock';
 
 // Export all block schemas
 export { GetTextBlockSchema } from './GetTextBlock';

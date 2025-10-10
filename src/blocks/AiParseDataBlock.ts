@@ -15,8 +15,9 @@ export interface SchemaField {
  * 스키마 정의 (JSON 형식)
  */
 export interface SchemaDefinition {
-  type: 'object';
-  shape: Record<string, SchemaField>;
+  type: 'object' | 'array';
+  shape?: Record<string, SchemaField>; // type이 'object'인 경우
+  items?: SchemaField; // type이 'array'인 경우
 }
 
 export interface AiParseDataBlock extends Omit<Block, 'selector' | 'findBy' | 'option'> {
@@ -33,8 +34,9 @@ export const AiParseDataBlockSchema = z.object({
   name: z.literal('ai-parse-data'),
   sourceData: z.any().optional(),
   schemaDefinition: z.object({
-    type: z.literal('object'),
-    shape: z.record(z.string(), z.any()),
+    type: z.enum(['object', 'array']),
+    shape: z.record(z.string(), z.any()).optional(),
+    items: z.any().optional(),
   }),
   prompt: z.string().optional(),
   model: z.string().optional(),
@@ -103,17 +105,34 @@ export async function handlerAiParseData(data: AiParseDataBlock): Promise<BlockR
  * 스키마 정의 헬퍼 함수
  * 
  * 사용 예:
+ * // 단일 객체
  * const schema = createSchema({
  *   memberName: { type: 'string' },
  *   email: { type: 'string' },
  *   joinDate: { type: 'string' },
  *   age: { type: 'number', optional: true }
  * });
+ * 
+ * // 객체 배열
+ * const arraySchema = createArraySchema({
+ *   type: 'object',
+ *   shape: {
+ *     name: { type: 'string' },
+ *     email: { type: 'string' }
+ *   }
+ * });
  */
 export function createSchema(shape: Record<string, SchemaField>): SchemaDefinition {
   return {
     type: 'object',
     shape,
+  };
+}
+
+export function createArraySchema(items: SchemaField): SchemaDefinition {
+  return {
+    type: 'array',
+    items,
   };
 }
 

@@ -39,15 +39,14 @@ export class AiParsingService {
           error: 'OpenAI API key is required. Please provide it in the ai-parse-data block.',
         };
       }
-
       // Zod 스키마 재구성
       const zodSchema = this.reconstructZodSchema(schemaDefinition);
 
       // OpenAI 모델 초기화
       const llm = new ChatOpenAI({
+        apiKey: apiKey,
         modelName: model,
         temperature: 0, // 일관된 출력을 위해 0으로 설정
-        openAIApiKey: apiKey,
       });
 
       // Structured Output 사용
@@ -76,7 +75,14 @@ export class AiParsingService {
    * JSON 스키마 정의를 Zod 스키마로 재구성
    */
   private reconstructZodSchema(schemaDefinition: any): z.ZodType<any> {
+    if (schemaDefinition.type === 'array' && schemaDefinition.items) {
+      // 배열 스키마
+      const itemsType = this.buildZodType(schemaDefinition.items);
+      return z.array(itemsType);
+    }
+    
     if (schemaDefinition.type === 'object' && schemaDefinition.shape) {
+      // 객체 스키마
       const shape: Record<string, z.ZodType<any>> = {};
       
       for (const [key, fieldDef] of Object.entries(schemaDefinition.shape)) {
@@ -164,6 +170,10 @@ Please parse the source data and return it in the exact format specified by the 
   private describeSchema(schemaDefinition: any, indent = 0): string {
     const spaces = '  '.repeat(indent);
     
+    if (schemaDefinition.type === 'array' && schemaDefinition.items) {
+      return `Array<${this.describeSchema(schemaDefinition.items, 0)}>`;
+    }
+    
     if (schemaDefinition.type === 'object' && schemaDefinition.shape) {
       let description = `${spaces}{\n`;
       for (const [key, fieldDef] of Object.entries(schemaDefinition.shape)) {
@@ -172,10 +182,6 @@ Please parse the source data and return it in the exact format specified by the 
       }
       description += `${spaces}}`;
       return description;
-    }
-    
-    if (schemaDefinition.type === 'array' && schemaDefinition.items) {
-      return `Array<${this.describeSchema(schemaDefinition.items, 0)}>`;
     }
     
     return schemaDefinition.type || 'any';
