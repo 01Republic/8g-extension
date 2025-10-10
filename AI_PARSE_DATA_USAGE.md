@@ -36,9 +36,6 @@ const result = await client.collectData({
   targetUrl: 'https://example.com/members',
   block: {
     name: 'ai-parse-data',
-    selector: '', // AI 블록은 selector 불필요
-    findBy: 'cssSelector',
-    option: {},
     sourceData: tableHtml.result.data, // 이전에 수집한 데이터
     schemaDefinition: createSchema({
       memberName: Schema.string(),
@@ -67,9 +64,6 @@ const result = await client.collectData({
   targetUrl: 'https://example.com/members',
   block: {
     name: 'ai-parse-data',
-    selector: '',
-    findBy: 'cssSelector',
-    option: {},
     sourceData: tableHtml.result.data,
     schemaDefinition: {
       type: 'object',
@@ -108,9 +102,6 @@ const result = await client.collectData({
   targetUrl: 'https://example.com',
   block: {
     name: 'ai-parse-data',
-    selector: '',
-    findBy: 'cssSelector',
-    option: {},
     sourceData: rawText,
     schemaDefinition: createSchema({
       productName: Schema.string(),
@@ -190,9 +181,6 @@ const workflow = {
       id: 'parseData',
       block: {
         name: 'ai-parse-data',
-        selector: '',
-        findBy: 'cssSelector',
-        option: {},
         sourceData: { valueFrom: '$.steps.collectTable.result.data' },
         schemaDefinition: createSchema({
           memberName: Schema.string(),

@@ -114,7 +114,7 @@ export class BlockHandler {
   static executeBlock(block: Block): Promise<BlockResult>;
 
   // Implementation
-  static async executeBlock(block: Block): Promise<BlockResult> {
+  static async executeBlock(block: Block | AiParseDataBlock): Promise<BlockResult> {
     try {
       switch (block.name) {
         case 'get-text': {

@@ -19,7 +19,7 @@ export interface SchemaDefinition {
   shape: Record<string, SchemaField>;
 }
 
-export interface AiParseDataBlock extends Block {
+export interface AiParseDataBlock extends Omit<Block, 'selector' | 'findBy' | 'option'> {
   readonly name: 'ai-parse-data';
   sourceData?: any; // 직접 전달할 데이터 또는 이전 스텝 결과
   schemaDefinition: SchemaDefinition; // JSON 스키마 정의
@@ -31,9 +31,6 @@ export interface AiParseDataBlock extends Block {
 // AI 파싱 블록용 스키마 (검증용)
 export const AiParseDataBlockSchema = z.object({
   name: z.literal('ai-parse-data'),
-  selector: z.string().default(''), // Block 인터페이스 호환용
-  findBy: z.enum(['cssSelector', 'xpath']).default('cssSelector'), // Block 인터페이스 호환용
-  option: z.object({}).default({}),
   sourceData: z.any().optional(),
   schemaDefinition: z.object({
     type: z.literal('object'),

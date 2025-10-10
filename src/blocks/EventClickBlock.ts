@@ -58,7 +58,7 @@ export async function handlerEventClick(data: EventClickBlock): Promise<BlockRes
       targetElement = elements as HTMLElement;
     }
 
-    simulateClickElement(targetElement);
+    await simulateClickElement(targetElement);
 
     return { data: true };
   } catch (error) {
@@ -154,23 +154,76 @@ function getElementText(element: HTMLElement): string {
   return '';
 }
 
-function simulateClickElement(element: HTMLElement): void {
-  // Simulate realistic mouse events
+async function simulateClickElement(element: HTMLElement): Promise<void> {
+  // 1. Scroll element into view
+  element.scrollIntoView({ 
+    behavior: 'instant', 
+    block: 'center',
+    inline: 'center' 
+  });
+  
+  // Small delay to ensure scroll completes
+  await new Promise(resolve => setTimeout(resolve, 50));
+  
+  // 2. Focus the element (handles window focus issues)
+  if (element.focus) {
+    element.focus();
+  }
+  
+  // 3. Get element position for realistic coordinates
+  const rect = element.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  
+  // 4. Dispatch hover events first (mimics real user interaction)
+  const hoverEvents = [
+    new MouseEvent('mouseenter', { 
+      bubbles: true, 
+      cancelable: true,
+      clientX: centerX,
+      clientY: centerY,
+    }),
+    new MouseEvent('mouseover', { 
+      bubbles: true, 
+      cancelable: true,
+      clientX: centerX,
+      clientY: centerY,
+    }),
+  ];
+  
+  hoverEvents.forEach(event => element.dispatchEvent(event));
+  
+  // Small delay between hover and click
+  await new Promise(resolve => setTimeout(resolve, 10));
+  
+  // 5. Dispatch click events with coordinates
   const mouseEvents = [
     new MouseEvent('mousedown', {
       bubbles: true,
       cancelable: true,
       button: 0,
+      clientX: centerX,
+      clientY: centerY,
+      screenX: window.screenX + centerX,
+      screenY: window.screenY + centerY,
     }),
     new MouseEvent('mouseup', {
       bubbles: true,
       cancelable: true,
       button: 0,
+      clientX: centerX,
+      clientY: centerY,
+      screenX: window.screenX + centerX,
+      screenY: window.screenY + centerY,
     }),
     new MouseEvent('click', {
       bubbles: true,
       cancelable: true,
       button: 0,
+      clientX: centerX,
+      clientY: centerY,
+      screenX: window.screenX + centerX,
+      screenY: window.screenY + centerY,
     }),
   ];
 
@@ -178,8 +231,11 @@ function simulateClickElement(element: HTMLElement): void {
     element.dispatchEvent(event);
   });
 
-  // Also try the native click method
+  // 6. Native click method as fallback
   if (element.click) {
     element.click();
   }
+  
+  // 7. Small delay to ensure click is processed
+  await new Promise(resolve => setTimeout(resolve, 50));
 }
