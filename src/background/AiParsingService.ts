@@ -115,10 +115,21 @@ export class AiParsingService {
 
     switch (fieldDef.type) {
       case 'string':
-        zodType = z.string();
+        // enum이 있으면 z.enum 사용
+        if (fieldDef.enum && Array.isArray(fieldDef.enum) && fieldDef.enum.length > 0) {
+          zodType = z.enum(fieldDef.enum as [string, ...string[]]);
+        } else {
+          zodType = z.string();
+        }
         break;
       case 'number':
-        zodType = z.number();
+        // enum이 있으면 z.union + z.literal 사용
+        if (fieldDef.enum && Array.isArray(fieldDef.enum) && fieldDef.enum.length > 0) {
+          const literals = fieldDef.enum.map((v: any) => z.literal(v));
+          zodType = z.union(literals as [z.ZodLiteral<any>, z.ZodLiteral<any>, ...z.ZodLiteral<any>[]]);
+        } else {
+          zodType = z.number();
+        }
         break;
       case 'boolean':
         zodType = z.boolean();
@@ -191,10 +202,17 @@ Please parse the source data and return it in the exact format specified by the 
       let description = `${spaces}{\n`;
       for (const [key, fieldDef] of Object.entries(schemaDefinition.shape)) {
         const optional = (fieldDef as any).optional ? ' (optional)' : '';
-        description += `${spaces}  ${key}: ${this.describeSchema(fieldDef, indent + 1)}${optional}\n`;
+        const desc = (fieldDef as any).description ? ` // ${(fieldDef as any).description}` : '';
+        description += `${spaces}  ${key}: ${this.describeSchema(fieldDef, indent + 1)}${optional}${desc}\n`;
       }
       description += `${spaces}}`;
       return description;
+    }
+    
+    // enum이 있는 경우 enum 값들 표시
+    if (schemaDefinition.enum && Array.isArray(schemaDefinition.enum)) {
+      const valuesStr = schemaDefinition.enum.map((v: any) => JSON.stringify(v)).join(' | ');
+      return valuesStr;
     }
     
     return schemaDefinition.type || 'any';

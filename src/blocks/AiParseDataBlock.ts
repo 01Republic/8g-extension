@@ -3,37 +3,39 @@ import { Block, BlockResult } from './types';
 
 /**
  * 스키마 필드 정의 (Union 타입)
+ * OpenAI JSON Schema 표준 방식
  */
 export interface StringSchemaField {
   type: 'string';
+  enum?: readonly string[]; // enum 값들 (string만 허용)
+  description?: string;
   optional?: boolean;
 }
 
 export interface NumberSchemaField {
   type: 'number';
+  enum?: readonly number[]; // enum 값들 (number만 허용)
+  description?: string;
   optional?: boolean;
 }
 
 export interface BooleanSchemaField {
   type: 'boolean';
+  description?: string;
   optional?: boolean;
 }
 
 export interface ArraySchemaField {
   type: 'array';
   items: SchemaField;
+  description?: string;
   optional?: boolean;
 }
 
 export interface ObjectSchemaField {
   type: 'object';
   shape: Record<string, SchemaField>;
-  optional?: boolean;
-}
-
-export interface EnumSchemaField {
-  type: 'enum';
-  values: readonly (string | number)[];
+  description?: string;
   optional?: boolean;
 }
 
@@ -42,8 +44,7 @@ export type SchemaField =
   | NumberSchemaField
   | BooleanSchemaField
   | ArraySchemaField
-  | ObjectSchemaField
-  | EnumSchemaField;
+  | ObjectSchemaField;
 
 /**
  * 스키마 정의 (JSON 형식)
@@ -160,17 +161,25 @@ export async function handlerAiParseData(data: AiParseDataBlock): Promise<BlockR
  * // 단일 객체
  * const schema = createSchema({
  *   memberName: { type: 'string' },
- *   email: { type: 'string' },
+ *   email: { type: 'string', description: 'User email address' },
  *   joinDate: { type: 'string' },
  *   age: { type: 'number', optional: true },
- *   plan: { type: 'enum', values: ['MONTHLY', 'YEARLY'] }
+ *   plan: { type: 'string', enum: ['MONTHLY', 'YEARLY'] },
+ *   status: { type: 'number', enum: [1, 2, 3] }
  * });
  * 
- * // Schema 헬퍼 사용
+ * // Schema 헬퍼 사용 (권장)
  * const schema2 = createSchema({
  *   name: Schema.string(),
- *   plan: Schema.enum(['MONTHLY', 'YEARLY'] as const),
- *   status: Schema.enum([1, 2, 3] as const, true) // optional
+ *   email: Schema.string({ description: 'User email address' }),
+ *   plan: Schema.string({ 
+ *     enum: ['MONTHLY', 'YEARLY'] as const,
+ *     description: 'Billing cycle'
+ *   }),
+ *   priority: Schema.number({ 
+ *     enum: [1, 2, 3] as const, 
+ *     optional: true 
+ *   })
  * });
  * 
  * // 객체 배열
@@ -200,11 +209,27 @@ export function createArraySchema(items: SchemaField): ArraySchemaDefinition {
  * 스키마 필드 헬퍼 함수들
  */
 export const Schema = {
-  string: (optional = false): SchemaField => ({ type: 'string', optional }),
-  number: (optional = false): SchemaField => ({ type: 'number', optional }),
-  boolean: (optional = false): SchemaField => ({ type: 'boolean', optional }),
-  array: (items: SchemaField, optional = false): SchemaField => ({ type: 'array', items, optional }),
-  object: (shape: Record<string, SchemaField>, optional = false): SchemaField => ({ type: 'object', shape, optional }),
-  enum: <T extends readonly (string | number)[]>(values: T, optional = false): SchemaField => ({ type: 'enum', values, optional }),
+  string: (options?: { enum?: readonly string[]; description?: string; optional?: boolean }): StringSchemaField => ({
+    type: 'string',
+    ...options,
+  }),
+  number: (options?: { enum?: readonly number[]; description?: string; optional?: boolean }): NumberSchemaField => ({
+    type: 'number',
+    ...options,
+  }),
+  boolean: (options?: { description?: string; optional?: boolean }): BooleanSchemaField => ({
+    type: 'boolean',
+    ...options,
+  }),
+  array: (items: SchemaField, options?: { description?: string; optional?: boolean }): ArraySchemaField => ({
+    type: 'array',
+    items,
+    ...options,
+  }),
+  object: (shape: Record<string, SchemaField>, options?: { description?: string; optional?: boolean }): ObjectSchemaField => ({
+    type: 'object',
+    shape,
+    ...options,
+  }),
 };
 
