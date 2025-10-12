@@ -241,3 +241,331 @@ DOM 요소의 텍스트를 추출합니다.
   "attributes": ["data-id"]
 }
 ```
+
+---
+
+## scroll
+페이지나 특정 요소로 스크롤합니다. 무한 스크롤 페이지에서 컨텐츠를 로딩할 때 유용합니다.
+
+- 추가 필드:
+  - `scrollType?` ("toElement" | "toBottom" | "byDistance" | "untilLoaded"): 스크롤 타입 (기본: "toBottom")
+  - `distance?` (number): 스크롤 거리 (px, byDistance/untilLoaded 타입에서 사용, 기본: 500)
+  - `behavior?` ("auto" | "smooth"): 스크롤 동작 (기본: "smooth")
+  - `maxScrolls?` (number): 최대 스크롤 횟수 (untilLoaded 타입에서 사용, 기본: 50)
+  - `waitAfterScroll?` (number): 스크롤 후 대기 시간 (ms, 기본: 300)
+
+예시(특정 요소로 스크롤):
+```json
+{
+  "name": "scroll",
+  "selector": ".footer",
+  "findBy": "cssSelector",
+  "scrollType": "toElement",
+  "behavior": "smooth",
+  "option": {}
+}
+```
+
+예시(페이지 맨 아래로 스크롤):
+```json
+{
+  "name": "scroll",
+  "scrollType": "toBottom",
+  "behavior": "smooth",
+  "waitAfterScroll": 500
+}
+```
+
+예시(거리 기반 스크롤):
+```json
+{
+  "name": "scroll",
+  "scrollType": "byDistance",
+  "distance": 1000,
+  "behavior": "auto"
+}
+```
+
+예시(무한 스크롤 - 컨텐츠가 더 로딩될 때까지):
+```json
+{
+  "name": "scroll",
+  "scrollType": "untilLoaded",
+  "distance": 500,
+  "maxScrolls": 100,
+  "waitAfterScroll": 1000
+}
+```
+
+---
+
+## keypress
+키보드 키 입력을 시뮬레이션합니다. ESC 키로 모달 닫기, Enter로 검색 실행 등에 사용됩니다.
+
+- 주요 필드:
+  - `key` (string, 필수): 키 이름 ("Escape", "Enter", "ArrowDown" 등)
+  - `code?` (string): 키 코드 (선택, 기본: key와 동일)
+  - `keyCode?` (number): 키 코드 번호 (선택, 기본: key에서 자동 계산)
+  - `modifiers?` (배열): 수정 키 ["Alt", "Control", "Meta", "Shift"]
+
+- 참고: `selector`, `findBy`, `option` 필드는 사용하지 않습니다.
+
+예시(ESC 키 누르기):
+```json
+{
+  "name": "keypress",
+  "key": "Escape"
+}
+```
+
+예시(Enter 키 누르기):
+```json
+{
+  "name": "keypress",
+  "key": "Enter"
+}
+```
+
+예시(Ctrl+S 단축키):
+```json
+{
+  "name": "keypress",
+  "key": "s",
+  "modifiers": ["Control"]
+}
+```
+
+예시(화살표 키):
+```json
+{
+  "name": "keypress",
+  "key": "ArrowDown"
+}
+```
+
+---
+
+## wait
+지정된 시간 동안 대기합니다. 페이지 로딩이나 애니메이션 완료를 기다릴 때 유용합니다.
+
+- 주요 필드:
+  - `duration` (number, 필수): 대기 시간 (밀리초)
+
+- 참고: `selector`, `findBy`, `option` 필드는 사용하지 않습니다.
+
+예시(1초 대기):
+```json
+{
+  "name": "wait",
+  "duration": 1000
+}
+```
+
+예시(3초 대기):
+```json
+{
+  "name": "wait",
+  "duration": 3000
+}
+```
+
+---
+
+## fetch-api
+외부 API를 호출하여 데이터를 가져옵니다. Background에서 실행되므로 CORS 제약 없이 API를 호출할 수 있습니다.
+
+- 주요 필드:
+  - `url` (string, 필수): API 엔드포인트 URL
+  - `method?` (string): HTTP 메서드 (기본: "GET")
+    - 가능한 값: "GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"
+  - `headers?` (Record<string, string>): 요청 헤더
+  - `body?` (any): 요청 바디 (객체 또는 문자열, GET/HEAD에는 사용 불가)
+  - `timeout?` (number): 타임아웃 (ms, 기본: 30000)
+  - `parseJson?` (boolean): 응답을 JSON으로 파싱 (기본: true)
+  - `returnHeaders?` (boolean): 응답 헤더도 반환 (기본: false)
+
+- 참고: `selector`, `findBy`, `option` 필드는 사용하지 않습니다.
+
+예시(GET 요청):
+```json
+{
+  "name": "fetch-api",
+  "url": "https://api.example.com/users"
+}
+```
+
+예시(POST 요청):
+```json
+{
+  "name": "fetch-api",
+  "url": "https://api.example.com/users",
+  "method": "POST",
+  "headers": {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer token123"
+  },
+  "body": {
+    "name": "홍길동",
+    "email": "hong@example.com"
+  }
+}
+```
+
+예시(응답 헤더 포함):
+```json
+{
+  "name": "fetch-api",
+  "url": "https://api.example.com/data",
+  "method": "GET",
+  "headers": {
+    "X-API-Key": "my-api-key"
+  },
+  "returnHeaders": true,
+  "timeout": 10000
+}
+```
+
+**워크플로우에서 사용 예시** (이전 스텝 데이터를 API로 전송):
+```typescript
+{
+  version: '1.0',
+  start: 'scrapeData',
+  steps: [
+    {
+      id: 'scrapeData',
+      block: {
+        name: 'get-text',
+        selector: '.product-title',
+        findBy: 'cssSelector',
+        option: {}
+      },
+      next: 'sendToApi'
+    },
+    {
+      id: 'sendToApi',
+      block: {
+        name: 'fetch-api',
+        url: 'https://api.example.com/products',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: {
+          title: { valueFrom: '$.steps.scrapeData.result.data' }, // 이전 스텝 결과 바인딩
+          source: 'web-scraping',
+          timestamp: new Date().toISOString()
+        }
+      }
+    }
+  ]
+}
+```
+
+**반환 데이터 구조**:
+```typescript
+{
+  status: number;         // HTTP 상태 코드 (예: 200, 404)
+  statusText: string;     // 상태 텍스트 (예: "OK", "Not Found")
+  data: any;              // 파싱된 JSON 또는 텍스트
+  headers?: Record<string, string>;  // returnHeaders: true일 때만
+}
+```
+
+---
+
+## ai-parse-data
+AI(OpenAI)를 사용하여 비구조화된 데이터를 구조화된 JSON으로 파싱합니다. 웹페이지의 복잡한 데이터를 추출할 때 유용합니다.
+
+- 주요 필드:
+  - `apiKey` (string, 필수): OpenAI API 키
+  - `schemaDefinition` (SchemaDefinition, 필수): 출력 데이터 스키마 정의
+  - `sourceData?` (any): 파싱할 원본 데이터 (워크플로우에서는 이전 스텝 결과 바인딩 가능)
+  - `prompt?` (string): AI에게 추가 지시사항
+  - `model?` (string): 사용할 OpenAI 모델 (기본: "gpt-4o-mini")
+
+- 참고: `selector`, `findBy`, `option` 필드는 사용하지 않습니다.
+
+**스키마 정의 방법**:
+
+객체 스키마:
+```typescript
+{
+  type: 'object',
+  shape: {
+    fieldName: { type: 'string', description: '설명', optional: false },
+    age: { type: 'number', description: '나이' },
+    active: { type: 'boolean' }
+  }
+}
+```
+
+배열 스키마:
+```typescript
+{
+  type: 'array',
+  items: { 
+    type: 'object',
+    shape: { ... }
+  }
+}
+```
+
+예시(객체 파싱):
+```json
+{
+  "name": "ai-parse-data",
+  "apiKey": "sk-...",
+  "sourceData": "이름: 홍길동, 나이: 30세, 직업: 개발자",
+  "schemaDefinition": {
+    "type": "object",
+    "shape": {
+      "name": { "type": "string", "description": "사람의 이름" },
+      "age": { "type": "number", "description": "나이" },
+      "occupation": { "type": "string", "description": "직업" }
+    }
+  },
+  "prompt": "주어진 텍스트에서 사람 정보를 추출하세요."
+}
+```
+
+예시(배열 파싱):
+```json
+{
+  "name": "ai-parse-data",
+  "apiKey": "sk-...",
+  "sourceData": ["상품1: 10,000원", "상품2: 20,000원"],
+  "schemaDefinition": {
+    "type": "array",
+    "items": {
+      "type": "object",
+      "shape": {
+        "name": { "type": "string" },
+        "price": { "type": "number" }
+      }
+    }
+  }
+}
+```
+
+**워크플로우에서 사용 예시**:
+```typescript
+{
+  id: 'parseProducts',
+  block: {
+    name: 'ai-parse-data',
+    apiKey: process.env.OPENAI_API_KEY,
+    sourceData: { valueFrom: '$.steps.getProducts.result.data' }, // 이전 스텝 결과 바인딩
+    schemaDefinition: {
+      type: 'array',
+      items: {
+        type: 'object',
+        shape: {
+          productName: { type: 'string', description: '상품명' },
+          price: { type: 'number', description: '가격' },
+          inStock: { type: 'boolean', description: '재고 여부' }
+        }
+      }
+    }
+  }
+}
+```

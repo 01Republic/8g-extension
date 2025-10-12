@@ -1,5 +1,6 @@
 import { ChatOpenAI } from '@langchain/openai';
 import { z } from 'zod';
+import { ErrorResponse } from '@/types/internal-messages';
 
 export interface AiParsingRequest {
   sourceData: any;
@@ -23,6 +24,43 @@ export interface AiParsingResult {
 export class AiParsingService {
   constructor() {
     // API 키는 블록에서 직접 전달받음
+  }
+
+  /**
+   * AI 파싱 요청을 처리하고 응답을 전송합니다.
+   * 
+   * @param requestData - AI 파싱 요청 데이터
+   * @param sendResponse - 응답 전송 함수
+   */
+  async handleParseData(
+    requestData: AiParsingRequest,
+    sendResponse: (response: any) => void
+  ): Promise<void> {
+    try {
+      console.log('[AiParsingService] Handle parse data request');
+
+      const result = await this.parseData(requestData);
+
+      if (result.success) {
+        sendResponse({
+          success: true,
+          data: result.data,
+        });
+      } else {
+        sendResponse({
+          $isError: true,
+          message: result.error || 'AI parsing failed',
+          data: null,
+        } as ErrorResponse);
+      }
+    } catch (error) {
+      console.error('[AiParsingService] Parse data error:', error);
+      sendResponse({
+        $isError: true,
+        message: error instanceof Error ? error.message : 'Unknown error in AI parsing',
+        data: null,
+      } as ErrorResponse);
+    }
   }
 
   /**

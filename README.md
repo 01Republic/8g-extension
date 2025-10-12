@@ -66,7 +66,9 @@ npm run build:extension
 
 ## SDK 사용 가이드(요약)
 
-패키지 설치 후 SDK를 초기화하고 블록/워크플로우를 실행할 수 있습니다.
+**중요**: v2.x부터 **모든 블록 실행은 워크플로우를 통해서만** 가능합니다.
+
+패키지 설치 후 SDK를 초기화하고 워크플로우를 실행할 수 있습니다.
 
 ```ts
 import { EightGClient } from '8g-extension';
@@ -74,42 +76,59 @@ import { EightGClient } from '8g-extension';
 const client = new EightGClient();
 await client.checkExtension();
 
-// 단일 블록 실행 예시
-const result1 = await client.collectData({
+// 단일 블록도 워크플로우로 실행
+const simpleWorkflow = {
+  version: '1.0',
+  start: 'getTitle',
+  steps: [
+    { 
+      id: 'getTitle', 
+      block: { 
+        name: 'get-text', 
+        selector: '#title', 
+        findBy: 'cssSelector', 
+        option: {},
+        useTextContent: true 
+      }
+    }
+  ]
+};
+
+const result1 = await client.collectWorkflow({
   targetUrl: location.href,
-  block: {
-    name: 'get-text',
-    selector: '#title',
-    findBy: 'cssSelector',
-    option: {},
-    useTextContent: true,
-  },
-  blockDelay: 200,
+  workflow: simpleWorkflow
 });
 
-// 워크플로우 실행 예시
-const workflow = {
+// 복잡한 워크플로우: 분기, 조건, 순차 실행
+const complexWorkflow = {
   version: '1.0',
   start: 'readStatus',
   steps: [
-    { id: 'readStatus', block: { name: 'get-text', selector: '.status', findBy: 'cssSelector', useTextContent: true, option: {} },
-      switch: [ { when: { equals: { left: "$.steps.readStatus.result.data", right: 'OK' } }, next: 'go' } ], next: 'retry' },
-    { id: 'go', block: { name: 'event-click', selector: '.go', findBy: 'cssSelector', option: {} }, next: 'done' },
-    { id: 'retry', block: { name: 'event-click', selector: '.retry', findBy: 'cssSelector', option: {} }, next: 'done' },
+    { 
+      id: 'readStatus', 
+      block: { name: 'get-text', selector: '.status', findBy: 'cssSelector', useTextContent: true, option: {} },
+      switch: [ 
+        { when: { equals: { left: "$.steps.readStatus.result.data", right: 'OK' } }, next: 'go' } 
+      ], 
+      next: 'retry' 
+    },
+    { id: 'go', block: { name: 'event-click', selector: '.go', findBy: 'cssSelector', option: {} }, delayAfterMs: 300, next: 'done' },
+    { id: 'retry', block: { name: 'event-click', selector: '.retry', findBy: 'cssSelector', option: {} }, delayAfterMs: 300, next: 'done' },
     { id: 'done', block: { name: 'get-text', selector: '.result', findBy: 'cssSelector', option: { waitForSelector: true } } },
   ],
 };
 
 const result2 = await client.collectWorkflow({
   targetUrl: location.href,
-  workflow,
+  workflow: complexWorkflow,
   closeTabAfterCollection: true,
 });
 ```
 
-자세한 JSON 스키마/조건식/바인딩, 실행 규칙은 아래 문서를 참고하세요.
+자세한 사용법, JSON 스키마/조건식/바인딩, 실행 규칙은 아래 문서를 참고하세요.
 
-- 워크플로우 아키텍처: `WORKFLOW_EXECUTION_ARCHITECTURE.md`
+- 워크플로우 가이드: `WORKFLOW_EXECUTION_ARCHITECTURE.md`
+- 블록 아키텍처: `BLOCK_EXECUTION_ARCHITECTURE.md`
 
 ## 프로젝트 구조
 
@@ -152,26 +171,20 @@ Webpage(JS) ─ SDK(EightGClient)
                  └── 결과 집계 후 응답(역방향 경로로 반환)
 ```
 
-### 요청 흐름: 단일/리스트 블록(`collectData`)
-1. 웹페이지에서 SDK `EightGClient.collectData` 호출 → `window.postMessage({ type: '8G_COLLECT_DATA', ... })` 전송
-2. Content Script의 `ExternalMessageHandler`가 수신 → Background로 `COLLECT_DATA_NEW_TAB` 메시지 전달
-3. Background `BackgroundManager`가 탭 생성(`TabManager.createTab`) 후, 각 블록을 순서대로 실행
+### 요청 흐름: 워크플로우 실행 (`collectWorkflow`)
+1. 웹페이지에서 SDK `EightGClient.collectWorkflow` 호출 → `window.postMessage({ type: '8G_COLLECT_WORKFLOW', ... })` 전송
+2. Content Script의 `ExternalMessageHandler`가 수신 → Background로 `COLLECT_WORKFLOW_NEW_TAB` 메시지 전달
+3. Background `WorkflowService`가 탭 생성 후, 워크플로우 실행 시작
+   - `WorkflowRunner`가 `start` 스텝부터 시작하여 `steps`를 따라 진행
+   - 각 스텝에서 `when` 조건 평가, `retry` 재시도, `timeoutMs` 타임아웃 처리
    - 블록 실행은 `TabManager.executeBlock` → 대상 탭의 Content Script로 `ExecuteBlockMessage` 송신
-   - Content Script `MessageKernel.executeBlock` → 동적 import로 `BlockHandler` 호출 → 블록별 `validate*` 후 `handler*` 실행
-4. 각 블록 결과를 Background가 수집하고, 최종 결과를 Content Script로 전달
-5. Content Script가 웹페이지로 `8G_COLLECT_RESPONSE`를 `window.postMessage`하여 SDK가 Promise resolve
+   - Content Script `MessageKernel.executeBlock` → `BlockHandler` 호출 → 블록별 `validate*` 후 `handler*` 실행
+4. 각 스텝의 결과(성공/실패/시각/메시지)를 기록하며 다음 스텝으로 진행 (`next`, `switch`, `onSuccess/onFailure`)
+5. 워크플로우 완료 시 모든 스텝 로그를 Content Script로 전달
+6. Content Script가 웹페이지로 `8G_COLLECT_RESPONSE`를 `window.postMessage`하여 SDK가 Promise resolve
 
-참고: `block`에 배열을 넘기면 내부적으로 순차 실행되며, `blockDelay`(기본 500ms) 만큼 블록 간 대기합니다.
+참고: `delayAfterMs`로 스텝 간 대기 시간을 조정할 수 있습니다.
 
-### 요청 흐름: 워크플로우(`collectWorkflow`)
-1. SDK `EightGClient.collectWorkflow` → `window.postMessage({ type: '8G_COLLECT_WORKFLOW', ... })`
-2. Content Script가 `COLLECT_WORKFLOW_NEW_TAB`로 Background에 포워딩
-3. Background `WorkflowRunner.run`이 `start`부터 `steps`를 따라 진행
-   - 각 스텝에서 `when` 조건을 평가하여 실행/스킵 결정
-   - `retry { attempts, delayMs, backoffFactor }`, `timeoutMs`, `delayAfterMs` 지원
-   - 실행 시 `TabManager.executeBlock`을 통해 실제 블록을 탭에서 수행
-   - `switch` 분기 또는 `next`에 따라 다음 스텝 결정
-4. 스텝 로그·결과를 모아 Content Script → 웹페이지로 반환하여 SDK가 `steps` 배열로 제공
 
 ### 블록 시스템 구조
 - 공통 형태(`src/blocks/types.ts`)
@@ -188,27 +201,35 @@ Webpage(JS) ─ SDK(EightGClient)
   - `event-click`: 요소 클릭(다중 요소 + 텍스트 필터 선택 가능)
   - `save-assets`: 이미지/리소스 수집 및 저장
   - `get-element-data`: 텍스트/속성/선택자/XPath 등 복합 데이터 추출
+  - `scroll`: 페이지 스크롤(toElement, toBottom, byDistance, untilLoaded)
+  - `keypress`: 키보드 입력 시뮬레이션(Escape, Enter 등, modifier 키 지원)
+  - `wait`: 지정 시간 대기(ms)
+  - `fetch-api`: 외부 API 호출(GET, POST 등, CORS 제약 없음)
+  - `ai-parse-data`: AI 기반 데이터 파싱(OpenAI, 스키마 정의 필요)
 
 ### SDK 상세(브라우저에서 사용)
 - `EightGClient.checkExtension()`
   - 확장 주입 여부 확인. 내부적으로 `8G_EXTENSION_CHECK` 메시지를 사용
-- `EightGClient.collectData({ targetUrl, block, blockDelay?, closeTabAfterCollection?, activateTab? })`
-  - `block`: 단일 `Block` 또는 `Block[]`
-  - 반환: `{ success, data, error?, timestamp, targetUrl }`
-  - 타임아웃: 기본 30초(`EightGError.requestTimeout`)
+  - 타임아웃: 5초
 - `EightGClient.collectWorkflow({ targetUrl, workflow, closeTabAfterCollection?, activateTab? })`
-  - `workflow`: `{ version, start, steps[] }` 형식. 스텝은 `{ id, block?, when?, switch?, next?, retry?, timeoutMs?, delayAfterMs?, setVars? }`
-  - 반환: `{ success, steps, error?, timestamp, targetUrl }` (스텝별 성공/실패/메시지/시각 포함)
+  - **유일한 블록 실행 방법** - 모든 블록은 워크플로우를 통해서만 실행
+  - `workflow`: `{ version, start, steps[] }` 형식
+  - 각 스텝: `{ id, block?, when?, switch?, next?, onSuccess?, onFailure?, retry?, timeoutMs?, delayAfterMs?, setVars? }`
+  - 반환: `{ success, steps, error?, timestamp, targetUrl }` (스텝별 성공/실패/메시지/시각/재시도 횟수 포함)
   - 타임아웃: 기본 60초
 
 ### 주요 내부 모듈과 연결 관계
 - `src/content/kernel/MessageKernel.ts`: Background 통신, 블록 실행(락 관리 포함), 런타임 메시지 처리
 - `src/content/handler/ExternalMessageHandler.ts`: 웹페이지(Window) ↔ Content Script 브리지
 - `src/content/handler/InternalMessageHandler.ts`: Background ↔ Content Script 브리지
-- `src/background/BackgroundManager.ts`: 내부 메시지 수신, `collectData`/`collectWorkflow` 처리 루틴
-- `src/background/TabManager.ts`: 탭 생성/활성화, 특정 탭에 블록 실행 위임
+- `src/background/BackgroundManager.ts`: 메시지 라우팅 담당 (워크플로우, CDP, AI 파싱)
+- `src/background/WorkflowService.ts`: 워크플로우 실행 전담
 - `src/background/WorkflowRunner.ts`: 워크플로우 루프, 분기/바인딩/재시도/타임아웃 처리
-- `src/blocks/index.ts`: `BlockHandler.executeBlock` 진입점(블록별 validate/handler 매핑)
+- `src/background/CdpService.ts`: Chrome DevTools Protocol 처리 (클릭, 키보드 입력)
+- `src/background/ApiService.ts`: 외부 API 요청 처리 (fetch, CORS 우회)
+- `src/background/AiParsingService.ts`: AI 파싱 처리 (OpenAI 연동)
+- `src/background/TabManager.ts`: 탭 생성/활성화, 특정 탭에 블록 실행 위임
+- `src/blocks/index.ts`: `BlockHandler.executeBlock` 진입점 (블록별 validate/handler 매핑)
 - `src/content/elements/*`: CSS/XPath 셀렉터 빌드/탐색, 대기 옵션 처리
 
 ### 응답과 에러 처리
@@ -217,6 +238,6 @@ Webpage(JS) ─ SDK(EightGClient)
 - 공통 타임아웃/통신 오류는 `EightGError`로 래핑됨
 
 ### 추가 참고 문서
-- 블록 실행 개요: `BLOCK_EXECUTION_ARCHITECTURE.md`
-- 지원 블록 상세: `BLOCKS.md`
-- 워크플로우 실행 규칙: `WORKFLOW_EXECUTION_ARCHITECTURE.md`
+- **워크플로우 가이드** (필수): `WORKFLOW_EXECUTION_ARCHITECTURE.md` - 워크플로우 실행 방법, JSON 스키마, 조건식, 바인딩
+- **블록 카탈로그**: `BLOCKS.md` - 모든 블록의 상세 사용법과 예시
+- **아키텍처 문서**: `BLOCK_EXECUTION_ARCHITECTURE.md` - 내부 구조와 아키텍처 변경사항

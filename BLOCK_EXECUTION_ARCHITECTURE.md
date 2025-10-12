@@ -1,31 +1,15 @@
-# 8G Extension 블록 실행 아키텍처 분석
+# 8G Extension 블록 실행 아키텍처
 
 ## 개요
-8G Extension은 웹페이지에서 데이터를 수집하기 위한 Chrome Extension입니다. 이 문서는 블록 실행을 처음 사용하는 분들을 위한 간단한 사용 안내와 순차 실행의 요점을 제공합니다.
+8G Extension은 웹페이지에서 데이터를 수집하고 자동화하기 위한 Chrome Extension입니다. 
+
+**중요**: 모든 블록 실행은 **워크플로우를 통해서만** 가능합니다. 단일 블록도 워크플로우로 실행해야 합니다.
 
 ## 현재 아키텍처
 
 ### 빠른 시작
 
-1) 클라이언트 생성 및 설치 체크
-```html
-<script type="module">
-  import { EightGClient } from './dist/index.js';
-  const client = new EightGClient();
-  await client.checkExtension();
-  // ...
-</script>
-```
-
-2) 단일 블록 실행
-```ts
-await client.collectData({
-  targetUrl: location.href,
-  block: { name: 'get-text', selector: '#title', findBy: 'cssSelector', option: {} },
-});
-```
-
-#### npm에서 사용
+#### 설치
 
 ```bash
 npm install 8g-extension
@@ -33,35 +17,170 @@ npm install 8g-extension
 yarn add 8g-extension
 ```
 
+#### 기본 사용법
+
 ```ts
 import { EightGClient } from '8g-extension';
 
 const client = new EightGClient();
 await client.checkExtension();
+```
 
-await client.collectData({
+### 블록 실행 방법
+
+모든 블록은 **워크플로우를 통해서만** 실행됩니다.
+
+#### 1) 단일 블록 실행
+
+```ts
+const workflow = {
+  version: '1.0',
+  start: 'getTitle',
+  steps: [
+    {
+      id: 'getTitle',
+      block: { 
+        name: 'get-text', 
+        selector: '#title', 
+        findBy: 'cssSelector', 
+        option: {} 
+      }
+    }
+  ]
+};
+
+const result = await client.collectWorkflow({
   targetUrl: location.href,
-  block: { name: 'get-text', selector: '#title', findBy: 'cssSelector', option: {} },
+  workflow
 });
 ```
 
-3) 블록 리스트(순차 실행)
+#### 2) 여러 블록 순차 실행
+
 ```ts
-await client.collectData({
+const workflow = {
+  version: '1.0',
+  start: 'clickOpen',
+  steps: [
+    {
+      id: 'clickOpen',
+      block: { 
+        name: 'event-click', 
+        selector: '.open', 
+        findBy: 'cssSelector', 
+        option: { waitForSelector: true } 
+      },
+      delayAfterMs: 300,  // 다음 블록 전 300ms 대기
+      next: 'getContent'
+    },
+    {
+      id: 'getContent',
+      block: { 
+        name: 'get-text', 
+        selector: '.modal .content', 
+        findBy: 'cssSelector', 
+        option: { waitForSelector: true } 
+      }
+    }
+  ]
+};
+
+const result = await client.collectWorkflow({
   targetUrl: location.href,
-  blockDelay: 300,
-  block: [
-    { name: 'event-click', selector: '.open', findBy: 'cssSelector', option: { waitForSelector: true } },
-    { name: 'get-text', selector: '.modal .content', findBy: 'cssSelector', option: { waitForSelector: true } },
-  ],
+  workflow
 });
+```
+
+#### 3) 고급 블록 사용 예시
+
+```ts
+// 무한 스크롤 + 키보드 입력 + 대기
+const workflow = {
+  version: '1.0',
+  start: 'scrollToLoad',
+  steps: [
+    {
+      id: 'scrollToLoad',
+      block: { 
+        name: 'scroll',
+        scrollType: 'untilLoaded',
+        distance: 500,
+        maxScrolls: 50
+      },
+      next: 'waitAnimation'
+    },
+    {
+      id: 'waitAnimation',
+      block: { name: 'wait', duration: 500 },
+      next: 'clickModal'
+    },
+    {
+      id: 'clickModal',
+      block: { 
+        name: 'event-click', 
+        selector: '.open-modal', 
+        findBy: 'cssSelector', 
+        option: {} 
+      },
+      next: 'closeWithEsc'
+    },
+    {
+      id: 'closeWithEsc',
+      block: { name: 'keypress', key: 'Escape' }
+    }
+  ]
+};
+
+const result = await client.collectWorkflow({
+  targetUrl: location.href,
+  workflow
+});
+```
+
+#### 4) AI 파싱 블록
+
+```ts
+const workflow = {
+  version: '1.0',
+  start: 'getText',
+  steps: [
+    {
+      id: 'getText',
+      block: {
+        name: 'get-text',
+        selector: '.product-info',
+        findBy: 'cssSelector',
+        option: {}
+      },
+      next: 'parseWithAi'
+    },
+    {
+      id: 'parseWithAi',
+      block: {
+        name: 'ai-parse-data',
+        apiKey: 'sk-...',
+        sourceData: { valueFrom: '$.steps.getText.result.data' }, // 이전 스텝 결과 바인딩
+        schemaDefinition: {
+          type: 'object',
+          shape: {
+            name: { type: 'string', description: '상품명' },
+            price: { type: 'number', description: '가격' }
+          }
+        }
+      }
+    }
+  ]
+};
 ```
 
 ### 요약 포인트
 
-– 모든 블록에는 `option: {}`를 권장합니다(비어있어도 OK)
-– `blockDelay`로 블록 간 대기 시간을 조절할 수 있습니다(기본 500ms)
+– **모든 블록은 워크플로우로만 실행됩니다** (`collectWorkflow` 사용)
+– 모든 블록에는 `option: {}`를 권장합니다 (비어있어도 OK)
+– 예외: `keypress`, `wait`, `ai-parse-data` 블록은 `selector`, `findBy`, `option` 필드 불필요
+– 블록 간 대기: `delayAfterMs`를 각 스텝에 지정 (ms)
 – 다중 요소가 필요하면 `option.multiple: true`를 사용하세요
+– 스텝 간 데이터 전달: `valueFrom`, `template` 바인딩 사용
 
 ### 지원 블록 (요약)
 
@@ -74,93 +193,91 @@ await client.collectData({
 – `event-click`: 클릭 이벤트 발생
 – `save-assets`: 에셋 저장
 – `get-element-data`: 요소 데이터 추출
+– `scroll`: 페이지 스크롤 (toElement, toBottom, byDistance, untilLoaded)
+– `keypress`: 키보드 입력 시뮬레이션
+– `wait`: 지정 시간 대기
+– `fetch-api`: 외부 API 호출 (CORS 제약 없음)
+– `ai-parse-data`: AI 기반 데이터 파싱 (OpenAI)
 
-## 구현된 BlockList 순차 실행 기능
+## 워크플로우 기반 실행
 
-### 🎯 주요 기능
+### 🎯 주요 특징
 
-#### 1. 순차 실행
-- 블록들이 배열 순서대로 순차적으로 실행됩니다
-- 각 블록 사이에 설정 가능한 지연 시간이 적용됩니다
+#### 1. 워크플로우 전용
+- 모든 블록은 워크플로우를 통해서만 실행됩니다
+- 단일 블록도 워크플로우로 래핑해야 합니다
+- `collectWorkflow()` 메서드만 제공됩니다
 
-#### 2. 지연 시간 설정
-- `blockDelay` 옵션으로 블록 간 대기 시간을 조정할 수 있습니다
-- 기본값: `500ms`
-- 범위: `0ms` (대기 없음) ~ 원하는 시간
+#### 2. 순차 실행
+- `steps` 배열의 순서대로 실행됩니다
+- `next` 필드로 다음 스텝을 지정합니다
+- `delayAfterMs`로 스텝 간 대기 시간을 조정합니다
 
-#### 3. 에러 처리
-- 하나의 블록에서 에러가 발생해도 다음 블록은 계속 실행됩니다
-- 실패한 블록은 `{ hasError: true, message: "에러 메시지", data: null }` 형태로 결과에 포함됩니다
+#### 3. 고급 기능
+- **분기 처리**: `switch`, `onSuccess/onFailure` 지원
+- **조건부 실행**: `when` 조건으로 스텝 스킵 가능
+- **재시도**: `retry { attempts, delayMs, backoffFactor }`
+- **타임아웃**: `timeoutMs`로 스텝별 제한 시간 설정
+- **데이터 바인딩**: `valueFrom`, `template`로 이전 스텝 결과 전달
 
-#### 4. 하위 호환성
-- 기존 단일 블록 사용법은 그대로 지원됩니다
-- `collectData({ block: Block })` - 단일 블록
-- `collectData({ block: Block[] })` - 블록 배열
+#### 4. 에러 처리
+- 각 스텝의 성공/실패 여부를 기록합니다
+- `onFailure`로 실패 시 다른 스텝으로 이동 가능
+- 재시도 설정으로 안정성 향상
 
-### 📝 사용 예시
+### 📝 결과 구조
 
-```javascript
-// 클릭 후 모달 데이터 수집
-await client.collectData({
-  targetUrl: 'https://example.com',
-  blockDelay: 1000, // 1초 대기
-  block: [
+```typescript
+{
+  success: boolean;
+  steps: [
     {
-      name: 'event-click',
-      selector: '.open-modal-btn',
-      findBy: 'cssSelector',
-      option: { waitForSelector: true }
-    },
-    {
-      name: 'get-text',
-      selector: '.modal-content',
-      findBy: 'cssSelector',
-      option: { waitForSelector: true }
+      stepId: string;
+      skipped: boolean;
+      success: boolean;
+      message?: string;
+      result?: any;
+      startedAt: string;
+      finishedAt: string;
+      attempts: number;
     }
-  ]
-});
-
-// 빠른 순차 실행
-await client.collectData({
-  targetUrl: 'https://example.com',
-  blockDelay: 0, // 대기 없음
-  block: [block1, block2, block3]
-});
-
-// 기존 방식 (단일 블록)
-await client.collectData({
-  targetUrl: 'https://example.com',
-  block: {
-    name: 'get-text',
-    selector: '.title',
-    findBy: 'cssSelector'
-  }
-});
+  ];
+  timestamp: string;
+  targetUrl: string;
+}
 ```
 
-## 결론
+## 아키텍처 변경 사항
 
-✅ **BlockList 순차 실행 기능이 성공적으로 구현되었습니다!**
+### ✅ 워크플로우 중심으로 통합
 
-### 🎉 구현 완료 사항
-- **타입 정의 확장**: `Block | Block[]` 지원 및 `blockDelay` 옵션 추가
-- **SDK 클라이언트 확장**: 오버로드를 통한 단일/배열 블록 지원
-- **Background 처리**: 순차 실행 및 설정 가능한 지연 시간 구현
-- **메시지 핸들링**: 모든 레이어에서 블록 배열 지원
-- **하위 호환성**: 기존 단일 블록 사용법 완전 지원
+**Before (v1.x)**:
+- ❌ `collectData()` - 단일/배열 블록 직접 실행
+- ❌ `blockDelay` - 블록 간 지연 시간
 
-### 🚀 주요 특징
-- **순차 실행**: 블록들이 배열 순서대로 실행
-- **지연 시간 설정**: `blockDelay` 옵션으로 블록 간 대기 시간 조정
-- **에러 복원력**: 하나의 블록 실패 시에도 다음 블록 계속 실행
-- **완전한 하위 호환성**: 기존 코드 수정 없이 사용 가능
+**After (v2.x+)**:
+- ✅ `collectWorkflow()` - 워크플로우 전용
+- ✅ `delayAfterMs` - 스텝별 지연 시간
+- ✅ 분기, 조건, 재시도, 바인딩 등 강력한 기능
 
-### 📋 테스트 방법
-1. Python 서버 실행: `python3 -m http.server 8080`
-2. 브라우저에서 `http://localhost:8080/test-page.html` 접속
-3. 8G Extension 설치 후 각 테스트 시나리오 실행
+### 🎯 장점
 
-이제 클릭 후 모달 데이터 수집, 폼 입력 → 제출 → 결과 확인 등 복잡한 워크플로우를 블록 배열로 순차 실행할 수 있습니다!
+1. **일관성**: 모든 블록 실행이 동일한 방식
+2. **강력함**: 복잡한 자동화 시나리오 구현 가능
+3. **안정성**: 재시도, 타임아웃, 조건부 실행 지원
+4. **유연성**: 스텝 간 데이터 전달, 분기 처리
+5. **디버깅**: 각 스텝별 상세한 실행 로그
+
+### 🔧 Background 서비스 리팩토링
+
+- `BackgroundManager`: 메시지 라우팅만 담당
+- `WorkflowService`: 워크플로우 실행 전담
+- `CdpService`: Chrome DevTools Protocol 처리
+- `AiParsingService`: AI 파싱 전담
+
+### 📋 마이그레이션 가이드
+
+기존 코드를 워크플로우로 변환하는 방법은 `WORKFLOW_EXECUTION_ARCHITECTURE.md`를 참고하세요.
 
 ## 참고
 – 고정된 셀렉터로 동작하지 않는 경우가 있습니다. 동적 UI에서는 `waitForSelector`와 충분한 `waitSelectorTimeout`을 사용하세요.

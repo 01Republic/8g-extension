@@ -1,10 +1,9 @@
 import {
   WindowMessage,
-  CollectDataMessage,
   ExtensionResponseMessage,
   CollectWorkflowMessage,
 } from '@/types/external-messages';
-import { CollectDataNewTabMessage, CollectWorkflowNewTabMessage } from '@/types/internal-messages';
+import { CollectWorkflowNewTabMessage } from '@/types/internal-messages';
 import { MessageKernel } from '../kernel/MessageKernel';
 
 /**
@@ -34,10 +33,6 @@ export class ExternalMessageHandler {
         this.handleExtensionCheck();
         break;
 
-      case '8G_COLLECT_DATA':
-        await this.handleCollectData(message);
-        break;
-
       case '8G_COLLECT_WORKFLOW':
         await this.handleCollectWorkflow(message as CollectWorkflowMessage);
         break;
@@ -57,42 +52,6 @@ export class ExternalMessageHandler {
       version: '1.0.0',
     };
     this.kernel.sendToWebpage(response);
-  }
-
-  /**
-   * 데이터 수집 요청 처리
-   */
-  private async handleCollectData(message: CollectDataMessage): Promise<void> {
-    try {
-      this.validateCollectDataMessage(message);
-
-      // Background script로 데이터 수집 요청 전송
-      const backgroundMessage: CollectDataNewTabMessage = {
-        type: 'COLLECT_DATA_NEW_TAB',
-        data: {
-          targetUrl: message.targetUrl,
-          block: message.block,
-          closeTabAfterCollection: message.closeTabAfterCollection !== false,
-          activateTab: message.activateTab === true,
-          blockDelay: message.blockDelay || 500, // 기본값 500ms
-        },
-      };
-
-      try {
-        const response = await this.kernel.sendToBackground(backgroundMessage);
-
-        // 웹페이지로 성공 응답
-        const successResponse = this.kernel.createSuccessResponse(message.requestId, response);
-        this.kernel.sendToWebpage(successResponse);
-      } catch (error) {
-        // 웹페이지로 에러 응답
-        const errorResponse = this.kernel.createErrorResponse(message.requestId, error);
-        this.kernel.sendToWebpage(errorResponse);
-      }
-    } catch (error) {
-      const errorResponse = this.kernel.createErrorResponse(message.requestId, error);
-      this.kernel.sendToWebpage(errorResponse);
-    }
   }
 
   /**
@@ -135,19 +94,6 @@ export class ExternalMessageHandler {
     }
     if (!message.workflow.start || !Array.isArray(message.workflow.steps)) {
       throw new Error('Workflow must have start and steps');
-    }
-  }
-
-  /**
-   * 데이터 수집 요청 유효성 검증
-   */
-  private validateCollectDataMessage(message: CollectDataMessage): void {
-    if (!message.targetUrl) {
-      throw new Error('Target URL is required');
-    }
-
-    if (!message.block) {
-      throw new Error('Block is required');
     }
   }
 }

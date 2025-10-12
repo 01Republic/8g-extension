@@ -9,17 +9,6 @@ export interface ExecuteBlockMessage {
 }
 
 // Content Script -> Background Messages
-export interface CollectDataNewTabMessage {
-  type: 'COLLECT_DATA_NEW_TAB';
-  data: {
-    targetUrl: string;
-    block: Block | Block[]; // 단일 블록 또는 블록 배열 지원
-    closeTabAfterCollection?: boolean;
-    activateTab?: boolean;
-    blockDelay?: number; // 블록 간 지연 시간 (ms) - 기본값: 500ms
-  };
-}
-
 export interface CollectWorkflowNewTabMessage {
   type: 'COLLECT_WORKFLOW_NEW_TAB';
   data: {
@@ -48,8 +37,21 @@ export interface CdpKeypressMessage {
   };
 }
 
+export interface FetchApiMessage {
+  type: 'FETCH_API';
+  data: {
+    url: string;
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS';
+    headers: Record<string, string>;
+    body?: any;
+    timeout: number;
+    parseJson: boolean;
+    returnHeaders: boolean;
+  };
+}
+
 // Internal Message Union Types
-export type BackgroundMessage = CollectDataNewTabMessage | CollectWorkflowNewTabMessage | CdpClickMessage | CdpKeypressMessage;
+export type BackgroundMessage = CollectWorkflowNewTabMessage | CdpClickMessage | CdpKeypressMessage | FetchApiMessage;
 export type ContentMessage = ExecuteBlockMessage;
 
 // Response Types for Internal Communication
@@ -62,23 +64,9 @@ export interface ErrorResponse {
 // Block Execution Response (specifically for content script)
 export type BlockExecutionResponse = BlockResult | ErrorResponse;
 
-// Background Step Response
-export interface BackgroundStepResponse<T> {
-  success: true;
-  targetUrl: string;
-  tabId: number;
-  result: BlockResult<T> | BlockResult<T>[]; // 단일 또는 배열 결과
-  timestamp: string;
-  closeTabAfterCollection: boolean;
-}
-
 // Type guards for internal messages
 export function isExecuteBlockMessage(message: any): message is ExecuteBlockMessage {
   return message && message.isBlock === true && message.type === 'EXECUTE_BLOCK';
-}
-
-export function isCollectDataNewTabMessage(message: any): message is CollectDataNewTabMessage {
-  return message && message.type === 'COLLECT_DATA_NEW_TAB';
 }
 
 export function isCdpClickMessage(message: any): message is CdpClickMessage {
@@ -87,6 +75,10 @@ export function isCdpClickMessage(message: any): message is CdpClickMessage {
 
 export function isCdpKeypressMessage(message: any): message is CdpKeypressMessage {
   return message && message.type === 'CDP_KEYPRESS';
+}
+
+export function isFetchApiMessage(message: any): message is FetchApiMessage {
+  return message && message.type === 'FETCH_API';
 }
 
 export function isErrorResponse(response: any): response is ErrorResponse {

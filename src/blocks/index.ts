@@ -23,6 +23,7 @@ export type {
   ArraySchemaDefinition 
 } from './AiParseDataBlock';
 export { createSchema, createArraySchema, Schema } from './AiParseDataBlock';
+export type { FetchApiBlock, FetchApiResponse } from './FetchApiBlock';
 
 // Export all block schemas
 export { GetTextBlockSchema } from './GetTextBlock';
@@ -38,6 +39,7 @@ export { SaveAssetsBlockSchema } from './SaveAssetsBlock';
 export { GetElementDataBlockSchema } from './GetElementDataBlock';
 export { ScrollBlockSchema } from './ScrollBlock';
 export { AiParseDataBlockSchema } from './AiParseDataBlock';
+export { FetchApiBlockSchema } from './FetchApiBlock';
 
 // Import block handlers and types
 import { handlerGetText, GetTextBlock, validateGetTextBlock } from './GetTextBlock';
@@ -78,6 +80,7 @@ import {
 } from './GetElementDataBlock';
 import { handlerScroll, ScrollBlock, validateScrollBlock } from './ScrollBlock';
 import { handlerAiParseData, AiParseDataBlock, validateAiParseDataBlock } from './AiParseDataBlock';
+import { handlerFetchApi, FetchApiBlock, validateFetchApiBlock } from './FetchApiBlock';
 import { Block, BlockResult } from './types';
 import { GetTextBlockSchema } from './GetTextBlock';
 import { GetAttributeValueBlockSchema } from './GetAttributeValueBlock';
@@ -92,6 +95,7 @@ import { SaveAssetsBlockSchema } from './SaveAssetsBlock';
 import { GetElementDataBlockSchema } from './GetElementDataBlock';
 import { ScrollBlockSchema } from './ScrollBlock';
 import { AiParseDataBlockSchema } from './AiParseDataBlock';
+import { FetchApiBlockSchema } from './FetchApiBlock';
 
 // All block schemas mapped by block name
 export const AllBlockSchemas = {
@@ -108,6 +112,7 @@ export const AllBlockSchemas = {
   'get-element-data': GetElementDataBlockSchema,
   'scroll': ScrollBlockSchema,
   'ai-parse-data': AiParseDataBlockSchema,
+  'fetch-api': FetchApiBlockSchema,
 } as const;
 
 export class BlockHandler {
@@ -129,10 +134,11 @@ export class BlockHandler {
   ): Promise<BlockResult<ElementData | ElementData[]>>;
   static executeBlock(block: ScrollBlock): Promise<BlockResult<boolean>>;
   static executeBlock(block: AiParseDataBlock): Promise<BlockResult<any>>;
+  static executeBlock(block: FetchApiBlock): Promise<BlockResult<any>>;
   static executeBlock(block: Block): Promise<BlockResult>;
 
   // Implementation
-  static async executeBlock(block: Block | AiParseDataBlock | KeypressBlock | WaitBlock): Promise<BlockResult> {
+  static async executeBlock(block: Block | AiParseDataBlock | FetchApiBlock | KeypressBlock | WaitBlock): Promise<BlockResult> {
     try {
       switch (block.name) {
         case 'get-text': {
@@ -198,6 +204,11 @@ export class BlockHandler {
         case 'ai-parse-data': {
           const validatedBlock = validateAiParseDataBlock(block);
           return await handlerAiParseData(validatedBlock);
+        }
+
+        case 'fetch-api': {
+          const validatedBlock = validateFetchApiBlock(block);
+          return await handlerFetchApi(validatedBlock);
         }
 
         default:
