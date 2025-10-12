@@ -2,14 +2,48 @@ import z from 'zod';
 import { Block, BlockResult } from './types';
 
 /**
- * 스키마 필드 정의
+ * 스키마 필드 정의 (Union 타입)
  */
-export interface SchemaField {
-  type: 'string' | 'number' | 'boolean' | 'array' | 'object';
-  items?: SchemaField; // array인 경우
-  shape?: Record<string, SchemaField>; // object인 경우
+export interface StringSchemaField {
+  type: 'string';
   optional?: boolean;
 }
+
+export interface NumberSchemaField {
+  type: 'number';
+  optional?: boolean;
+}
+
+export interface BooleanSchemaField {
+  type: 'boolean';
+  optional?: boolean;
+}
+
+export interface ArraySchemaField {
+  type: 'array';
+  items: SchemaField;
+  optional?: boolean;
+}
+
+export interface ObjectSchemaField {
+  type: 'object';
+  shape: Record<string, SchemaField>;
+  optional?: boolean;
+}
+
+export interface EnumSchemaField {
+  type: 'enum';
+  values: readonly (string | number)[];
+  optional?: boolean;
+}
+
+export type SchemaField =
+  | StringSchemaField
+  | NumberSchemaField
+  | BooleanSchemaField
+  | ArraySchemaField
+  | ObjectSchemaField
+  | EnumSchemaField;
 
 /**
  * 스키마 정의 (JSON 형식)
@@ -128,7 +162,15 @@ export async function handlerAiParseData(data: AiParseDataBlock): Promise<BlockR
  *   memberName: { type: 'string' },
  *   email: { type: 'string' },
  *   joinDate: { type: 'string' },
- *   age: { type: 'number', optional: true }
+ *   age: { type: 'number', optional: true },
+ *   plan: { type: 'enum', values: ['MONTHLY', 'YEARLY'] }
+ * });
+ * 
+ * // Schema 헬퍼 사용
+ * const schema2 = createSchema({
+ *   name: Schema.string(),
+ *   plan: Schema.enum(['MONTHLY', 'YEARLY'] as const),
+ *   status: Schema.enum([1, 2, 3] as const, true) // optional
  * });
  * 
  * // 객체 배열
@@ -163,5 +205,6 @@ export const Schema = {
   boolean: (optional = false): SchemaField => ({ type: 'boolean', optional }),
   array: (items: SchemaField, optional = false): SchemaField => ({ type: 'array', items, optional }),
   object: (shape: Record<string, SchemaField>, optional = false): SchemaField => ({ type: 'object', shape, optional }),
+  enum: <T extends readonly (string | number)[]>(values: T, optional = false): SchemaField => ({ type: 'enum', values, optional }),
 };
 
