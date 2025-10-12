@@ -173,10 +173,23 @@ export class WorkflowRunner {
     return obj;
   }
 
-  private interpolate(template: string, context: any): string {
+  private interpolate(template: string, context: any): any {
+    // 전체 문자열이 단일 바인딩 표현식인 경우 (예: "${steps.prev.result}")
+    // 원본 값을 그대로 반환 (배열/객체 유지)
+    const singleBindingMatch = /^\$\{([^}]+)\}$/.exec(template);
+    if (singleBindingMatch) {
+      const v = this.getByPath(context, singleBindingMatch[1].trim());
+      return v;
+    }
+
+    // 문자열 템플릿인 경우 (예: "Hello ${name}!")
+    // 문자열로 변환하여 반환
     return template.replace(/\$\{([^}]+)\}/g, (_m, p1) => {
       const v = this.getByPath(context, p1.trim());
-      return v == null ? '' : String(v);
+      if (v == null) return '';
+      // 객체/배열은 JSON.stringify로 변환
+      if (typeof v === 'object') return JSON.stringify(v);
+      return String(v);
     });
   }
 
