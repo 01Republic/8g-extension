@@ -50,8 +50,16 @@ export interface FetchApiMessage {
   };
 }
 
+export interface DataExtractMessage {
+  type: 'DATA_EXTRACT';
+  data: {
+    code: string;
+    inputData?: any;
+  };
+}
+
 // Internal Message Union Types
-export type BackgroundMessage = CollectWorkflowNewTabMessage | CdpClickMessage | CdpKeypressMessage | FetchApiMessage;
+export type BackgroundMessage = CollectWorkflowNewTabMessage | CdpClickMessage | CdpKeypressMessage | FetchApiMessage | DataExtractMessage;
 export type ContentMessage = ExecuteBlockMessage;
 
 // Response Types for Internal Communication
@@ -79,6 +87,10 @@ export function isCdpKeypressMessage(message: any): message is CdpKeypressMessag
 
 export function isFetchApiMessage(message: any): message is FetchApiMessage {
   return message && message.type === 'FETCH_API';
+}
+
+export function isDataExtractMessage(message: any): message is DataExtractMessage {
+  return message && message.type === 'DATA_EXTRACT';
 }
 
 export function isErrorResponse(response: any): response is ErrorResponse {

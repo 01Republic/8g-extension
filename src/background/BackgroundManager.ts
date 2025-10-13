@@ -5,27 +5,32 @@ import {
   CdpClickMessage,
   CdpKeypressMessage,
   FetchApiMessage,
+  DataExtractMessage,
   isCdpClickMessage,
   isCdpKeypressMessage,
   isFetchApiMessage,
+  isDataExtractMessage,
   ErrorResponse,
 } from '@/types/internal-messages';
 import { AiParsingService } from './AiParsingService';
 import { CdpService } from './CdpService';
 import { WorkflowService } from './WorkflowService';
 import { ApiService } from './ApiService';
+import { DataExtractService } from './DataExtractService';
 
 export class BackgroundManager {
   private aiParsingService: AiParsingService;
   private cdpService: CdpService;
   private workflowService: WorkflowService;
   private apiService: ApiService;
+  private dataExtractService: DataExtractService;
 
   constructor() {
     this.aiParsingService = new AiParsingService();
     this.cdpService = new CdpService();
     this.workflowService = new WorkflowService(new TabManager());
     this.apiService = new ApiService();
+    this.dataExtractService = new DataExtractService();
   }
 
   initHandler() {
@@ -65,6 +70,11 @@ export class BackgroundManager {
 
       if ((message as any).type === 'FETCH_API' && isFetchApiMessage(message)) {
         this.handleAsyncFetchApi(message.data, sendResponse);
+        return true;
+      }
+
+      if ((message as any).type === 'DATA_EXTRACT' && isDataExtractMessage(message)) {
+        this.handleAsyncDataExtract(message.data, sendResponse);
         return true;
       }
 
@@ -111,5 +121,13 @@ export class BackgroundManager {
     sendResponse: (response: any) => void
   ) {
     await this.apiService.handleRequest(requestData, sendResponse);
+  }
+
+  // 데이터 추출 요청 처리
+  private async handleAsyncDataExtract(
+    requestData: DataExtractMessage['data'],
+    sendResponse: (response: any) => void
+  ) {
+    await this.dataExtractService.handleRequest(requestData, sendResponse);
   }
 }
