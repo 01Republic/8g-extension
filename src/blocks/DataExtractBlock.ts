@@ -19,28 +19,15 @@ export function validateDataExtractBlock(data: unknown): DataExtractBlock {
 
 export async function handlerDataExtract(data: DataExtractBlock): Promise<BlockResult<any>> {
   try {
-    console.log('[DataExtractBlock] Sending data extract request to background');
+    console.log('[DataExtractBlock] Executing data extraction in content script');
 
-    // Background로 데이터 추출 요청 전송
-    const response = await chrome.runtime.sendMessage({
-      type: 'DATA_EXTRACT',
-      data: {
-        code: data.code,
-        inputData: data.inputData,
-      },
-    });
-
-    if (response.$isError) {
-      return {
-        hasError: true,
-        message: response.message || 'Data extraction failed',
-        data: undefined,
-      };
-    }
+    // Content Script에서 직접 실행 (CSP 제약 없음)
+    const extractFunction = new Function('data', data.code);
+    const result = extractFunction(data.inputData);
 
     console.log('[DataExtractBlock] Data extraction successful');
     return {
-      data: response.data,
+      data: result,
     };
   } catch (error) {
     console.error('[DataExtractBlock] Data extraction error:', error);
