@@ -19,11 +19,57 @@ export function validateDataExtractBlock(data: unknown): DataExtractBlock {
 
 export async function handlerDataExtract(data: DataExtractBlock): Promise<BlockResult<any>> {
   try {
-    console.log('[DataExtractBlock] Executing data extraction in content script');
+    console.log('[DataExtractBlock] Executing data extraction in page context');
 
-    // Content Script에서 직접 실행 (CSP 제약 없음)
-    const extractFunction = new Function('data', data.code);
-    const result = extractFunction(data.inputData);
+    // 웹페이지 컨텍스트에 script를 inject하여 실행 (CSP 제약 없음)
+    const result = await new Promise((resolve, reject) => {
+      const scriptId = `data-extract-${Date.now()}-${Math.random()}`;
+      
+      // 결과를 받을 이벤트 리스너 등록
+      const messageHandler = (event: MessageEvent) => {
+        if (event.data?.type === 'DATA_EXTRACT_RESULT' && event.data?.scriptId === scriptId) {
+          window.removeEventListener('message', messageHandler);
+          if (event.data.error) {
+            reject(new Error(event.data.error));
+          } else {
+            resolve(event.data.result);
+          }
+        }
+      };
+      window.addEventListener('message', messageHandler);
+
+      // 웹페이지 컨텍스트에서 실행될 script 생성
+      const script = document.createElement('script');
+      script.textContent = `
+        (function() {
+          try {
+            const data = ${JSON.stringify(data.inputData)};
+            const extractFunction = new Function('data', ${JSON.stringify(data.code)});
+            const result = extractFunction(data);
+            window.postMessage({
+              type: 'DATA_EXTRACT_RESULT',
+              scriptId: '${scriptId}',
+              result: result
+            }, '*');
+          } catch (error) {
+            window.postMessage({
+              type: 'DATA_EXTRACT_RESULT',
+              scriptId: '${scriptId}',
+              error: error.message
+            }, '*');
+          }
+        })();
+      `;
+      
+      document.documentElement.appendChild(script);
+      script.remove();
+
+      // 타임아웃 설정 (10초)
+      setTimeout(() => {
+        window.removeEventListener('message', messageHandler);
+        reject(new Error('Data extraction timeout'));
+      }, 10000);
+    });
 
     console.log('[DataExtractBlock] Data extraction successful');
     return {
