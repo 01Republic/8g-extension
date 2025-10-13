@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notion Workspace Data Crawler</title>
+</head>
+<body>
+    <h1>Notion 워크스페이스 데이터 크롤러</h1>
+    <p>이 워크플로우는 Notion의 워크스페이스 데이터를 가져오는 API를 호출하고 AI로 파싱합니다.</p>
+
+    <script type="module">
+        // 워크플로우 정의
+        const notionWorkflow = {
+            name: "Notion Workspace Data Analysis",
+            description: "Notion 워크스페이스 정보, 멤버 정보, 빌링 정보를 수집하고 AI로 분석",
+            blocks: [
+                // 1. Notion 로그인 페이지로 이동
+                {
+                    type: "navigate",
+                    id: "navigate-notion",
+                    config: {
+                        url: "https://www.notion.so/login"
+                    }
+                },
+                
+                // 2. 로그인 대기 (수동으로 로그인)
+                {
+                    type: "wait",
+                    id: "wait-login",
+                    config: {
+                        duration: 10000,
+                        message: "Notion에 로그인하세요"
+                    }
+                },
+
+                // 3. 워크스페이스 초기 데이터 가져오기
+                {
+                    type: "fetch-api",
+                    id: "fetch-workspace-initial",
+                    config: {
+                        url: "https://www.notion.so/api/v3/getSpacesInitial",
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({})
+                    },
+                    output: "workspaceData"
+                },
+
+                // 4. 팀 정보 가져오기
+                {
+                    type: "fetch-api",
+                    id: "fetch-teams",
+                    config: {
+                        url: "https://www.notion.so/api/v3/getTeamsV2",
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({})
+                    },
+                    output: "teamsData"
+                },
+
+                // 5. 멤버 정보 가져오기
+                {
+                    type: "fetch-api",
+                    id: "fetch-members",
+                    config: {
+                        url: "https://www.notion.so/api/v3/getVisibleUsers",
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({})
+                    },
+                    output: "membersData"
+                },
+
+                // 6. 구독/빌링 정보 가져오기
+                {
+                    type: "fetch-api",
+                    id: "fetch-subscription",
+                    config: {
+                        url: "https://www.notion.so/api/v3/getSubscriptionData",
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({})
+                    },
+                    output: "subscriptionData"
+                },
+
+                // 7. 빌링 히스토리 가져오기
+                {
+                    type: "fetch-api",
+                    id: "fetch-billing-history",
+                    config: {
+                        url: "https://www.notion.so/api/v3/getBillingHistory",
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({})
+                    },
+                    output: "billingHistory"
+                },
+
+                // 8. 모든 데이터를 통합
+                {
+                    type: "data-extract",
+                    id: "combine-data",
+                    config: {
+                        selector: "body",
+                        extractType: "custom",
+                        customScript: `
+                            return {
+                                workspace: window.__workspaceData__,
+                                teams: window.__teamsData__,
+                                members: window.__membersData__,
+                                subscription: window.__subscriptionData__,
+                                billingHistory: window.__billingHistory__
+                            };
+                        `
+                    },
+                    output: "combinedData"
+                },
+
+                // 9. AI로 데이터 파싱 및 분석
+                {
+                    type: "ai-parse-data",
+                    id: "ai-parse-notion-data",
+                    config: {
+                        data: "{{combinedData}}",
+                        prompt: `
+다음은 Notion 워크스페이스에서 수집한 데이터입니다.
+이 데이터를 분석하여 다음 정보를 추출하고 구조화해주세요:
+
+1. 워크스페이스 정보:
+   - 워크스페이스 이름
+   - 워크스페이스 ID
+   - 생성 날짜
+   - 소유자 정보
+
+2. 팀 정보:
+   - 팀 이름 목록
+   - 각 팀의 멤버 수
+   - 팀 권한 설정
+
+3. 멤버 정보:
+   - 전체 멤버 수
+   - 각 멤버의 이름, 이메일, 역할
+   - 게스트 멤버 수
+   - 활성/비활성 멤버 구분
+
+4. 구독/빌링 정보:
+   - 현재 플랜 (Free/Plus/Business/Enterprise)
+   - 월간 비용
+   - 결제 주기
+   - 유료 시트 수
+   - 다음 결제일
+
+5. 빌링 히스토리:
+   - 최근 3개월 결제 내역
+   - 각 결제의 날짜, 금액, 상태
+
+JSON 형식으로 구조화된 데이터를 반환해주세요.
+`,
+                        outputFormat: "json"
+                    },
+                    output: "parsedData"
+                },
+
+                // 10. 결과를 콘솔에 출력
+                {
+                    type: "custom-script",
+                    id: "log-result",
+                    config: {
+                        script: `
+                            console.log("=== Notion 워크스페이스 분석 결과 ===");
+                            console.log(JSON.stringify({{parsedData}}, null, 2));
+                            
+                            // 요약 정보 출력
+                            const data = {{parsedData}};
+                            console.log("\\n워크스페이스:", data.workspace?.name);
+                            console.log("전체 멤버 수:", data.members?.totalCount);
+                            console.log("현재 플랜:", data.subscription?.plan);
+                            console.log("월간 비용:", data.subscription?.monthlyCost);
+                        `
+                    }
+                }
+            ]
+        };
+
+        // 워크플로우 실행 로직
+        async function runWorkflow() {
+            console.log("Notion 워크플로우 시작...");
+            console.log(JSON.stringify(notionWorkflow, null, 2));
+            
+            // 실제 실행은 8g-extension을 통해 이루어집니다
+            // 이 HTML 파일은 워크플로우 정의만 포함합니다
+        }
+
+        // 페이지 로드 시 실행
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', runWorkflow);
+        } else {
+            runWorkflow();
+        }
+    </script>
+
+    <h2>워크플로우 단계:</h2>
+    <ol>
+        <li><strong>Notion 로그인</strong> - https://www.notion.so/login 접속</li>
+        <li><strong>로그인 대기</strong> - 사용자가 수동으로 로그인 (10초 대기)</li>
+        <li><strong>워크스페이스 데이터 수집</strong> - POST /api/v3/getSpacesInitial</li>
+        <li><strong>팀 정보 수집</strong> - POST /api/v3/getTeamsV2</li>
+        <li><strong>멤버 정보 수집</strong> - POST /api/v3/getVisibleUsers</li>
+        <li><strong>구독 정보 수집</strong> - POST /api/v3/getSubscriptionData</li>
+        <li><strong>빌링 히스토리 수집</strong> - POST /api/v3/getBillingHistory</li>
+        <li><strong>데이터 통합</strong> - 모든 API 응답을 하나로 합침</li>
+        <li><strong>AI 파싱</strong> - AI를 사용해 데이터를 구조화하고 분석</li>
+        <li><strong>결과 출력</strong> - 콘솔에 분석 결과 표시</li>
+    </ol>
+
+    <h2>예상 출력 형식:</h2>
+    <pre>
+{
+  "workspace": {
+    "name": "01Republic [스코디]",
+    "id": "54e11296-3b17-4f3e-9fe7-3bb4afe717a3",
+    "createdAt": "2023-xx-xx",
+    "owner": {
+      "name": "김용현",
+      "email": "fred@01republic.io"
+    }
+  },
+  "teams": [
+    {
+      "name": "전체",
+      "memberCount": 6,
+      "guestCount": 25
+    }
+  ],
+  "members": {
+    "totalCount": 6,
+    "activeMembers": [
+      {
+        "name": "김규리 / diana",
+        "email": "diana@01republic.io",
+        "role": "Member"
+      },
+      {
+        "name": "김용현",
+        "email": "fred@01republic.io",
+        "role": "Workspace owner"
+      },
+      {
+        "name": "보람 김",
+        "email": "lucy@01republic.io",
+        "role": "Workspace owner"
+      },
+      {
+        "name": "선진 김",
+        "email": "kerry@01republic.io",
+        "role": "Workspace owner"
+      },
+      {
+        "name": "양형우",
+        "email": "leo@01republic.io",
+        "role": "Member"
+      },
+      {
+        "name": "윤미주",
+        "email": "holly@01republic.io",
+        "role": "Member"
+      }
+    ]
+  },
+  "subscription": {
+    "plan": "Plus",
+    "monthlyCost": "$84",
+    "billingPeriod": "Monthly",
+    "paidSeats": 7,
+    "nextBillingDate": "2025-10-28"
+  },
+  "billingHistory": [
+    {
+      "date": "2025-09-28",
+      "amount": "$84",
+      "status": "Paid"
+    }
+  ]
+}
+    </pre>
+
+    <h2>사용 방법:</h2>
+    <p>이 워크플로우를 8g-extension에서 실행하면:</p>
+    <ul>
+        <li>✅ Notion API를 자동으로 호출하여 데이터 수집</li>
+        <li>✅ AI가 수집된 데이터를 분석하여 구조화</li>
+        <li>✅ 워크스페이스 현황을 한눈에 파악 가능</li>
+        <li>✅ 추가 분석이나 리포트 생성에 활용 가능</li>
+    </ul>
+</body>
+</html>
+
