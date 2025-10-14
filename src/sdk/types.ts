@@ -30,11 +30,26 @@ export interface Binding {
   default?: BindingValue;
 }
 
+export type ForEachConfig = {
+  forEach: string;  // 배열 경로 (예: '$.steps.getIds.result.data')
+  continueOnError?: boolean;  // 에러 발생해도 계속 진행
+  delayBetween?: number;  // 반복 사이 대기 시간 (ms)
+};
+
+export type LoopConfig = {
+  count: number | string;  // 반복 횟수 (숫자 또는 바인딩 경로)
+  continueOnError?: boolean;  // 에러 발생해도 계속 진행
+  delayBetween?: number;  // 반복 사이 대기 시간 (ms)
+};
+
+export type RepeatConfig = ForEachConfig | LoopConfig;
+
 export interface WorkflowStep {
   id: string;
   title?: string;
   when?: Condition;
   block?: Block; // BlockBase 호환. 바인딩은 런타임에서 해석
+  repeat?: RepeatConfig;  // 반복 설정 (forEach 또는 count)
   next?: string;
   onSuccess?: string;
   onFailure?: string;

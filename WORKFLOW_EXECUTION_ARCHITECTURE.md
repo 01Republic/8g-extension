@@ -103,6 +103,117 @@ const result = await client.collectWorkflow({
 });
 ```
 
+### 반복 실행 (forEach / loop)
+
+**배열 기반 반복 (forEach)**와 **횟수 기반 반복 (count)**을 지원합니다.
+
+#### forEach - 배열 각 항목마다 실행
+
+```ts
+const workflow = {
+  version: '1.0',
+  start: 'getProductIds',
+  steps: [
+    {
+      id: 'getProductIds',
+      block: {
+        name: 'get-element-data',
+        selector: '.product-item',
+        findBy: 'cssSelector',
+        option: { multiple: true },
+        extractors: [
+          { type: 'attribute', attribute: 'data-id', saveAs: 'id' }
+        ]
+      },
+      next: 'fetchEachProduct'
+    },
+    {
+      id: 'fetchEachProduct',
+      repeat: {
+        forEach: '$.steps.getProductIds.result.data',  // 배열 경로
+        continueOnError: true,   // 하나 실패해도 계속
+        delayBetween: 200        // 각 반복 사이 200ms 대기
+      },
+      block: {
+        name: 'fetch-api',
+        // forEach 반복 시 $.forEach.item, $.forEach.index 접근 가능
+        url: { template: 'https://api.example.com/products/${$.forEach.item.id}' },
+        method: 'GET',
+        parseJson: true
+      }
+    }
+  ]
+};
+```
+
+**forEach 컨텍스트 변수:**
+- `$.forEach.item` - 현재 배열 항목
+- `$.forEach.index` - 현재 인덱스 (0부터 시작)
+- `$.forEach.total` - 전체 배열 길이
+
+**동작:**
+- 배열이면 각 항목마다 실행
+- 단일 값이면 1번 실행
+- null/undefined면 스킵
+- 결과는 배열로 수집: `$.steps.fetchEachProduct.result.data = [result1, result2, ...]`
+
+#### count - 고정 횟수 반복
+
+```ts
+const workflow = {
+  version: '1.0',
+  start: 'scrollMultipleTimes',
+  steps: [
+    {
+      id: 'scrollMultipleTimes',
+      repeat: {
+        count: 10,           // 10번 반복
+        delayBetween: 500    // 각 스크롤 사이 500ms 대기
+      },
+      block: {
+        name: 'scroll',
+        scrollType: 'byDistance',
+        distance: 500
+      },
+      next: 'collectData'
+    },
+    {
+      id: 'collectData',
+      block: {
+        name: 'get-text',
+        selector: '.loaded-items',
+        findBy: 'cssSelector',
+        option: { multiple: true }
+      }
+    }
+  ]
+};
+```
+
+**loop 컨텍스트 변수:**
+- `$.loop.index` - 현재 반복 인덱스 (0부터 시작)
+- `$.loop.count` - 전체 반복 횟수
+
+**동적 count 값:**
+```ts
+{
+  id: 'dynamicRepeat',
+  repeat: {
+    count: '$.vars.pageCount'  // 변수나 이전 스텝 결과로 결정
+  },
+  block: { /* ... */ }
+}
+```
+
+#### repeat 옵션
+
+- `forEach?: string` - 반복할 배열의 경로 (예: '$.steps.stepId.result.data')
+- `count?: number | string` - 반복 횟수 (숫자 또는 바인딩 경로)
+- `continueOnError?: boolean` - true면 에러 발생해도 다음 항목 계속 실행 (기본값: false)
+- `delayBetween?: number` - 각 반복 사이 대기 시간 (ms)
+
+**주의:** `forEach`와 `count`는 둘 중 하나만 사용해야 합니다.
+
 ### 워크플로우 실행(분기/조건/바인딩/재시도/타임아웃)
 
 ```ts
@@ -222,6 +333,9 @@ const result = await client.collectWorkflow({
 - 애니메이션 대기: `wait` 블록으로 충분한 시간 확보
 - 외부 API 연동: `fetch-api` 블록으로 CORS 제약 없이 API 호출 (웹페이지 데이터를 외부로 전송 가능)
 - 복잡한 데이터: `ai-parse-data`로 비구조화 데이터를 구조화된 JSON으로 변환
+- **배열 반복**: `repeat: { forEach }}`로 배열 각 항목 처리 (예: API 호출 목록, 상품 목록)
+- **고정 반복**: `repeat: { count }}`로 같은 동작 N번 실행 (예: 페이징, 스크롤)
+- 반복 중 에러 처리: `continueOnError: true`로 일부 실패해도 계속 진행
 
 ### 워크플로우 JSON 빠른 레퍼런스
 
@@ -236,6 +350,11 @@ const result = await client.collectWorkflow({
   - when?: 실행 전 조건
     - 문자열 표현식: `{ expr: "$.steps.prev.result.data == 'OK'" }`
     - JSON 조건식: `{ equals: { left: "$.steps.prev.result.data", right: 'OK' } }`
+  - repeat?: 반복 설정 `{ forEach?: string, count?: number|string, continueOnError?: boolean, delayBetween?: number }`
+    - forEach: 배열 경로 (배열 각 항목마다 실행, `$.forEach.item`/`$.forEach.index`로 접근)
+    - count: 반복 횟수 (고정 횟수만큼 실행, `$.loop.index`로 접근)
+    - continueOnError: 에러 발생해도 계속 (기본값: false)
+    - delayBetween: 반복 사이 대기시간 (ms)
   - switch?: 분기 배열 `[{ when, next }]`
   - onSuccess?/onFailure?/next?: 다음 스텝 id
   - timeoutMs?: 스텝별 타임아웃(ms)

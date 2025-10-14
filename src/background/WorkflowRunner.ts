@@ -24,24 +24,32 @@ export class WorkflowRunner {
       if (!shouldRun) {
         skipped = true;
       } else if (step.block) {
-        const maxAttempts = Math.max(1, step.retry?.attempts ?? 1);
-        const baseDelay = step.retry?.delayMs ?? 0;
-        const backoff = step.retry?.backoffFactor ?? 1;
-        while (attempts < maxAttempts) {
-          attempts++;
-          try {
-            const boundBlock = this.resolveBindings(step.block, context);
-            result = await this.runWithTimeout(() => this.tabManager.executeBlock(boundBlock as any, tabId), step.timeoutMs);
-            success = !result?.hasError;
-            message = result?.message || '';
-            if (success) break;
-          } catch (e: any) {
-            success = false;
-            message = e?.message || 'Workflow step error';
-          }
-          if (attempts < maxAttempts) {
-            const wait = baseDelay * Math.pow(backoff, attempts - 1);
-            if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+        // repeat 설정이 있으면 반복 실행
+        if (step.repeat) {
+          result = await this.executeWithRepeat(step, context, tabId);
+          success = !result?.hasError;
+          message = result?.message || '';
+        } else {
+          // 기존 단일 실행 로직
+          const maxAttempts = Math.max(1, step.retry?.attempts ?? 1);
+          const baseDelay = step.retry?.delayMs ?? 0;
+          const backoff = step.retry?.backoffFactor ?? 1;
+          while (attempts < maxAttempts) {
+            attempts++;
+            try {
+              const boundBlock = this.resolveBindings(step.block, context);
+              result = await this.runWithTimeout(() => this.tabManager.executeBlock(boundBlock as any, tabId), step.timeoutMs);
+              success = !result?.hasError;
+              message = result?.message || '';
+              if (success) break;
+            } catch (e: any) {
+              success = false;
+              message = e?.message || 'Workflow step error';
+            }
+            if (attempts < maxAttempts) {
+              const wait = baseDelay * Math.pow(backoff, attempts - 1);
+              if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+            }
           }
         }
       } else {
@@ -204,6 +212,138 @@ export class WorkflowRunner {
       const t = setTimeout(() => reject(new Error('Step timeout')), timeoutMs);
       fn().then((v) => { clearTimeout(t); resolve(v); }).catch((e) => { clearTimeout(t); reject(e); });
     });
+  }
+
+  private async executeWithRepeat(step: any, context: any, tabId: number): Promise<any> {
+    const repeatConfig = step.repeat;
+    const results: any[] = [];
+    const errors: any[] = [];
+    let items: any[] = [];
+    let isForEach = false;
+
+    // forEach 또는 count 중 하나 결정
+    if (repeatConfig.forEach) {
+      isForEach = true;
+      const forEachValue = this.getByPath(context, repeatConfig.forEach);
+      
+      // 배열이면 그대로, 아니면 단일 값으로 처리
+      if (Array.isArray(forEachValue)) {
+        items = forEachValue;
+      } else if (forEachValue != null) {
+        items = [forEachValue];  // 단일 값은 배열로 감싸서 1번 실행
+      } else {
+        // null/undefined면 빈 배열 (스킵)
+        items = [];
+      }
+    } else if (repeatConfig.count != null) {
+      // count 처리
+      let count: number;
+      if (typeof repeatConfig.count === 'string') {
+        count = this.getByPath(context, repeatConfig.count) ?? 0;
+      } else {
+        count = repeatConfig.count;
+      }
+      // count만큼 반복하기 위해 배열 생성
+      items = Array.from({ length: Math.max(0, count) }, (_, i) => i);
+    } else {
+      // repeat 설정이 있지만 forEach도 count도 없으면 에러
+      return {
+        hasError: true,
+        message: 'repeat requires either forEach or count',
+        data: null
+      };
+    }
+
+    // 반복 실행
+    for (let index = 0; index < items.length; index++) {
+      const item = items[index];
+      
+      // context에 현재 반복 정보 추가
+      if (isForEach) {
+        context.forEach = { item, index, total: items.length };
+      } else {
+        context.loop = { index, count: items.length };
+      }
+
+      try {
+        // retry 로직 포함 실행
+        const maxAttempts = Math.max(1, step.retry?.attempts ?? 1);
+        const baseDelay = step.retry?.delayMs ?? 0;
+        const backoff = step.retry?.backoffFactor ?? 1;
+        let lastResult: any = null;
+        let success = false;
+
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+          try {
+            const boundBlock = this.resolveBindings(step.block, context);
+            lastResult = await this.runWithTimeout(
+              () => this.tabManager.executeBlock(boundBlock as any, tabId),
+              step.timeoutMs
+            );
+            success = !lastResult?.hasError;
+            
+            if (success) break;
+          } catch (e: any) {
+            lastResult = { hasError: true, message: e?.message || 'Block execution error' };
+          }
+
+          // 재시도 전 대기
+          if (attempt < maxAttempts - 1) {
+            const wait = baseDelay * Math.pow(backoff, attempt);
+            if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+          }
+        }
+
+        if (success) {
+          results.push(lastResult);
+        } else {
+          errors.push({ index, item, error: lastResult });
+          if (!repeatConfig.continueOnError) {
+            // 에러 발생 시 중단
+            return {
+              hasError: true,
+              message: `Repeat failed at index ${index}: ${lastResult?.message || 'Unknown error'}`,
+              data: { results, errors, stoppedAt: index }
+            };
+          } else {
+            // continueOnError: true면 null로 결과 추가하고 계속
+            results.push(null);
+          }
+        }
+      } catch (e: any) {
+        errors.push({ index, item, error: e.message });
+        if (!repeatConfig.continueOnError) {
+          return {
+            hasError: true,
+            message: `Repeat failed at index ${index}: ${e.message}`,
+            data: { results, errors, stoppedAt: index }
+          };
+        } else {
+          results.push(null);
+        }
+      }
+
+      // 반복 사이 대기
+      if (repeatConfig.delayBetween && index < items.length - 1) {
+        await new Promise((r) => setTimeout(r, repeatConfig.delayBetween));
+      }
+    }
+
+    // context에서 반복 정보 제거
+    if (isForEach) {
+      delete context.forEach;
+    } else {
+      delete context.loop;
+    }
+
+    // 모든 반복 완료
+    return {
+      hasError: errors.length > 0 && !repeatConfig.continueOnError,
+      message: errors.length > 0 
+        ? `Completed with ${errors.length} error(s) out of ${items.length}` 
+        : `Completed ${items.length} iteration(s)`,
+      data: results
+    };
   }
 }
 
