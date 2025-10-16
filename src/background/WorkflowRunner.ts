@@ -1,6 +1,7 @@
 import { TabManager } from './TabManager';
 import type { Workflow } from '@/sdk/types';
 
+// 코드 리팩토링 필요 - 너무 커짐
 export class WorkflowRunner {
   constructor(private tabManager: TabManager) {}
 
@@ -183,10 +184,17 @@ export class WorkflowRunner {
 
   private interpolate(template: string, context: any): any {
     // 전체 문자열이 단일 바인딩 표현식인 경우 (예: "${steps.prev.result}")
-    // 원본 값을 그대로 반환 (배열/객체 유지)
+    // 전체 문자열이 단일 바인딩 표현식인 경우
+    // 1. "${$.path}" 형태
     const singleBindingMatch = /^\$\{([^}]+)\}$/.exec(template);
     if (singleBindingMatch) {
       const v = this.getByPath(context, singleBindingMatch[1].trim());
+      return v;
+    }
+    
+    // 2. "$.path" 형태 (템플릿 없이 경로만)
+    if (/^\$\./.test(template)) {
+      const v = this.getByPath(context, template);
       return v;
     }
 
