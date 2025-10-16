@@ -7,6 +7,9 @@ import manifest from './manifest.config.js';
 import { name, version } from './package.json';
 
 export default defineConfig({
+  build: {
+    emptyOutDir: false, // SDK 디렉토리를 보존
+  },
   resolve: {
     alias: {
       '@': `${path.resolve(__dirname, 'src')}`,

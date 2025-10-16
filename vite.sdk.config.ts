@@ -6,7 +6,7 @@ export default defineConfig({
   build: {
     lib: {
       entry: resolve(__dirname, 'src/sdk/index.ts'),
-      name: '8g-extension',
+      name: 'scordi-extension',
       fileName: () => 'index.js',
       formats: ['es'],
     },
@@ -19,7 +19,7 @@ export default defineConfig({
         },
       },
     },
-    outDir: 'dist',
+    outDir: 'dist/sdk',
   },
   resolve: {
     alias: {

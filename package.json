@@ -1,14 +1,14 @@
 {
-  "name": "8g-extension",
+  "name": "scordi-extension",
   "type": "module",
   "version": "1.14.0",
   "private": false,
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
+  "main": "./dist/sdk/index.js",
+  "module": "./dist/sdk/index.js",
   "types": "./dist/sdk/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
+      "import": "./dist/sdk/index.js",
       "types": "./dist/sdk/index.d.ts"
     }
   },
@@ -18,7 +18,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build --config vite.sdk.config.ts && tsc -p tsconfig.sdk.json",
-    "build:extension": "tsc -b && vite build --config vite.config.ts",
+    "build:extension": "npm run build && tsc -b && vite build --config vite.config.ts",
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
