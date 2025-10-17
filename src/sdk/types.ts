@@ -17,14 +17,14 @@ export type JsonCondition =
   | { or: JsonCondition[] }
   | { not: JsonCondition };
 
-export interface Condition {
+export class Condition {
   expr?: ExpressionString;
   json?: JsonCondition;
 }
 
 export type BindingValue = string | number | boolean | null | Record<string, any> | any[];
 
-export interface Binding {
+export class Binding {
   template?: string;
   valueFrom?: string;
   default?: BindingValue;
@@ -44,12 +44,12 @@ export type LoopConfig = {
 
 export type RepeatConfig = ForEachConfig | LoopConfig;
 
-export interface WorkflowStep {
-  id: string;
+export class WorkflowStep {
+  id!: string;
   title?: string;
   when?: Condition;
   block?: Block; // BlockBase 호환. 바인딩은 런타임에서 해석
-  repeat?: RepeatConfig;  // 반복 설정 (forEach 또는 count)
+  repeat?: RepeatConfig;  // 반복 설정 (forEach 또는 count)`  
   next?: string;
   onSuccess?: string;
   onFailure?: string;
@@ -60,13 +60,13 @@ export interface WorkflowStep {
   setVars?: Record<string, Binding | BindingValue>;
 }
 
-export interface Workflow {
-  version: '1.0';
+export class Workflow {
+  version!: '1.0';
   id?: string;
   title?: string;
   description?: string;
-  start: string;
-  steps: WorkflowStep[];
+  start!: string;
+  steps!: WorkflowStep[];
   defaultDelayMs?: number;
 }
 
@@ -77,21 +77,21 @@ export type CollectWorkflowRequest = {
   closeTabAfterCollection?: boolean;
 };
 
-export interface WorkflowStepRunResult<T = any> {
-  stepId: string;
-  skipped: boolean;
-  success: boolean;
+export class WorkflowStepRunResult<T = any> {
+  stepId!: string;
+  skipped!: boolean;
+  success!: boolean;
   message?: string;
   result?: T;
-  startedAt: string;
-  finishedAt: string;
-  attempts: number;
+  startedAt!: string;
+  finishedAt!: string;
+  attempts!: number;
 }
 
-export interface CollectWorkflowResult<T = any> {
-  success: boolean;
-  steps: WorkflowStepRunResult<T>[];
-  targetUrl: string;
-  timestamp: string;
+export class CollectWorkflowResult<T = any> {
+  success!: boolean;
+  steps!: WorkflowStepRunResult<T>[];
+  targetUrl!: string;
+  timestamp!: string;
   error?: string;
 }
