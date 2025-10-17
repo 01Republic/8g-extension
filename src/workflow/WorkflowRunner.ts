@@ -1,5 +1,5 @@
 import type { Workflow, WorkflowStepRunResult } from '@/sdk/types';
-import { createExecutionContext } from './context';
+import { createExecutionContext, setVarsInContext } from './context';
 import {
   executeStep,
   getNextStepId,
@@ -12,6 +12,12 @@ export class WorkflowRunner {
 
   async run(workflow: Workflow, tabId: number) {
     let context = createExecutionContext();
+
+    // workflow.vars가 있으면 초기 변수 설정
+    if (workflow.vars) {
+      context = setVarsInContext(context, workflow.vars);
+    }
+
     const stepsById = new Map(workflow.steps.map((s) => [s.id, s]));
     let currentId: string | undefined = workflow.start;
     const results: WorkflowStepRunResult<any>[] = [];

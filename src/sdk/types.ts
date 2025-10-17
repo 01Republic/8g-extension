@@ -49,7 +49,7 @@ export class WorkflowStep {
   title?: string;
   when?: Condition;
   block?: Block; // BlockBase 호환. 바인딩은 런타임에서 해석
-  repeat?: RepeatConfig;  // 반복 설정 (forEach 또는 count)`  
+  repeat?: RepeatConfig;  // 반복 설정 (forEach 또는 count)`
   next?: string;
   onSuccess?: string;
   onFailure?: string;
@@ -57,7 +57,6 @@ export class WorkflowStep {
   timeoutMs?: number;
   retry?: { attempts: number; delayMs?: number; backoffFactor?: number };
   delayAfterMs?: number;
-  setVars?: Record<string, Binding | BindingValue>;
 }
 
 export class Workflow {
@@ -67,6 +66,7 @@ export class Workflow {
   description?: string;
   start!: string;
   steps!: WorkflowStep[];
+  vars?: Record<string, any>;  // 워크플로우 초기 변수
   defaultDelayMs?: number;
 }
 

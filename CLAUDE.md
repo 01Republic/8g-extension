@@ -68,13 +68,17 @@ Webpage (SDK resolves Promise)
 ### Key Components
 
 **Background ([src/background/](src/background/))**
-- [BackgroundManager.ts](src/background/BackgroundManager.ts) - Routes messages to appropriate services
-- [WorkflowRunner.ts](src/background/WorkflowRunner.ts) - Executes workflows: evaluates conditions, handles branching/retry/timeout, manages step execution
-- [WorkflowService.ts](src/background/WorkflowService.ts) - Creates tabs and initiates workflow execution
-- [TabManager.ts](src/background/TabManager.ts) - Manages tab lifecycle and sends block execution commands to content scripts
-- [CdpService.ts](src/background/CdpService.ts) - Chrome DevTools Protocol operations (click, keypress)
-- [ApiService.ts](src/background/ApiService.ts) - Handles fetch-api block requests (bypasses CORS)
-- [AiParsingService.ts](src/background/AiParsingService.ts) - OpenAI integration for ai-parse-data blocks
+- [BackgroundManager.ts](src/background/chrome/BackgroundManager.ts) - Routes messages to appropriate services
+- [TabManager.ts](src/background/chrome/TabManager.ts) - Manages tab lifecycle and sends block execution commands to content scripts
+- [WorkflowService.ts](src/background/service/WorkflowService.ts) - Creates tabs and initiates workflow execution
+- [CdpService.ts](src/background/service/CdpService.ts) - Chrome DevTools Protocol operations (click, keypress)
+- [ApiService.ts](src/background/service/ApiService.ts) - Handles fetch-api block requests (bypasses CORS)
+- [AiParsingService.ts](src/background/service/AiParsingService.ts) - OpenAI integration for ai-parse-data blocks
+
+**Workflow ([src/workflow/](src/workflow/))**
+- [WorkflowRunner.ts](src/workflow/WorkflowRunner.ts) - Core workflow execution engine: evaluates conditions, handles branching/retry/timeout, manages step execution
+- [context/](src/workflow/context/) - Execution context management (vars, steps, forEach/loop state)
+- [step-executor/](src/workflow/step-executor/) - Step execution logic, condition evaluation, data binding, repeat handling
 
 **Content Scripts ([src/content/](src/content/))**
 - [main.tsx](src/content/main.tsx) - Entry point, initializes MessageKernel and handlers
@@ -299,10 +303,56 @@ Tests use Vitest with jsdom environment. Test files are co-located with source f
 - Use `retry` with backoff for flaky operations
 - Use `continueOnError` in repeat blocks to skip failed iterations
 
+## Code Organization
+
+### Directory Structure
+```
+src/
+├── background/          # Extension background service worker
+│   ├── chrome/         # Tab and message management
+│   │   ├── BackgroundManager.ts
+│   │   └── TabManager.ts
+│   ├── service/        # Service layer (CDP, API, AI, Workflow)
+│   │   ├── CdpService.ts
+│   │   ├── ApiService.ts
+│   │   ├── AiParsingService.ts
+│   │   └── WorkflowService.ts
+│   └── index.ts        # Background entry point
+├── workflow/           # Workflow execution engine (refactored from background)
+│   ├── context/        # Context management (vars, steps, forEach/loop)
+│   ├── step-executor/  # Step execution, conditions, bindings, repeat
+│   └── WorkflowRunner.ts
+├── content/            # Content script
+│   ├── kernel/         # Message kernel
+│   │   └── MessageKernel.ts
+│   ├── handler/        # Message handlers (internal/external)
+│   │   ├── ExternalMessageHandler.ts
+│   │   └── InternalMessageHandler.ts
+│   ├── elements/       # Element selectors and finders
+│   │   └── finders/    # CSS/XPath, iframe, shadow DOM support
+│   └── main.tsx        # Content script entry
+├── blocks/             # Block implementations
+│   ├── GetTextBlock.ts
+│   ├── EventClickBlock.ts
+│   ├── KeypressBlock.ts
+│   ├── ScrollBlock.ts
+│   ├── WaitBlock.ts
+│   ├── FetchApiBlock.ts
+│   ├── AiParseDataBlock.ts
+│   └── index.ts        # BlockHandler entry point
+├── sdk/                # Browser SDK
+│   ├── EightGClient.ts # Main client API
+│   ├── types.ts        # Public types
+│   ├── errors.ts       # Error classes
+│   └── index.ts        # SDK entry point
+└── types/              # Type definitions
+    ├── external-messages.ts  # Webpage ↔ content script
+    └── internal-messages.ts  # Content ↔ background
+```
+
 ## Reference Documentation
 
 For detailed information, see:
 - [WORKFLOW_EXECUTION_ARCHITECTURE.md](WORKFLOW_EXECUTION_ARCHITECTURE.md) - Complete workflow guide with examples
-- [BLOCKS.md](BLOCKS.md) - Detailed block catalog with usage examples (if exists)
 - [BLOCK_EXECUTION_ARCHITECTURE.md](BLOCK_EXECUTION_ARCHITECTURE.md) - Internal architecture details
 - [README.md](README.md) - Project overview, setup, and examples (Korean)

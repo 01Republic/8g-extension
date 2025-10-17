@@ -1,284 +1,426 @@
 # 8G Extension 블록 실행 아키텍처
 
 ## 개요
-8G Extension은 웹페이지에서 데이터를 수집하고 자동화하기 위한 Chrome Extension입니다. 
+
+8G Extension은 웹페이지에서 데이터를 수집하고 자동화하기 위한 Chrome Extension입니다.
 
 **중요**: 모든 블록 실행은 **워크플로우를 통해서만** 가능합니다. 단일 블록도 워크플로우로 실행해야 합니다.
 
-## 현재 아키텍처
+## 빠른 시작
 
-### 빠른 시작
-
-#### 설치
+### 설치
 
 ```bash
 npm install 8g-extension
-# 또는
-yarn add 8g-extension
 ```
 
-#### 기본 사용법
+### 기본 사용법
 
-```ts
+```typescript
 import { EightGClient } from '8g-extension';
 
 const client = new EightGClient();
 await client.checkExtension();
-```
 
-### 블록 실행 방법
-
-모든 블록은 **워크플로우를 통해서만** 실행됩니다.
-
-#### 1) 단일 블록 실행
-
-```ts
-const workflow = {
-  version: '1.0',
-  start: 'getTitle',
-  steps: [
-    {
-      id: 'getTitle',
-      block: { 
-        name: 'get-text', 
-        selector: '#title', 
-        findBy: 'cssSelector', 
-        option: {} 
-      }
-    }
-  ]
-};
-
+// 워크플로우 실행
 const result = await client.collectWorkflow({
-  targetUrl: location.href,
-  workflow
-});
-```
-
-#### 2) 여러 블록 순차 실행
-
-```ts
-const workflow = {
-  version: '1.0',
-  start: 'clickOpen',
-  steps: [
-    {
-      id: 'clickOpen',
-      block: { 
-        name: 'event-click', 
-        selector: '.open', 
-        findBy: 'cssSelector', 
-        option: { waitForSelector: true } 
-      },
-      delayAfterMs: 300,  // 다음 블록 전 300ms 대기
-      next: 'getContent'
-    },
-    {
-      id: 'getContent',
-      block: { 
-        name: 'get-text', 
-        selector: '.modal .content', 
-        findBy: 'cssSelector', 
-        option: { waitForSelector: true } 
-      }
-    }
-  ]
-};
-
-const result = await client.collectWorkflow({
-  targetUrl: location.href,
-  workflow
-});
-```
-
-#### 3) 고급 블록 사용 예시
-
-```ts
-// 무한 스크롤 + 키보드 입력 + 대기
-const workflow = {
-  version: '1.0',
-  start: 'scrollToLoad',
-  steps: [
-    {
-      id: 'scrollToLoad',
-      block: { 
-        name: 'scroll',
-        scrollType: 'untilLoaded',
-        distance: 500,
-        maxScrolls: 50
-      },
-      next: 'waitAnimation'
-    },
-    {
-      id: 'waitAnimation',
-      block: { name: 'wait', duration: 500 },
-      next: 'clickModal'
-    },
-    {
-      id: 'clickModal',
-      block: { 
-        name: 'event-click', 
-        selector: '.open-modal', 
-        findBy: 'cssSelector', 
-        option: {} 
-      },
-      next: 'closeWithEsc'
-    },
-    {
-      id: 'closeWithEsc',
-      block: { name: 'keypress', key: 'Escape' }
-    }
-  ]
-};
-
-const result = await client.collectWorkflow({
-  targetUrl: location.href,
-  workflow
-});
-```
-
-#### 4) AI 파싱 블록
-
-```ts
-const workflow = {
-  version: '1.0',
-  start: 'getText',
-  steps: [
-    {
-      id: 'getText',
-      block: {
-        name: 'get-text',
-        selector: '.product-info',
-        findBy: 'cssSelector',
-        option: {}
-      },
-      next: 'parseWithAi'
-    },
-    {
-      id: 'parseWithAi',
-      block: {
-        name: 'ai-parse-data',
-        apiKey: 'sk-...',
-        sourceData: { valueFrom: '$.steps.getText.result.data' }, // 이전 스텝 결과 바인딩
-        schemaDefinition: {
-          type: 'object',
-          shape: {
-            name: { type: 'string', description: '상품명' },
-            price: { type: 'number', description: '가격' }
-          }
+  targetUrl: 'https://example.com',
+  workflow: {
+    version: '1.0',
+    start: 'getTitle',
+    steps: [
+      {
+        id: 'getTitle',
+        block: {
+          name: 'get-text',
+          selector: '#title',
+          findBy: 'cssSelector',
+          option: {},
+          useTextContent: true
         }
       }
-    }
-  ]
-};
+    ]
+  }
+});
 ```
 
-### 요약 포인트
+## 지원 블록 목록
 
-– **모든 블록은 워크플로우로만 실행됩니다** (`collectWorkflow` 사용)
-– 모든 블록에는 `option: {}`를 권장합니다 (비어있어도 OK)
-– 예외: `keypress`, `wait`, `ai-parse-data` 블록은 `selector`, `findBy`, `option` 필드 불필요
-– 블록 간 대기: `delayAfterMs`를 각 스텝에 지정 (ms)
-– 다중 요소가 필요하면 `option.multiple: true`를 사용하세요
-– 스텝 간 데이터 전달: `valueFrom`, `template` 바인딩 사용
+### 데이터 추출 블록
 
-### 지원 블록 (요약)
-
-– `get-text`: 텍스트 추출
-– `attribute-value`: 속성 값 추출
-– `get-value-form`: 폼 값 가져오기
-– `set-value-form`: 폼 값 설정
-– `clear-value-form`: 폼 값 지우기
-– `element-exists`: 요소 존재 확인
-– `event-click`: 클릭 이벤트 발생
-– `save-assets`: 에셋 저장
-– `get-element-data`: 요소 데이터 추출
-– `scroll`: 페이지 스크롤 (toElement, toBottom, byDistance, untilLoaded)
-– `keypress`: 키보드 입력 시뮬레이션
-– `wait`: 지정 시간 대기
-– `fetch-api`: 외부 API 호출 (CORS 제약 없음)
-– `ai-parse-data`: AI 기반 데이터 파싱 (OpenAI)
-
-## 워크플로우 기반 실행
-
-### 🎯 주요 특징
-
-#### 1. 워크플로우 전용
-- 모든 블록은 워크플로우를 통해서만 실행됩니다
-- 단일 블록도 워크플로우로 래핑해야 합니다
-- `collectWorkflow()` 메서드만 제공됩니다
-
-#### 2. 순차 실행
-- `steps` 배열의 순서대로 실행됩니다
-- `next` 필드로 다음 스텝을 지정합니다
-- `delayAfterMs`로 스텝 간 대기 시간을 조정합니다
-
-#### 3. 고급 기능
-- **분기 처리**: `switch`, `onSuccess/onFailure` 지원
-- **조건부 실행**: `when` 조건으로 스텝 스킵 가능
-- **재시도**: `retry { attempts, delayMs, backoffFactor }`
-- **타임아웃**: `timeoutMs`로 스텝별 제한 시간 설정
-- **데이터 바인딩**: `valueFrom`, `template`로 이전 스텝 결과 전달
-
-#### 4. 에러 처리
-- 각 스텝의 성공/실패 여부를 기록합니다
-- `onFailure`로 실패 시 다른 스텝으로 이동 가능
-- 재시도 설정으로 안정성 향상
-
-### 📝 결과 구조
-
+**get-text** - 텍스트 추출
 ```typescript
 {
-  success: boolean;
-  steps: [
-    {
-      stepId: string;
-      skipped: boolean;
-      success: boolean;
-      message?: string;
-      result?: any;
-      startedAt: string;
-      finishedAt: string;
-      attempts: number;
-    }
-  ];
-  timestamp: string;
-  targetUrl: string;
+  name: 'get-text',
+  selector: '.title',
+  findBy: 'cssSelector',
+  option: {
+    waitForSelector?: boolean,
+    waitSelectorTimeout?: number,
+    multiple?: boolean
+  },
+  useTextContent?: boolean,
+  regex?: string,
+  prefix?: string,
+  suffix?: string
 }
 ```
 
-## 아키텍처 변경 사항
+**attribute-value** - 속성 값 추출
+```typescript
+{
+  name: 'attribute-value',
+  selector: 'img',
+  findBy: 'cssSelector',
+  option: { multiple?: boolean },
+  attribute: 'src'
+}
+```
 
-### ✅ 워크플로우 중심으로 통합
+**get-element-data** - 복합 데이터 추출
+```typescript
+{
+  name: 'get-element-data',
+  selector: '.product',
+  findBy: 'cssSelector',
+  option: { multiple?: boolean },
+  extractors: [
+    { type: 'text', selector: '.title', saveAs: 'title' },
+    { type: 'attribute', attribute: 'data-id', saveAs: 'id' },
+    { type: 'cssSelector', saveAs: 'selector' },
+    { type: 'xpath', saveAs: 'xpath' }
+  ]
+}
+```
 
-**Before (v1.x)**:
-- ❌ `collectData()` - 단일/배열 블록 직접 실행
-- ❌ `blockDelay` - 블록 간 지연 시간
+### 폼 처리 블록
 
-**After (v2.x+)**:
-- ✅ `collectWorkflow()` - 워크플로우 전용
-- ✅ `delayAfterMs` - 스텝별 지연 시간
-- ✅ 분기, 조건, 재시도, 바인딩 등 강력한 기능
+**get-value-form** - 폼 값 가져오기
+```typescript
+{
+  name: 'get-value-form',
+  selector: 'input[name="email"]',
+  findBy: 'cssSelector',
+  option: {}
+}
+```
 
-### 🎯 장점
+**set-value-form** - 폼 값 설정
+```typescript
+{
+  name: 'set-value-form',
+  selector: 'input[name="email"]',
+  findBy: 'cssSelector',
+  option: {},
+  value: 'user@example.com'
+}
+```
 
-1. **일관성**: 모든 블록 실행이 동일한 방식
-2. **강력함**: 복잡한 자동화 시나리오 구현 가능
-3. **안정성**: 재시도, 타임아웃, 조건부 실행 지원
-4. **유연성**: 스텝 간 데이터 전달, 분기 처리
-5. **디버깅**: 각 스텝별 상세한 실행 로그
+**clear-value-form** - 폼 값 초기화
+```typescript
+{
+  name: 'clear-value-form',
+  selector: 'input[name="search"]',
+  findBy: 'cssSelector',
+  option: {}
+}
+```
 
-### 🔧 Background 서비스 리팩토링
+### 상호작용 블록
 
-- `BackgroundManager`: 메시지 라우팅만 담당
-- `WorkflowService`: 워크플로우 실행 전담
-- `CdpService`: Chrome DevTools Protocol 처리
-- `AiParsingService`: AI 파싱 전담
+**event-click** - 클릭 이벤트
+```typescript
+{
+  name: 'event-click',
+  selector: '.button',
+  findBy: 'cssSelector',
+  option: {},
+  filterByText?: string,  // 텍스트로 필터링
+  clickAll?: boolean      // 여러 요소 모두 클릭
+}
+```
 
-### 📋 마이그레이션 가이드
+**keypress** - 키보드 입력
+```typescript
+{
+  name: 'keypress',
+  key: 'Enter',  // 'Escape', 'Tab', 'ArrowDown' 등
+  modifiers?: ['ctrl', 'shift', 'alt', 'meta']
+}
+// selector, findBy, option 불필요
+```
 
-기존 코드를 워크플로우로 변환하는 방법은 `WORKFLOW_EXECUTION_ARCHITECTURE.md`를 참고하세요.
+**scroll** - 페이지 스크롤
+```typescript
+{
+  name: 'scroll',
+  scrollType: 'toBottom' | 'toElement' | 'byDistance' | 'untilLoaded',
+  selector?: string,      // toElement일 때 필요
+  distance?: number,      // byDistance, untilLoaded일 때 사용
+  maxScrolls?: number,    // untilLoaded일 때 최대 스크롤 횟수
+  waitAfterScroll?: number  // 스크롤 후 대기 시간 (ms)
+}
+```
 
-## 참고
-– 고정된 셀렉터로 동작하지 않는 경우가 있습니다. 동적 UI에서는 `waitForSelector`와 충분한 `waitSelectorTimeout`을 사용하세요.
-– 클릭 후 DOM 업데이트가 필요한 경우 다음 스텝 앞에 `delayAfterMs`를 넣어 안정성을 높이세요.
+### 유틸리티 블록
+
+**element-exists** - 요소 존재 확인
+```typescript
+{
+  name: 'element-exists',
+  selector: '.modal',
+  findBy: 'cssSelector',
+  option: {
+    waitForSelector?: boolean,
+    waitSelectorTimeout?: number
+  }
+}
+// 결과: true/false
+```
+
+**wait** - 대기
+```typescript
+{
+  name: 'wait',
+  duration: 2000  // ms
+}
+// selector, findBy, option 불필요
+```
+
+**save-assets** - 이미지/미디어 수집
+```typescript
+{
+  name: 'save-assets',
+  selector: 'img',
+  findBy: 'cssSelector',
+  option: { multiple?: boolean },
+  attributeName: 'src'
+}
+```
+
+### API/AI 블록
+
+**fetch-api** - 외부 API 호출
+```typescript
+{
+  name: 'fetch-api',
+  url: 'https://api.example.com/users',
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',
+  headers?: { [key: string]: string },
+  body?: any,
+  parseJson?: boolean
+}
+// selector, findBy, option 불필요
+// CORS 제약 없음 (Background에서 실행)
+```
+
+**ai-parse-data** - AI 데이터 파싱
+```typescript
+{
+  name: 'ai-parse-data',
+  apiKey: 'sk-...',
+  sourceData: 'raw text data',
+  schemaDefinition: {
+    type: 'object',
+    shape: {
+      name: { type: 'string', description: '상품명' },
+      price: { type: 'number', description: '가격' },
+      features: { type: 'array', description: '특징 목록' }
+    }
+  }
+}
+// selector, findBy, option 불필요
+// OpenAI를 사용해서 비구조화 데이터를 구조화
+```
+
+## 블록 실행 파이프라인
+
+```
+1. BlockHandler.executeBlock(block)
+   ↓
+2. block.name으로 분기
+   ↓
+3. validate* 함수로 Zod 스키마 검증
+   ↓
+4. handler* 함수 실행 (실제 DOM/API 작업)
+   ↓
+5. BlockResult<T> 반환: { data, hasError?, message? }
+```
+
+## 중요 개념
+
+### option 필드
+
+대부분의 블록은 `option` 필드가 필수입니다 (비어있어도 `{}` 필요):
+
+```typescript
+{
+  block: {
+    name: 'get-text',
+    selector: '.title',
+    findBy: 'cssSelector',
+    option: {}  // 필수!
+  }
+}
+```
+
+**예외:** `keypress`, `wait`, `fetch-api`, `ai-parse-data` 블록은 `selector`, `findBy`, `option` 불필요
+
+### waitForSelector
+
+동적으로 생성되는 요소를 기다릴 때 사용:
+
+```typescript
+{
+  option: {
+    waitForSelector: true,
+    waitSelectorTimeout: 5000  // 최대 5초 대기
+  }
+}
+```
+
+### multiple 옵션
+
+여러 요소의 데이터를 배열로 수집:
+
+```typescript
+{
+  option: {
+    multiple: true
+  }
+}
+// 결과: ['text1', 'text2', 'text3']
+```
+
+## 블록 결과 구조
+
+```typescript
+{
+  data: any,           // 블록 실행 결과 데이터
+  hasError?: boolean,  // 에러 발생 여부
+  message?: string     // 에러 메시지 또는 정보
+}
+```
+
+## 워크플로우 통합
+
+모든 블록은 워크플로우 내에서 실행됩니다. 자세한 내용은 [WORKFLOW_EXECUTION_ARCHITECTURE.md](WORKFLOW_EXECUTION_ARCHITECTURE.md)를 참고하세요.
+
+### 블록 간 데이터 전달
+
+```typescript
+{
+  version: '1.0',
+  start: 'getIds',
+  steps: [
+    {
+      id: 'getIds',
+      block: {
+        name: 'get-element-data',
+        selector: '.item',
+        findBy: 'cssSelector',
+        option: { multiple: true },
+        extractors: [
+          { type: 'attribute', attribute: 'data-id', saveAs: 'id' }
+        ]
+      },
+      next: 'fetchDetail'
+    },
+    {
+      id: 'fetchDetail',
+      block: {
+        name: 'fetch-api',
+        // 이전 스텝 결과 참조
+        url: { template: 'https://api.example.com/items/${$.steps.getIds.result.data[0].id}' },
+        method: 'GET',
+        parseJson: true
+      }
+    }
+  ]
+}
+```
+
+## 아키텍처
+
+### 디렉토리 구조
+
+```
+src/blocks/
+├── GetTextBlock.ts           # 텍스트 추출
+├── GetAttributeValueBlock.ts # 속성 값 추출
+├── GetElementDataBlock.ts    # 복합 데이터 추출
+├── GetValueFormBlock.ts      # 폼 값 가져오기
+├── SetValueFormBlock.ts      # 폼 값 설정
+├── ClearValueFormBlock.ts    # 폼 값 초기화
+├── EventClickBlock.ts        # 클릭
+├── KeypressBlock.ts          # 키보드 입력
+├── ScrollBlock.ts            # 스크롤
+├── ElementExistsBlock.ts     # 요소 존재 확인
+├── WaitBlock.ts              # 대기
+├── SaveAssetsBlock.ts        # 에셋 ��집
+├── FetchApiBlock.ts          # API 호출
+├── AiParseDataBlock.ts       # AI 파싱
+├── types.ts                  # 공통 타입
+└── index.ts                  # BlockHandler + 통합
+```
+
+### 각 블록 파일 구조
+
+```typescript
+// 1. Zod 스키마 정의
+export const BlockNameSchema = z.object({
+  name: z.literal('block-name'),
+  selector: z.string(),
+  // ...
+});
+
+// 2. TypeScript 타입
+export type BlockNameBlock = z.infer<typeof BlockNameSchema>;
+
+// 3. 검증 함수
+export const validateBlockName = (block: Block): BlockNameBlock => {
+  return BlockNameSchema.parse(block);
+};
+
+// 4. 핸들러 함수
+export const handlerBlockName = async (
+  block: BlockNameBlock
+): Promise<BlockResult<ReturnType>> => {
+  // 실제 작업 수행
+  return { data: result };
+};
+```
+
+### BlockHandler 진입점
+
+[src/blocks/index.ts](src/blocks/index.ts)의 `BlockHandler.executeBlock()`가 모든 블록 실행의 진입점입니다:
+
+```typescript
+export class BlockHandler {
+  static async executeBlock(block: Block): Promise<BlockResult> {
+    switch (block.name) {
+      case 'get-text':
+        return handlerGetText(validateGetTextBlock(block));
+      case 'event-click':
+        return handlerEventClick(validateEventClickBlock(block));
+      // ...
+    }
+  }
+}
+```
+
+## 요소 선택
+
+[src/content/elements/](src/content/elements/) 에서 셀렉터 해석 및 요소 탐색을 처리합니다:
+
+- CSS 선택자 지원
+- XPath 지원
+- iframe 탐색 지원
+- Shadow DOM 지원
+- `waitForSelector`로 요소 대기
+
+## 참고 문서
+
+- [CLAUDE.md](CLAUDE.md) - 프로젝트 개요 및 아키텍처
+- [WORKFLOW_EXECUTION_ARCHITECTURE.md](WORKFLOW_EXECUTION_ARCHITECTURE.md) - 워크플로우 실행 가이드
+- [README.md](README.md) - 프로젝트 설치 및 실행
