@@ -1,16 +1,25 @@
 {
   "name": "scordi-extension",
   "type": "module",
-  "version": "1.14.3",
+  "version": "1.14.4",
   "private": false,
   "main": "./dist/sdk/index.js",
   "module": "./dist/sdk/index.js",
   "types": "./dist/sdk/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/sdk/index.d.ts",
       "import": "./dist/sdk/index.js",
-      "types": "./dist/sdk/index.d.ts"
-    }
+      "require": "./dist/sdk/index.js",
+      "default": "./dist/sdk/index.js"
+    },
+    "./blocks": {
+      "types": "./dist/blocks/index.d.ts",
+      "import": "./dist/blocks/index.js",
+      "require": "./dist/blocks/index.js",
+      "default": "./dist/blocks/index.js"
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "dist/"
