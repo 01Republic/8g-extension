@@ -10,10 +10,10 @@ import {
   isFetchApiMessage,
   ErrorResponse,
 } from '@/types/internal-messages';
-import { AiParsingService } from './AiParsingService';
-import { CdpService } from './CdpService';
-import { WorkflowService } from './WorkflowService';
-import { ApiService } from './ApiService';
+import { AiParsingService } from '../service/AiParsingService';
+import { CdpService } from '../service/CdpService';
+import { WorkflowService } from '../service/WorkflowService';
+import { ApiService } from '../service/ApiService';
 
 export class BackgroundManager {
   private aiParsingService: AiParsingService;

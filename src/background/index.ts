@@ -1,4 +1,4 @@
-import { BackgroundManager } from './BackgroundManager';
+import { BackgroundManager } from './chrome/BackgroundManager';
 
 // Initialize the 8G background script
 console.log('[8G Extension] Background script starting...');

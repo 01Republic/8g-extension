@@ -1,6 +1,6 @@
-import { TabManager } from './TabManager';
+import { TabManager } from '../chrome/TabManager';
 import { CollectWorkflowNewTabMessage, ErrorResponse } from '@/types/internal-messages';
-import { WorkflowRunner } from './WorkflowRunner';
+import { WorkflowRunner } from '@/workflow';
 
 /**
  * Workflow Service
@@ -11,7 +11,10 @@ export class WorkflowService {
   private workflowRunner: WorkflowRunner;
 
   constructor(private tabManager: TabManager) {
-    this.workflowRunner = new WorkflowRunner(tabManager);
+    // TabManager의 executeBlock 메서드를 executor 함수로 주입
+    this.workflowRunner = new WorkflowRunner((block, tabId) =>
+      this.tabManager.executeBlock(block, tabId)
+    );
   }
 
   /**
