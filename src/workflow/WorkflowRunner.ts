@@ -1,5 +1,5 @@
 import type { Workflow, WorkflowStepRunResult } from '@/sdk/types';
-import { createExecutionContext, setVarsInContext } from './context';
+import { createExecutionContext, setVarsInContext, resolveBindings } from './context';
 import {
   executeStep,
   getNextStepId,
@@ -7,16 +7,33 @@ import {
   type BlockExecutor,
 } from './step-executor';
 
-export class WorkflowRunner {
-  constructor(private executeBlock: BlockExecutor) {}
+export type TabCreator = (targetUrl: string, activateTab: boolean) => Promise<number>;
 
-  async run(workflow: Workflow, tabId: number) {
+export class WorkflowRunner {
+  constructor(
+    private executeBlock: BlockExecutor,
+    private createTab: TabCreator
+  ) {}
+
+  async run(workflow: Workflow, targetUrl: string, activateTab: boolean = false) {
     let context = createExecutionContext();
 
     // workflow.vars가 있으면 초기 변수 설정
     if (workflow.vars) {
       context = setVarsInContext(context, workflow.vars);
     }
+
+    console.log('context', workflow.vars);
+    console.log('targetUrl', targetUrl);
+    console.log(context);
+    // targetUrl 바인딩 처리 (vars를 사용할 수 있도록)
+    const resolvedTargetUrl = typeof targetUrl === 'string'
+      ? resolveBindings(targetUrl, context)
+      : targetUrl;
+    console.log('resolvedTargetUrl', resolvedTargetUrl);
+
+    // 탭 생성
+    const tabId = await this.createTab(resolvedTargetUrl, activateTab);
 
     const stepsById = new Map(workflow.steps.map((s) => [s.id, s]));
     let currentId: string | undefined = workflow.start;
@@ -44,6 +61,6 @@ export class WorkflowRunner {
       currentId = nextId;
     }
 
-    return { steps: results };
+    return { steps: results, tabId };
   }
 }

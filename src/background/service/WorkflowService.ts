@@ -1,3 +1,4 @@
+import { Block } from '@/blocks';
 import { TabManager } from '../chrome/TabManager';
 import { CollectWorkflowNewTabMessage, ErrorResponse } from '@/types/internal-messages';
 import { WorkflowRunner } from '@/workflow';
@@ -12,8 +13,18 @@ export class WorkflowService {
 
   constructor(private tabManager: TabManager) {
     // TabManager의 executeBlock 메서드를 executor 함수로 주입
-    this.workflowRunner = new WorkflowRunner((block, tabId) =>
-      this.tabManager.executeBlock(block, tabId)
+    const executeBlock = (block: Block, tabId: number) => this.tabManager.executeBlock(block, tabId);
+    const createTab = async (targetUrl: string, activateTab: boolean) => {
+      const tab = await this.tabManager.createTab(targetUrl, activateTab);
+      if (tab.id === undefined) {
+        throw new Error('Failed to create tab or tab ID is missing');
+      }
+      return tab.id;
+    };
+
+    this.workflowRunner = new WorkflowRunner(
+      executeBlock,
+      createTab
     );
   }
 
@@ -38,32 +49,25 @@ export class WorkflowService {
       return;
     }
 
-    // 2) 탭 생성
-    const tab = await this.tabManager.createTab(
-      requestData.targetUrl,
-      requestData.activateTab === true
-    );
-
-    if (tab.id === undefined) {
-      sendResponse({
-        $isError: true,
-        message: 'Failed to create tab or tab ID is missing',
-        data: {},
-      } as ErrorResponse);
-      return;
-    }
+    let tabId: number | undefined;
 
     try {
-      // 3) 워크플로우 실행
-      console.log('[WorkflowService] Running workflow in tab:', tab.id);
-      const result = await this.workflowRunner.run(requestData.workflow, tab.id);
+      // 2) 워크플로우 실행 (내부에서 탭 생성)
+      console.log('[WorkflowService] Running workflow for:', requestData.targetUrl);
+      const result = await this.workflowRunner.run(
+        requestData.workflow,
+        requestData.targetUrl,
+        requestData.activateTab === true
+      );
 
-      // 4) 성공 응답 전송
+      tabId = result.tabId;
+
+      // 3) 성공 응답 전송
       sendResponse({
         success: true,
         targetUrl: requestData.targetUrl,
-        tabId: tab.id,
-        result,
+        tabId: result.tabId,
+        result: { steps: result.steps },
         timestamp: new Date().toISOString(),
         closeTabAfterCollection: requestData.closeTabAfterCollection !== false,
       });
@@ -75,8 +79,10 @@ export class WorkflowService {
         data: {},
       } as ErrorResponse);
     } finally {
-      // 5) 정리 작업 (탭 닫기)
-      await this.cleanup(tab.id);
+      // 4) 정리 작업 (탭 닫기)
+      if (tabId !== undefined && requestData.closeTabAfterCollection !== false) {
+        await this.cleanup(tabId);
+      }
     }
   }
 

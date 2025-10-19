@@ -9,10 +9,10 @@ import { isLoopPath, getByLoopPath } from '../loop-context';
  * 각 서브 컨텍스트의 isXXXPath로 영역 판단 후 처리
  *
  * @example
- * getByPath(context, '$.steps.stepId.result.data')
- * getByPath(context, '$.vars.userId')
- * getByPath(context, '$.forEach.item.id')
- * getByPath(context, '$.loop.index')
+ * getByPath(context, 'steps.stepId.result.data')
+ * getByPath(context, 'vars.userId')
+ * getByPath(context, 'forEach.item.id')
+ * getByPath(context, 'loop.index')
  */
 export const getByPath = (
   context: ExecutionContext,

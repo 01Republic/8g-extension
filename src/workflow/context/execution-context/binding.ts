@@ -16,26 +16,21 @@ export interface Binding {
  * 템플릿 문자열 보간 (순수 함수)
  *
  * @example
- * interpolate('${$.steps.step1.result.data}', context) // -> 값 그대로 (타입 유지)
- * interpolate('$.steps.step1.result.data', context)    // -> 값 그대로 (타입 유지)
- * interpolate('Hello ${$.vars.name}!', context)        // -> 'Hello World!' (문자열 보간)
+ * interpolate('${vars.userId}', context) // -> 값 그대로 (타입 유지)
+ * interpolate('${steps.step1.result.data}', context) // -> 값 그대로 (타입 유지)
+ * interpolate('Hello ${vars.name}!', context)        // -> 'Hello World!' (문자열 보간)
  */
 export const interpolate = (
   template: string,
   context: ExecutionContext
 ): any => {
-  // 1. "${$.path}" 형태 - 값 그대로 반환 (타입 유지)
+  // 1. "${path}" 형태 - 값 그대로 반환 (타입 유지)
   const singleMatch = /^\$\{([^}]+)\}$/.exec(template);
   if (singleMatch) {
     return getByPath(context, singleMatch[1].trim());
   }
 
-  // 2. "$.path" 형태 - 값 그대로 반환
-  if (/^\$\./.test(template)) {
-    return getByPath(context, template);
-  }
-
-  // 3. "Hello ${name}!" 형태 - 문자열 보간
+  // 2. "Hello ${name}!" 형태 - 문자열 보간
   return template.replace(/\$\{([^}]+)\}/g, (_match, path) => {
     const value = getByPath(context, path.trim());
     if (value == null) return '';
@@ -48,9 +43,9 @@ export const interpolate = (
  * Binding 객체 해석 (순수 함수)
  *
  * @example
- * resolveBinding({ valueFrom: '$.steps.step1.result.data' }, context)
- * resolveBinding({ template: 'User ${$.vars.userId}' }, context)
- * resolveBinding({ valueFrom: '$.missing', default: 'fallback' }, context)
+ * resolveBinding({ valueFrom: 'steps.step1.result.data' }, context)
+ * resolveBinding({ template: 'User ${vars.userId}' }, context)
+ * resolveBinding({ valueFrom: 'vars.missing', default: 'fallback' }, context)
  */
 export const resolveBinding = (
   binding: Binding,
@@ -80,9 +75,9 @@ export const resolveBinding = (
  *
  * @example
  * resolveBindings({
- *   url: { template: 'https://api.example.com/users/${$.vars.userId}' },
- *   items: ['${$.steps.step1.result.data}'],
- *   nested: { value: { valueFrom: '$.steps.step2.result' } }
+ *   url: { template: 'https://api.example.com/users/${vars.userId}' },
+ *   items: ['${steps.step1.result.data}'],
+ *   nested: { value: { valueFrom: 'steps.step2.result' } }
  * }, context)
  */
 export const resolveBindings = (

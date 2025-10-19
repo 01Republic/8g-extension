@@ -1,5 +1,4 @@
 import type { ExecutionContext } from './types';
-import { toPlainObject } from './execution-context';
 import { getByPath } from './resolver';
 
 /**
@@ -24,9 +23,9 @@ export interface Condition {
  * JSON 조건 평가 (순수 함수, 재귀)
  *
  * @example
- * evaluateJsonCondition({ exists: '$.steps.step1.result' }, context)
- * evaluateJsonCondition({ equals: { left: '$.vars.status', right: 'OK' } }, context)
- * evaluateJsonCondition({ and: [{ exists: '$.steps.a' }, { equals: { left: '$.vars.b', right: 1 } }] }, context)
+ * evaluateJsonCondition({ exists: 'steps.step1.result' }, context)
+ * evaluateJsonCondition({ equals: { left: 'vars.status', right: 'OK' } }, context)
+ * evaluateJsonCondition({ and: [{ exists: 'steps.a' }, { equals: { left: 'vars.b', right: 1 } }] }, context)
  */
 export const evaluateJsonCondition = (
   condition: JsonCondition,
@@ -79,18 +78,22 @@ export const evaluateJsonCondition = (
  * Expression 문자열 평가 (순수 함수)
  *
  * @example
- * evaluateExpression('$.steps.step1.result.data === "OK"', context)
- * evaluateExpression('$.vars.count > 10', context)
+ * evaluateExpression('steps.step1.result.data === "OK"', context)
+ * evaluateExpression('vars.count > 10', context)
  */
 export const evaluateExpression = (
   expr: string,
   context: ExecutionContext
 ): boolean => {
   try {
-    const $ = toPlainObject(context);
+    const vars = context.varContext.vars;
+    const steps = context.stepContext.steps;
+    const forEach = context.loopContext.forEach;
+    const loop = context.loopContext.loop;
+
     // eslint-disable-next-line no-new-func
-    const fn = new Function('$', `return (${expr});`);
-    return !!fn($);
+    const fn = new Function('vars', 'steps', 'forEach', 'loop', `return (${expr});`);
+    return !!fn(vars, steps, forEach, loop);
   } catch {
     return false;
   }
@@ -124,9 +127,9 @@ const isDirectJsonCondition = (condition: any): condition is JsonCondition => {
  *
  * @example
  * evaluateCondition(undefined, context) // -> true
- * evaluateCondition({ exists: '$.steps.step1' }, context)
- * evaluateCondition({ expr: '$.vars.count > 10' }, context)
- * evaluateCondition({ json: { equals: { left: '$.vars.status', right: 'OK' } } }, context)
+ * evaluateCondition({ exists: 'steps.step1' }, context)
+ * evaluateCondition({ expr: 'vars.count > 10' }, context)
+ * evaluateCondition({ json: { equals: { left: 'vars.status', right: 'OK' } } }, context)
  */
 export const evaluateCondition = (
   condition: Condition | JsonCondition | undefined,
