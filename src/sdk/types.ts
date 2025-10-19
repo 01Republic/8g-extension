@@ -1,5 +1,5 @@
-import { Block } from '@/blocks/types';
-export * from '@/blocks/types';
+import { Block } from '../blocks/types';
+export * from '../blocks/types';
 
 // =========================
 // Workflow Types
