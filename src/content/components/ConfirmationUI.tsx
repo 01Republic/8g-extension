@@ -50,6 +50,17 @@ export function ConfirmationUI({
     }
   }, [visible]);
 
+  // URL에 따라 메시지 결정
+  const getDisplayMessage = () => {
+    const currentUrl = window.location.href.toLowerCase();
+    const isLoginPage = currentUrl.includes('login') || currentUrl.includes('signin');
+
+    if (isLoginPage) {
+      return '로그인 완료 후 확인 버튼을 클릭해주세요.';
+    }
+    return message;
+  };
+
   if (!visible) return null;
 
   const handleConfirm = () => {
@@ -110,7 +121,7 @@ export function ConfirmationUI({
       style={containerStyle}
       onClick={(e) => e.stopPropagation()}
     >
-      <p style={messageStyle}>{message}</p>
+      <p style={messageStyle}>{getDisplayMessage()}</p>
       <button
         style={buttonStyle}
         onMouseEnter={(e) => {
