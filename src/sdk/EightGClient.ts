@@ -157,7 +157,7 @@ export class EightGClient {
     });
   }
 
-  async getWorkspaces(request: CollectWorkflowRequest): Promise<ConnectWorkspaceResponseDto> {
+  async getWorkspaces(request: CollectWorkflowRequest): Promise<ConnectWorkspaceResponseDto & { rawData: CollectWorkflowResult }> {
     const result = await this.collectWorkflow(request);
     if (!result.success) {
       throw new EightGError('Failed to get workspaces', 'GET_WORKSPACES_FAILED');
@@ -167,6 +167,7 @@ export class EightGClient {
     const rawData = result.steps[result.steps.length - 1]?.result?.data;
     if (!rawData || !Array.isArray(rawData)) {
       return {
+        rawData: result,
         data: [],
         isSuccess: false,
       };
@@ -184,13 +185,14 @@ export class EightGClient {
     }
 
     return {
+      rawData: result,
       data: validatedWorkspaces,
       isSuccess: true,
     };
   }
 
   // 플랜, 결제주기
-  async getWorkspacePlanAndCycle(request: CollectWorkflowRequest): Promise<WorkspaceBillingDto | null> {
+  async getWorkspacePlanAndCycle(request: CollectWorkflowRequest): Promise<WorkspaceBillingDto & { rawData: CollectWorkflowResult } | { rawData: CollectWorkflowResult }> {
     const result = await this.collectWorkflow(request);
     if (!result.success) {
       throw new EightGError('Failed to get workspace plan and cycle', 'GET_WORKSPACE_PLAN_AND_CYCLE_FAILED');
@@ -198,21 +200,21 @@ export class EightGClient {
 
     const rawData = result.steps[result.steps.length - 1]?.result?.data;
     if (!rawData) {
-      return null;
+      return { rawData: result };
     }
 
     const parsed = WorkspaceBillingSchema.safeParse(rawData);
     if (parsed.success) {
       const data = parsed.data as WorkspaceBillingDto;
-      return data;
+      return { rawData: result, ...data };
     } else {
       console.warn('Invalid workspace billing data:', rawData, parsed.error);
-      return null;
+      return { rawData: result };
     }
   }
 
   // 결제내역
-  async getWorkspaceBillingHistories(request: CollectWorkflowRequest): Promise<WorkspaceBillingHistoryDto[]> {
+  async getWorkspaceBillingHistories(request: CollectWorkflowRequest): Promise<{ data: WorkspaceBillingHistoryDto[], rawData: CollectWorkflowResult }> {
     const result = await this.collectWorkflow(request);
     if (!result.success) {
       throw new EightGError('Failed to get workspace billing histories', 'GET_WORKSPACE_BILLING_HISTORIES_FAILED');
@@ -220,7 +222,7 @@ export class EightGClient {
 
     const rawData = result.steps[result.steps.length - 1]?.result?.data;
     if (!rawData || !Array.isArray(rawData)) {
-      return [];
+      return { rawData: result, data: [] };
     }
 
     // 배열의 각 아이템 검증
@@ -234,11 +236,11 @@ export class EightGClient {
       }
     }
 
-    return validatedHistories;
+    return { rawData: result, data: validatedHistories };
   }
 
   // 구성원
-  async getWorkspaceMembers(request: CollectWorkflowRequest): Promise<WorkspaceMemberDto[]> {
+  async getWorkspaceMembers(request: CollectWorkflowRequest): Promise<{ data: WorkspaceMemberDto[], rawData: CollectWorkflowResult }> {
     const result = await this.collectWorkflow(request);
     if (!result.success) {
       throw new EightGError('Failed to get workspace members', 'GET_WORKSPACE_MEMBERS_FAILED');
@@ -246,7 +248,7 @@ export class EightGClient {
 
     const rawData = result.steps[result.steps.length - 1]?.result?.data;
     if (!rawData || !Array.isArray(rawData)) {
-      return [];
+      return { rawData: result, data: [] };
     }
 
     // 배열의 각 아이템 검증
@@ -260,6 +262,6 @@ export class EightGClient {
       }
     }
 
-    return validatedMembers;
+    return { rawData: result, data: validatedMembers };
   }
 }
