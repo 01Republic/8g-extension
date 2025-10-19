@@ -1,4 +1,18 @@
-export { EightGClient } from './EightGClient';
+export {
+  EightGClient,
+  WorkspaceItemDto,
+  CurrencyDto,
+  WorkspaceBillingDto,
+  WorkspaceBillingHistoryDto,
+  WorkspaceMemberDto,
+  BillingCycleTerm,
+  Currency,
+  type ConnectWorkspaceResponseDto,
+  type CurrencyCodes,
+  type CurrencySymbols,
+  type CurrencyFormats,
+  type ValuesOf,
+} from './EightGClient';
 export * from './types';
 export { EightGError } from './errors';
 

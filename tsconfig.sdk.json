@@ -14,7 +14,9 @@
     "outDir": "./dist",
     "strict": true,
     "skipLibCheck": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
   },
   "include": ["src/sdk/**/*", "src/blocks/**/*", "src/types/**/*"],
   "exclude": ["src/**/*.test.ts", "src/**/*.spec.ts"]

@@ -1,7 +1,7 @@
 {
   "name": "scordi-extension",
   "type": "module",
-  "version": "1.14.10",
+  "version": "1.15.0",
   "private": false,
   "main": "./dist/sdk/index.cjs",
   "module": "./dist/sdk/index.js",
@@ -41,6 +41,8 @@
   "dependencies": {
     "@langchain/core": "^0.3.78",
     "@langchain/openai": "^0.6.14",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
     "jsonata": "^2.1.0",
     "langchain": "^0.3.35",
     "react": "^19.1.0",
