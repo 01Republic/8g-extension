@@ -1,17 +1,26 @@
 export {
   EightGClient,
-  WorkspaceItemDto,
-  CurrencyDto,
-  WorkspaceBillingDto,
-  WorkspaceBillingHistoryDto,
-  WorkspaceMemberDto,
-  BillingCycleTerm,
-  Currency,
+  // Types
+  type WorkspaceItemDto,
+  type CurrencyDto,
+  type WorkspaceBillingDto,
+  type WorkspaceBillingHistoryDto,
+  type WorkspaceMemberDto,
   type ConnectWorkspaceResponseDto,
   type CurrencyCodes,
   type CurrencySymbols,
   type CurrencyFormats,
   type ValuesOf,
+  // Enums
+  BillingCycleTerm,
+  Currency,
+  // Schemas
+  WorkspaceItemSchema,
+  CurrencySchema,
+  WorkspaceBillingSchema,
+  WorkspaceBillingHistorySchema,
+  WorkspaceMemberSchema,
+  CurrencyValues,
 } from './EightGClient';
 export * from './types';
 export { EightGError } from './errors';

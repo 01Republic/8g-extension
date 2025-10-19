@@ -1,19 +1,16 @@
 import { CollectWorkflowRequest, CollectWorkflowResult } from './types';
 import { EightGError } from './errors';
 import { ExtensionResponseMessage, isExtensionResponseMessage } from '@/types/external-messages';
-import { plainToInstance, Type } from 'class-transformer';
-import { IsString, IsNumber, IsBoolean, IsEnum, IsOptional, IsDate, ValidateNested, validateSync, IsEmail } from 'class-validator';
+import { z } from 'zod';
 
-export class WorkspaceItemDto {
-  @IsString()
-  name!: string; // 서비스 내 조직 이름
+// Zod 스키마 정의
+export const WorkspaceItemSchema = z.object({
+  name: z.string(),
+  key: z.string(),
+  image: z.string(),
+});
 
-  @IsString()
-  key!: string; // 목록에서 조직을 선택하기 위한 식별자 (slug 성격)
-
-  @IsString()
-  image!: string; // 이미지
-}
+export type WorkspaceItemDto = z.infer<typeof WorkspaceItemSchema>;
 
 export type ConnectWorkspaceResponseDto = {
   data: WorkspaceItemDto[];
@@ -25,29 +22,21 @@ export enum BillingCycleTerm {
   yearly = 'YEARLY',
 }
 
-export class CurrencyDto {
-  @IsString()
-  text!: string;
+export const CurrencySchema = z.object({
+  text: z.string(),
+  code: z.string(),
+  symbol: z.string(),
+  format: z.string(),
+  amount: z.number(),
+});
 
-  @IsString()
-  code!: CurrencyCodes;
-
-  @IsString()
-  symbol!: CurrencySymbols;
-
-  @IsString()
-  format!: CurrencyFormats;
-
-  @IsNumber()
-  amount!: number;
-}
+export type CurrencyDto = z.infer<typeof CurrencySchema>;
 
 export type CurrencyCodes = ValuesOf<typeof CurrencyValues>['code'];
 export type CurrencySymbols = ValuesOf<typeof CurrencyValues>['symbol'];
 export type CurrencyFormats = '%u%n';
 
 export type ValuesOf<OBJ> = OBJ[keyof OBJ];
-
 
 export enum Currency {
   USD = 'USD',
@@ -59,80 +48,41 @@ export const CurrencyValues = {
   ko: {code: 'KRW', symbol: '₩'},
 } as const;
 
+export const WorkspaceBillingSchema = z.object({
+  planName: z.string(),
+  currentCycleBillAmount: CurrencySchema,
+  nextPaymentDue: z.string(),
+  cycleTerm: z.nativeEnum(BillingCycleTerm).nullable(),
+  isFreeTier: z.boolean(),
+  isPerUser: z.boolean(),
+  paidMemberCount: z.number(),
+  usedMemberCount: z.number(),
+  unitPrice: CurrencySchema.nullable()
+});
 
-export class WorkspaceBillingDto {
-  @IsString()
-  planName!: string;
+export type WorkspaceBillingDto = z.infer<typeof WorkspaceBillingSchema> & {
+};
 
-  @ValidateNested()
-  @Type(() => CurrencyDto)
-  currentCycleBillAmount!: CurrencyDto;
+export const WorkspaceBillingHistorySchema = z.object({
+  uid: z.string(),
+  issuedDate: z.coerce.date(),
+  paidDate: z.coerce.date().nullable().optional(),
+  paymentMethod: z.string(),
+  amount: CurrencySchema,
+  isSuccessfulPaid: z.boolean(),
+  receiptUrl: z.string(),
+});
 
-  @IsString()
-  nextPaymentDue!: string;
+export type WorkspaceBillingHistoryDto = z.infer<typeof WorkspaceBillingHistorySchema>;
 
-  @IsOptional()
-  @IsEnum(BillingCycleTerm)
-  cycleTerm!: BillingCycleTerm | null;
+export const WorkspaceMemberSchema = z.object({
+  name: z.string(),
+  email: z.string().email(),
+  profileImageUrl: z.string(),
+  role: z.string(),
+});
 
-  @IsBoolean()
-  isFreeTier!: boolean;
-
-  @IsBoolean()
-  isPerUser!: boolean;
-
-  @IsNumber()
-  paidMemberCount!: number;
-
-  @IsNumber()
-  usedMemberCount!: number;
-
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => CurrencyDto)
-  unitPrice!: CurrencyDto | null;
-}
-
-export class WorkspaceBillingHistoryDto {
-  @IsString()
-  uid!: string;
-
-  @IsDate()
-  @Type(() => Date)
-  issuedDate!: Date;
-
-  @IsOptional()
-  @IsDate()
-  @Type(() => Date)
-  paidDate?: Date | null;
-
-  @IsString()
-  paymentMethod!: string;
-
-  @ValidateNested()
-  @Type(() => CurrencyDto)
-  amount!: CurrencyDto;
-
-  @IsBoolean()
-  isSuccessfulPaid!: boolean;
-
-  @IsString()
-  receiptUrl!: string;
-}
-
-export class WorkspaceMemberDto {
-  @IsString()
-  name!: string;
-
-  @IsEmail()
-  email!: string;
-
-  @IsString()
-  profileImageUrl!: string;
-
-  @IsString()
-  role!: string;
-}
+export type WorkspaceMemberDto = z.infer<typeof WorkspaceMemberSchema>;
 
 /**
  * 8G Extension SDK Client
@@ -222,17 +172,14 @@ export class EightGClient {
       };
     }
 
-    // plainToInstance로 데이터를 WorkspaceItemDto 클래스 인스턴스로 변환
-    const workspaces = plainToInstance(WorkspaceItemDto, rawData);
-
-    // class-validator로 각 아이템 검증
+    // Zod로 각 아이템 검증
     const validatedWorkspaces: WorkspaceItemDto[] = [];
-    for (const workspace of workspaces) {
-      const errors = validateSync(workspace);
-      if (errors.length === 0) {
-        validatedWorkspaces.push(workspace);
+    for (const item of rawData) {
+      const parsed = WorkspaceItemSchema.safeParse(item);
+      if (parsed.success) {
+        validatedWorkspaces.push(parsed.data);
       } else {
-        console.warn('Invalid workspace data:', workspace, errors);
+        console.warn('Invalid workspace data:', item, parsed.error);
       }
     }
 
@@ -242,82 +189,77 @@ export class EightGClient {
     };
   }
 
-    // 플랜, 결제주기
-    async getWorkspacePlanAndCycle(request: CollectWorkflowRequest): Promise<WorkspaceBillingDto | null> {
-      const result = await this.collectWorkflow(request);
-      if (!result.success) {
-        throw new EightGError('Failed to get workspace plan and cycle', 'GET_WORKSPACE_PLAN_AND_CYCLE_FAILED');
-      }
+  // 플랜, 결제주기
+  async getWorkspacePlanAndCycle(request: CollectWorkflowRequest): Promise<WorkspaceBillingDto | null> {
+    const result = await this.collectWorkflow(request);
+    if (!result.success) {
+      throw new EightGError('Failed to get workspace plan and cycle', 'GET_WORKSPACE_PLAN_AND_CYCLE_FAILED');
+    }
 
-      const rawData = result.steps[result.steps.length - 1]?.result?.data;
-      if (!rawData) {
-        return null;
-      }
+    const rawData = result.steps[result.steps.length - 1]?.result?.data;
+    if (!rawData) {
+      return null;
+    }
 
-      const workspaceBilling = plainToInstance(WorkspaceBillingDto, rawData);
+    const parsed = WorkspaceBillingSchema.safeParse(rawData);
+    if (parsed.success) {
+      const data = parsed.data as WorkspaceBillingDto;
+      return data;
+    } else {
+      console.warn('Invalid workspace billing data:', rawData, parsed.error);
+      return null;
+    }
+  }
 
-      const errors = validateSync(workspaceBilling);
-      if (errors.length === 0) {
-        return workspaceBilling;
+  // 결제내역
+  async getWorkspaceBillingHistories(request: CollectWorkflowRequest): Promise<WorkspaceBillingHistoryDto[]> {
+    const result = await this.collectWorkflow(request);
+    if (!result.success) {
+      throw new EightGError('Failed to get workspace billing histories', 'GET_WORKSPACE_BILLING_HISTORIES_FAILED');
+    }
+
+    const rawData = result.steps[result.steps.length - 1]?.result?.data;
+    if (!rawData || !Array.isArray(rawData)) {
+      return [];
+    }
+
+    // 배열의 각 아이템 검증
+    const validatedHistories: WorkspaceBillingHistoryDto[] = [];
+    for (const item of rawData) {
+      const parsed = WorkspaceBillingHistorySchema.safeParse(item);
+      if (parsed.success) {
+        validatedHistories.push(parsed.data);
       } else {
-        console.warn('Invalid workspace billing data:', workspaceBilling, errors);
-        return null;
+        console.warn('Invalid workspace billing history data:', item, parsed.error);
       }
     }
 
-    // 결제내역
-    async getWorkspaceBillingHistories(request: CollectWorkflowRequest): Promise<WorkspaceBillingHistoryDto[]> {
-      const result = await this.collectWorkflow(request);
-      if (!result.success) {
-        throw new EightGError('Failed to get workspace billing histories', 'GET_WORKSPACE_BILLING_HISTORIES_FAILED');
-      }
+    return validatedHistories;
+  }
 
-      const rawData = result.steps[result.steps.length - 1]?.result?.data;
-      if (!rawData || !Array.isArray(rawData)) {
-        return [];
-      }
-
-      const workspaceBillingHistories = plainToInstance(WorkspaceBillingHistoryDto, rawData);
-
-      // 배열의 각 아이템 검증
-      const validatedHistories: WorkspaceBillingHistoryDto[] = [];
-      for (const history of workspaceBillingHistories) {
-        const errors = validateSync(history);
-        if (errors.length === 0) {
-          validatedHistories.push(history);
-        } else {
-          console.warn('Invalid workspace billing history data:', history, errors);
-        }
-      }
-
-      return validatedHistories;
+  // 구성원
+  async getWorkspaceMembers(request: CollectWorkflowRequest): Promise<WorkspaceMemberDto[]> {
+    const result = await this.collectWorkflow(request);
+    if (!result.success) {
+      throw new EightGError('Failed to get workspace members', 'GET_WORKSPACE_MEMBERS_FAILED');
     }
 
-    // 구성원
-    async getWorkspaceMembers(request: CollectWorkflowRequest): Promise<WorkspaceMemberDto[]> {
-      const result = await this.collectWorkflow(request);
-      if (!result.success) {
-        throw new EightGError('Failed to get workspace members', 'GET_WORKSPACE_MEMBERS_FAILED');
-      }
-
-      const rawData = result.steps[result.steps.length - 1]?.result?.data;
-      if (!rawData || !Array.isArray(rawData)) {
-        return [];
-      }
-
-      const workspaceMembers = plainToInstance(WorkspaceMemberDto, rawData);
-
-      // 배열의 각 아이템 검증
-      const validatedMembers: WorkspaceMemberDto[] = [];
-      for (const member of workspaceMembers) {
-        const errors = validateSync(member);
-        if (errors.length === 0) {
-          validatedMembers.push(member);
-        } else {
-          console.warn('Invalid workspace member data:', member, errors);
-        }
-      }
-
-      return validatedMembers;
+    const rawData = result.steps[result.steps.length - 1]?.result?.data;
+    if (!rawData || !Array.isArray(rawData)) {
+      return [];
     }
+
+    // 배열의 각 아이템 검증
+    const validatedMembers: WorkspaceMemberDto[] = [];
+    for (const item of rawData) {
+      const parsed = WorkspaceMemberSchema.safeParse(item);
+      if (parsed.success) {
+        validatedMembers.push(parsed.data);
+      } else {
+        console.warn('Invalid workspace member data:', item, parsed.error);
+      }
+    }
+
+    return validatedMembers;
+  }
 }
