@@ -24,14 +24,29 @@ import { ConfirmationUIContainer } from './components/ConfirmationUI';
   internalHandler.initializeMessageListener();
   externalHandler.initializeMessageListener();
 
-  // Confirmation UI 초기화
-  const uiRoot = document.createElement('div');
-  uiRoot.id = '8g-confirmation-ui-root';
-  uiRoot.style.cssText = 'all: initial; position: fixed; z-index: 2147483647;';
-  document.body.appendChild(uiRoot);
+  // Confirmation UI 초기화 (top frame에서만)
+  const isTopFrame = window.self === window.top;
 
-  const root = createRoot(uiRoot);
-  root.render(<ConfirmationUIContainer />);
+  if (isTopFrame) {
+    const initUI = () => {
+      const uiRoot = document.createElement('div');
+      uiRoot.id = '8g-confirmation-ui-root';
+      uiRoot.style.cssText = 'all: initial; position: fixed; z-index: 2147483647;';
+      document.body.appendChild(uiRoot);
 
-  console.log('[8G Extension] Confirmation UI mounted');
+      const root = createRoot(uiRoot);
+      root.render(<ConfirmationUIContainer />);
+
+      console.log('[8G Extension] Confirmation UI mounted (top frame only)');
+    };
+
+    // document.body가 준비되면 UI 초기화
+    if (document.body) {
+      initUI();
+    } else {
+      document.addEventListener('DOMContentLoaded', initUI);
+    }
+  } else {
+    console.log('[8G Extension] Skipping UI mount (inside iframe)');
+  }
 })();

@@ -13,6 +13,7 @@ export type { EventClickBlock } from './EventClickBlock';
 export type { KeypressBlock } from './KeypressBlock';
 export type { WaitBlock } from './WaitBlock';
 export type { WaitForConditionBlock, WaitForConditionResult } from './WaitForConditionBlock';
+export type { NavigateBlock } from './NavigateBlock';
 export type { SaveAssetsBlock } from './SaveAssetsBlock';
 export type { GetElementDataBlock, ElementData } from './GetElementDataBlock';
 export type { ScrollBlock } from './ScrollBlock';
@@ -38,6 +39,7 @@ export { EventClickBlockSchema } from './EventClickBlock';
 export { KeypressBlockSchema } from './KeypressBlock';
 export { WaitBlockSchema } from './WaitBlock';
 export { WaitForConditionBlockSchema } from './WaitForConditionBlock';
+export { NavigateBlockSchema } from './NavigateBlock';
 export { SaveAssetsBlockSchema } from './SaveAssetsBlock';
 export { GetElementDataBlockSchema } from './GetElementDataBlock';
 export { ScrollBlockSchema } from './ScrollBlock';
@@ -81,6 +83,7 @@ import {
   WaitForConditionResult,
   validateWaitForConditionBlock
 } from './WaitForConditionBlock';
+import { handlerNavigate, NavigateBlock, validateNavigateBlock } from './NavigateBlock';
 import { handlerSaveAssets, SaveAssetsBlock, validateSaveAssetsBlock } from './SaveAssetsBlock';
 import {
   handlerGetElementData,
@@ -103,6 +106,7 @@ import { EventClickBlockSchema } from './EventClickBlock';
 import { KeypressBlockSchema } from './KeypressBlock';
 import { WaitBlockSchema } from './WaitBlock';
 import { WaitForConditionBlockSchema } from './WaitForConditionBlock';
+import { NavigateBlockSchema } from './NavigateBlock';
 import { SaveAssetsBlockSchema } from './SaveAssetsBlock';
 import { GetElementDataBlockSchema } from './GetElementDataBlock';
 import { ScrollBlockSchema } from './ScrollBlock';
@@ -122,6 +126,7 @@ export const AllBlockSchemas = {
   'keypress': KeypressBlockSchema,
   'wait': WaitBlockSchema,
   'wait-for-condition': WaitForConditionBlockSchema,
+  'navigate': NavigateBlockSchema,
   'save-assets': SaveAssetsBlockSchema,
   'get-element-data': GetElementDataBlockSchema,
   'scroll': ScrollBlockSchema,
@@ -144,6 +149,7 @@ export class BlockHandler {
   static executeBlock(block: KeypressBlock): Promise<BlockResult<boolean>>;
   static executeBlock(block: WaitBlock): Promise<BlockResult<boolean>>;
   static executeBlock(block: WaitForConditionBlock): Promise<BlockResult<WaitForConditionResult>>;
+  static executeBlock(block: NavigateBlock): Promise<BlockResult<boolean>>;
   static executeBlock(block: SaveAssetsBlock): Promise<BlockResult<string[] | null>>;
   static executeBlock(
     block: GetElementDataBlock
@@ -155,7 +161,7 @@ export class BlockHandler {
   static executeBlock(block: Block): Promise<BlockResult>;
 
   // Implementation
-  static async executeBlock(block: Block | AiParseDataBlock | FetchApiBlock | DataExtractBlock | KeypressBlock | WaitBlock | WaitForConditionBlock): Promise<BlockResult> {
+  static async executeBlock(block: Block | AiParseDataBlock | FetchApiBlock | DataExtractBlock | KeypressBlock | WaitBlock | WaitForConditionBlock | NavigateBlock): Promise<BlockResult> {
     try {
       switch (block.name) {
         case 'get-text': {
@@ -206,6 +212,11 @@ export class BlockHandler {
         case 'wait-for-condition': {
           const validatedBlock = validateWaitForConditionBlock(block);
           return await handlerWaitForCondition(validatedBlock);
+        }
+
+        case 'navigate': {
+          const validatedBlock = validateNavigateBlock(block);
+          return await handlerNavigate(validatedBlock);
         }
 
         case 'save-assets': {

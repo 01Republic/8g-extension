@@ -100,6 +100,16 @@ export class TabManager {
       };
     }
 
+    return this.executeBlockWithRetry(blockData, tabId, 0);
+  }
+
+  private async executeBlockWithRetry(
+    blockData: Block,
+    tabId: number,
+    retryCount: number
+  ): Promise<BlockResult> {
+    const MAX_RETRIES = 3;
+
     return new Promise((resolve, reject) => {
       const message: ExecuteBlockMessage = {
         isBlock: true,
@@ -107,21 +117,48 @@ export class TabManager {
         data: blockData,
       };
 
-      chrome.tabs.sendMessage(tabId, message, (response: BlockExecutionResponse) => {
+      chrome.tabs.sendMessage(tabId, message, async (response: BlockExecutionResponse) => {
         if (chrome.runtime.lastError) {
-          console.log('Error sending message:', chrome.runtime.lastError);
+          const errorMsg = chrome.runtime.lastError.message || '';
+          console.log('[TabManager] Error sending message:', errorMsg);
 
           // 탭 닫힘으로 인한 에러인지 확인
           if (this.isTabClosed(tabId)) {
             reject(new Error('Tab was closed by user'));
+            return;
+          }
+
+          // 페이지 전환으로 인한 content script unload 감지
+          const isPageTransition =
+            errorMsg.includes('Receiving end does not exist') ||
+            errorMsg.includes('message channel closed') ||
+            errorMsg.includes('back/forward cache');
+
+          if (isPageTransition && retryCount < MAX_RETRIES) {
+            console.log(
+              `[TabManager] Page transition detected, waiting for reload and retrying (${retryCount + 1}/${MAX_RETRIES})...`
+            );
+
+            try {
+              // 페이지 로드 대기
+              await this.waitForTabLoad(tabId, 10000);
+              // Content script 준비 대기
+              await new Promise((r) => setTimeout(r, 1000));
+
+              // 재시도
+              const result = await this.executeBlockWithRetry(blockData, tabId, retryCount + 1);
+              resolve(result);
+            } catch (error) {
+              reject(new Error('Page load timeout after transition'));
+            }
           } else {
-            reject(new Error(chrome.runtime.lastError.message || 'Communication error'));
+            reject(new Error(errorMsg || 'Communication error'));
           }
         } else if (isErrorResponse(response)) {
-          console.log('Content script error:', response.message);
+          console.log('[TabManager] Content script error:', response.message);
           reject(new Error(response.message));
         } else {
-          console.log('Received response from content script:', response);
+          console.log('[TabManager] Received response from content script');
           resolve(response || { data: null });
         }
       });

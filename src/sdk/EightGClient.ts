@@ -37,9 +37,10 @@ export class EightGClient {
   async collectWorkflow(request: CollectWorkflowRequest): Promise<CollectWorkflowResult> {
     return new Promise((resolve, reject) => {
       const requestId = `8g_wf_${Date.now()}_${Math.random()}`;
+      const timeoutMs = request.timeoutMs ?? 600000; // 기본 10분
       const timeout = setTimeout(() => {
-        reject(EightGError.requestTimeout());
-      }, 60000);
+        reject(EightGError.requestTimeout(timeoutMs));
+      }, timeoutMs);
 
       const handleResponse = (event: MessageEvent) => {
         if (event.data?.type === '8G_COLLECT_RESPONSE' && event.data.requestId === requestId) {

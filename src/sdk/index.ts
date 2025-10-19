@@ -16,6 +16,7 @@ export type {
   WaitBlock,
   WaitForConditionBlock,
   WaitForConditionResult,
+  NavigateBlock,
   SaveAssetsBlock,
   GetElementDataBlock,
   ElementData,

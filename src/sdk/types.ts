@@ -75,6 +75,7 @@ export type CollectWorkflowRequest = {
   workflow: Workflow;
   activateTab?: boolean;
   closeTabAfterCollection?: boolean;
+  timeoutMs?: number;  // SDK timeout (기본값: 600000ms = 10분)
 };
 
 export class WorkflowStepRunResult<T = any> {

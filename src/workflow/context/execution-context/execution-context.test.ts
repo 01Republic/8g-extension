@@ -3,7 +3,6 @@ import {
   createExecutionContext,
   setStepResultInContext,
   setVarInContext,
-  setVarsInContext,
   enterForEachInContext,
   exitLoopInContext,
   getByPath,
