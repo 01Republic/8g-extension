@@ -77,7 +77,11 @@ Webpage (SDK resolves Promise)
 
 **Workflow ([src/workflow/](src/workflow/))**
 - [WorkflowRunner.ts](src/workflow/WorkflowRunner.ts) - Core workflow execution engine: evaluates conditions, handles branching/retry/timeout, manages step execution
-- [context/](src/workflow/context/) - Execution context management (vars, steps, forEach/loop state)
+- [context/](src/workflow/context/) - Execution context management with organized sub-contexts:
+  - [execution-context/](src/workflow/context/execution-context/) - Overall execution state
+  - [var-context/](src/workflow/context/var-context/) - Variable management
+  - [step-context/](src/workflow/context/step-context/) - Step results tracking
+  - [loop-context/](src/workflow/context/loop-context/) - forEach/loop iteration state
 - [step-executor/](src/workflow/step-executor/) - Step execution logic, condition evaluation, data binding, repeat handling
 
 **Content Scripts ([src/content/](src/content/))**
@@ -86,15 +90,19 @@ Webpage (SDK resolves Promise)
 - [handler/ExternalMessageHandler.ts](src/content/handler/ExternalMessageHandler.ts) - Bridges webpage ↔ content script via window.postMessage
 - [handler/InternalMessageHandler.ts](src/content/handler/InternalMessageHandler.ts) - Bridges background ↔ content script via chrome.runtime
 - [elements/](src/content/elements/) - CSS/XPath selector builders, element finders (supports iframe, shadow DOM)
+- [components/ConfirmationUI.tsx](src/content/components/ConfirmationUI.tsx) - User confirmation floating UI for wait-for-condition block
+- [utils/synchronizedLock.ts](src/content/utils/synchronizedLock.ts) - Lock queue management for synchronized block execution
 
 **Blocks ([src/blocks/](src/blocks/))**
 - [index.ts](src/blocks/index.ts) - `BlockHandler.executeBlock()` entry point, routes to validate*/handler* functions
 - Each block has: TypeSchema (Zod schema), validate* function, handler* function
-- Block types: get-text, attribute-value, get-element-data, get/set/clear-value-form, element-exists, event-click, keypress, scroll, wait, save-assets, fetch-api, ai-parse-data
+- Block types: get-text, attribute-value, get-element-data, get/set/clear-value-form, element-exists, event-click, keypress, scroll, wait, save-assets, fetch-api, ai-parse-data, navigate, wait-for-condition, data-extract
 
 **SDK ([src/sdk/](src/sdk/))**
 - [index.ts](src/sdk/index.ts) - Main export entry point
-- [EightGClient.ts](src/sdk/EightGClient.ts) - Public API: `checkExtension()`, `collectWorkflow()`
+- [EightGClient.ts](src/sdk/EightGClient.ts) - Public API:
+  - Core: `checkExtension()`, `collectWorkflow()`
+  - Workspace: `getWorkspaces()`, `getWorkspacePlanAndCycle()`, `getWorkspaceBillingHistories()`, `getWorkspaceMembers()`
 - [types.ts](src/sdk/types.ts) - Workflow, Step, and configuration types
 - [errors.ts](src/sdk/errors.ts) - EightGError class
 
@@ -159,23 +167,23 @@ During workflow execution, `WorkflowRunner` maintains a context object:
 
 ### Data Binding
 Values can reference context data using JSONPath-like syntax:
-- **valueFrom**: `{ valueFrom: "$.steps.stepId.result.data" }` - Direct value reference
-- **template**: `{ template: "User ${$.vars.userId}" }` - String interpolation
+- **valueFrom**: `{ valueFrom: "steps.stepId.result.data" }` - Direct value reference
+- **template**: `{ template: "User ${vars.userId}" }` - String interpolation
 - References are resolved via `WorkflowRunner.getByPath()` and `resolveBindings()`
 
 ### Conditions (when/switch)
 Supports both JSON conditions (recommended) and expression strings:
 
 **JSON Conditions:**
-- `{ exists: "$.steps.stepId.result" }`
-- `{ equals: { left: "$.steps.stepId.result.data", right: "OK" } }`
+- `{ exists: "steps.stepId.result" }`
+- `{ equals: { left: "steps.stepId.result.data", right: "OK" } }`
 - `{ notEquals: { left: "...", right: "..." } }`
 - `{ contains: { value: "...", search: "..." } }`
 - `{ regex: { value: "...", pattern: "...", flags?: "..." } }`
 - `{ and: [ {...}, {...} ] }`, `{ or: [...] }`, `{ not: {...} }`
 
 **Expression Strings:**
-- `{ expr: "$.steps.prev.result.data === 'OK'" }` - Uses Function() constructor with $ as context
+- `{ expr: "steps.prev.result.data === 'OK'" }` - Uses Function() constructor with vars, steps, forEach, loop as parameters
 
 ### Repeat Execution
 Steps can be repeated using `repeat` configuration:
@@ -184,7 +192,7 @@ Steps can be repeated using `repeat` configuration:
 ```typescript
 {
   repeat: {
-    forEach: '$.steps.getItems.result.data',  // Array path
+    forEach: 'steps.getItems.result.data',  // Array path
     continueOnError: true,                     // Keep going on errors
     delayBetween: 200                          // Wait between iterations (ms)
   }
@@ -206,7 +214,7 @@ Results from repeated steps are collected in arrays.
 ## Block System
 
 ### Block Structure
-All blocks (except keypress, wait, fetch-api, ai-parse-data) have:
+All blocks (except keypress, wait, fetch-api, ai-parse-data, navigate, wait-for-condition, data-extract) have:
 ```typescript
 {
   name: 'block-name',
@@ -240,11 +248,14 @@ All blocks (except keypress, wait, fetch-api, ai-parse-data) have:
 **Utilities:**
 - `element-exists` - Check if element exists (returns boolean)
 - `wait` - Delay execution (ms)
+- `wait-for-condition` - Wait for conditions (URL pattern, element, cookie, storage, user confirmation) with auto/manual/combined modes
+- `navigate` - Navigate to specific URL with optional page load waiting
 - `save-assets` - Collect image/media URLs
 
-**API/AI:**
+**API/AI/Data:**
 - `fetch-api` - External API calls (no CORS restrictions, runs in background)
 - `ai-parse-data` - Parse unstructured data using OpenAI with schema definition
+- `data-extract` - Extract/transform data using JSONata queries
 
 ### Block Execution Pipeline
 1. `BlockHandler.executeBlock(block)` - Entry point in content script
@@ -292,7 +303,7 @@ Tests use Vitest with jsdom environment. Test files are co-located with source f
 ### Workflow Development
 - All block execution must go through workflows - no standalone block execution
 - Always provide `option: {}` for blocks even if empty (required by validation)
-- Exception: keypress, wait, fetch-api, ai-parse-data don't need selector/findBy/option
+- Exception: keypress, wait, fetch-api, ai-parse-data, navigate, wait-for-condition, data-extract don't need selector/findBy/option
 - Use `delayAfterMs` generously for animations and async UI updates
 - Set `waitForSelector: true` for dynamic content
 - Branch execution priority: switch → onSuccess/onFailure → next → end
@@ -337,6 +348,9 @@ src/
 │   ├── KeypressBlock.ts
 │   ├── ScrollBlock.ts
 │   ├── WaitBlock.ts
+│   ├── NavigateBlock.ts
+│   ├── WaitForConditionBlock.ts
+│   ├── DataExtractBlock.ts
 │   ├── FetchApiBlock.ts
 │   ├── AiParseDataBlock.ts
 │   └── index.ts        # BlockHandler entry point

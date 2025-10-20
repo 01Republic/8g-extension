@@ -108,7 +108,7 @@ const complexWorkflow = {
       id: 'readStatus', 
       block: { name: 'get-text', selector: '.status', findBy: 'cssSelector', useTextContent: true, option: {} },
       switch: [ 
-        { when: { equals: { left: "$.steps.readStatus.result.data", right: 'OK' } }, next: 'go' } 
+        { when: { equals: { left: "steps.readStatus.result.data", right: 'OK' } }, next: 'go' } 
       ], 
       next: 'retry' 
     },
@@ -204,8 +204,11 @@ Webpage(JS) ─ SDK(EightGClient)
   - `scroll`: 페이지 스크롤(toElement, toBottom, byDistance, untilLoaded)
   - `keypress`: 키보드 입력 시뮬레이션(Escape, Enter 등, modifier 키 지원)
   - `wait`: 지정 시간 대기(ms)
+  - `wait-for-condition`: 조건 대기(URL 패턴, 요소 존재, 쿠키, 스토리지, 사용자 확인)
+  - `navigate`: URL 이동(페이지 로드 대기 옵션)
   - `fetch-api`: 외부 API 호출(GET, POST 등, CORS 제약 없음)
   - `ai-parse-data`: AI 기반 데이터 파싱(OpenAI, 스키마 정의 필요)
+  - `data-extract`: 데이터 추출/변환(JSONata 쿼리 지원)
 
 ### SDK 상세(브라우저에서 사용)
 - `EightGClient.checkExtension()`
@@ -217,6 +220,11 @@ Webpage(JS) ─ SDK(EightGClient)
   - 각 스텝: `{ id, block?, when?, switch?, next?, onSuccess?, onFailure?, retry?, timeoutMs?, delayAfterMs?, setVars? }`
   - 반환: `{ success, steps, error?, timestamp, targetUrl }` (스텝별 성공/실패/메시지/시각/재시도 횟수 포함)
   - 타임아웃: 기본 60초
+- **Workspace 관련 메서드** (워크플로우 기반):
+  - `getWorkspaces()`: 워크스페이스 목록 조회
+  - `getWorkspacePlanAndCycle()`: 워크스페이스 플랜 및 결제 주기 조회
+  - `getWorkspaceBillingHistories()`: 결제 내역 조회
+  - `getWorkspaceMembers()`: 워크스페이스 구성원 조회
 
 ### 주요 내부 모듈과 연결 관계
 - `src/content/kernel/MessageKernel.ts`: Background 통신, 블록 실행(락 관리 포함), 런타임 메시지 처리

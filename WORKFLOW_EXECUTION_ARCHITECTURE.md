@@ -132,7 +132,7 @@ const result = await client.collectWorkflow({
   id: 'fetchUser',
   block: {
     name: 'fetch-api',
-    url: { template: 'https://api.example.com/users/${$.steps.getUserId.result.data}' },
+    url: { template: 'https://api.example.com/users/${steps.getUserId.result.data}' },
     method: 'GET',
     parseJson: true
   }
@@ -140,10 +140,10 @@ const result = await client.collectWorkflow({
 ```
 
 **템플릿 문법:**
-- `${$.steps.stepId.result.data}` - 스텝 결과 참조
-- `${$.forEach.item.id}` - forEach 반복의 현재 항목
-- `${$.forEach.index}` - forEach 반복의 현재 인덱스
-- `${$.loop.index}` - count 반복의 현재 인덱스
+- `${steps.stepId.result.data}` - 스텝 결과 참조
+- `${forEach.item.id}` - forEach 반복의 현재 항목
+- `${forEach.index}` - forEach 반복의 현재 인덱스
+- `${loop.index}` - count 반복의 현재 인덱스
 
 #### 2. 값 참조 (`valueFrom`)
 
@@ -155,7 +155,7 @@ const result = await client.collectWorkflow({
   block: {
     name: 'ai-parse-data',
     apiKey: 'sk-...',
-    sourceData: { valueFrom: '$.steps.getText.result.data' },
+    sourceData: { valueFrom: 'steps.getText.result.data' },
     schemaDefinition: {
       type: 'object',
       shape: {
@@ -174,7 +174,7 @@ const result = await client.collectWorkflow({
 ```typescript
 {
   url: {
-    valueFrom: '$.steps.getUrl.result.data',
+    valueFrom: 'steps.getUrl.result.data',
     default: 'https://example.com'
   }
 }
@@ -182,13 +182,13 @@ const result = await client.collectWorkflow({
 
 ### JSONPath 참조 문법
 
-- `$.steps.stepId.result.data` - 특정 스텝의 결과 데이터
-- `$.steps.stepId.result.data[0]` - 배열의 첫 번째 항목
-- `$.steps.stepId.result.data.user.name` - 중첩된 객체 속성
-- `$.vars.varName` - 워크플로우 변수 참조
-- `$.forEach.item` - forEach 반복의 현재 항목
-- `$.forEach.index` - forEach 반복의 현재 인덱스
-- `$.loop.index` - count 반복의 현재 인덱스
+- `steps.stepId.result.data` - 특정 스텝의 결과 데이터
+- `steps.stepId.result.data[0]` - 배열의 첫 번째 항목
+- `steps.stepId.result.data.user.name` - 중첩된 객체 속성
+- `vars.varName` - 워크플로우 변수 참조
+- `forEach.item` - forEach 반복의 현재 항목
+- `forEach.index` - forEach 반복의 현재 인덱스
+- `loop.index` - count 반복의 현재 인덱스
 
 ### 워크플로우 변수 (vars)
 
@@ -208,10 +208,10 @@ const workflow = {
       id: 'fetchUser',
       block: {
         name: 'fetch-api',
-        url: { template: '${$.vars.baseUrl}/users/${$.vars.userId}' },
+        url: { template: '${vars.baseUrl}/users/${vars.userId}' },
         method: 'GET',
         headers: {
-          'Authorization': { template: 'Bearer ${$.vars.apiKey}' }
+          'Authorization': { template: 'Bearer ${vars.apiKey}' }
         },
         parseJson: true
       },
@@ -258,7 +258,7 @@ const workflow = {
       id: 'fetchUserData',
       block: {
         name: 'fetch-api',
-        url: { template: '${$.vars.apiEndpoint}/users/${$.vars.userId}' },
+        url: { template: '${vars.apiEndpoint}/users/${vars.userId}' },
         method: 'GET',
         parseJson: true
       }
@@ -280,7 +280,7 @@ const workflow = {
   id: 'conditionalStep',
   when: {
     equals: {
-      left: '$.steps.checkStatus.result.data',
+      left: 'steps.checkStatus.result.data',
       right: 'active'
     }
   },
@@ -292,24 +292,24 @@ const workflow = {
 
 ```typescript
 // 존재 여부
-{ exists: '$.steps.stepId.result' }
+{ exists: 'steps.stepId.result' }
 
 // 같음
-{ equals: { left: '$.steps.stepId.result.data', right: 'value' } }
+{ equals: { left: 'steps.stepId.result.data', right: 'value' } }
 
 // 다름
-{ notEquals: { left: '$.steps.stepId.result.data', right: 'value' } }
+{ notEquals: { left: 'steps.stepId.result.data', right: 'value' } }
 
 // 포함
-{ contains: { value: '$.steps.stepId.result.data', search: 'substring' } }
+{ contains: { value: 'steps.stepId.result.data', search: 'substring' } }
 
 // 정규식
-{ regex: { value: '$.steps.stepId.result.data', pattern: '^OK$', flags: 'i' } }
+{ regex: { value: 'steps.stepId.result.data', pattern: '^OK$', flags: 'i' } }
 
 // 논리 연산
-{ and: [ { exists: '$.steps.a' }, { equals: { left: '$.steps.b.result.data', right: 1 } } ] }
-{ or: [ { equals: { left: '$.steps.a', right: 1 } }, { equals: { left: '$.steps.b', right: 2 } } ] }
-{ not: { exists: '$.steps.error.result' } }
+{ and: [ { exists: 'steps.a' }, { equals: { left: 'steps.b.result.data', right: 1 } } ] }
+{ or: [ { equals: { left: 'steps.a', right: 1 } }, { equals: { left: 'steps.b', right: 2 } } ] }
+{ not: { exists: 'steps.error.result' } }
 ```
 
 #### 표현식 조건
@@ -318,7 +318,7 @@ const workflow = {
 {
   id: 'conditionalStep',
   when: {
-    expr: "$.steps.checkStatus.result.data === 'active'"
+    expr: "steps.checkStatus.result.data === 'active'"
   },
   block: { /* ... */ }
 }
@@ -340,11 +340,11 @@ const workflow = {
   },
   switch: [
     {
-      when: { equals: { left: '$.steps.checkStatus.result.data', right: 'OK' } },
+      when: { equals: { left: 'steps.checkStatus.result.data', right: 'OK' } },
       next: 'handleOk'
     },
     {
-      when: { equals: { left: '$.steps.checkStatus.result.data', right: 'PENDING' } },
+      when: { equals: { left: 'steps.checkStatus.result.data', right: 'PENDING' } },
       next: 'handlePending'
     }
   ],
@@ -386,13 +386,13 @@ const workflow = {
     {
       id: 'fetchEachProduct',
       repeat: {
-        forEach: '$.steps.getProductIds.result.data',  // 배열 경로
+        forEach: 'steps.getProductIds.result.data',  // 배열 경로
         continueOnError: true,    // 에러 발생해도 계속
         delayBetween: 200         // 각 반복 사이 200ms 대기
       },
       block: {
         name: 'fetch-api',
-        url: { template: 'https://api.example.com/products/${$.forEach.item.id}' },
+        url: { template: 'https://api.example.com/products/${forEach.item.id}' },
         method: 'GET',
         parseJson: true
       }
@@ -402,13 +402,13 @@ const workflow = {
 ```
 
 **forEach 컨텍스트 변수:**
-- `$.forEach.item` - 현재 배열 항목
-- `$.forEach.index` - 현재 인덱스 (0부터)
-- `$.forEach.total` - 전체 배열 길이
+- `forEach.item` - 현재 배열 항목
+- `forEach.index` - 현재 인덱스 (0부터)
+- `forEach.total` - 전체 배열 길이
 
 **결과:** 결과는 배열로 수집됩니다
 ```typescript
-$.steps.fetchEachProduct.result.data = [result1, result2, result3, ...]
+steps.fetchEachProduct.result.data = [result1, result2, result3, ...]
 ```
 
 ### count - 고정 횟수 반복
@@ -435,15 +435,15 @@ $.steps.fetchEachProduct.result.data = [result1, result2, result3, ...]
 {
   id: 'dynamicRepeat',
   repeat: {
-    count: '$.steps.getPageCount.result.data'  // 이전 스텝 결과 사용
+    count: 'steps.getPageCount.result.data'  // 이전 스텝 결과 사용
   },
   block: { /* ... */ }
 }
 ```
 
 **loop 컨텍스트 변수:**
-- `$.loop.index` - 현재 반복 인덱스 (0부터)
-- `$.loop.count` - 전체 반복 횟수
+- `loop.index` - 현재 반복 인덱스 (0부터)
+- `loop.count` - 전체 반복 횟수
 
 ### repeat 옵션
 
@@ -509,7 +509,7 @@ forEach/count 반복 중 에러가 발생해도 계속 진행:
 {
   id: 'fetchMultiple',
   repeat: {
-    forEach: '$.steps.getIds.result.data',
+    forEach: 'steps.getIds.result.data',
     continueOnError: true  // 일부 실패해도 나머지 계속 실행
   },
   block: { /* ... */ }
@@ -660,7 +660,7 @@ const workflow = {
     {
       id: 'collectPages',
       repeat: {
-        count: '$.steps.getPageCount.result.data',
+        count: 'steps.getPageCount.result.data',
         delayBetween: 1000
       },
       block: {
@@ -678,8 +678,8 @@ const workflow = {
       id: 'clickNextPage',
       when: {
         notEquals: {
-          left: '$.loop.index',
-          right: { valueFrom: '$.steps.getPageCount.result.data' }
+          left: 'loop.index',
+          right: { valueFrom: 'steps.getPageCount.result.data' }
         }
       },
       block: {
@@ -718,13 +718,13 @@ const workflow = {
     {
       id: 'enrichWithApi',
       repeat: {
-        forEach: '$.steps.getProductIds.result.data',
+        forEach: 'steps.getProductIds.result.data',
         continueOnError: true,
         delayBetween: 500
       },
       block: {
         name: 'fetch-api',
-        url: { template: 'https://api.example.com/products/${$.forEach.item.id}' },
+        url: { template: 'https://api.example.com/products/${forEach.item.id}' },
         method: 'GET',
         parseJson: true,
         headers: {
@@ -764,7 +764,7 @@ const workflow = {
       block: {
         name: 'ai-parse-data',
         apiKey: 'sk-...',
-        sourceData: { valueFrom: '$.steps.getRawText.result.data' },
+        sourceData: { valueFrom: 'steps.getRawText.result.data' },
         schemaDefinition: {
           type: 'object',
           shape: {
@@ -774,6 +774,180 @@ const workflow = {
             features: { type: 'array', description: '주요 특징 목록' }
           }
         }
+      }
+    }
+  ]
+};
+```
+
+### 예제 6: 로그인 대기 (wait-for-condition)
+
+```typescript
+const workflow = {
+  version: '1.0',
+  start: 'navigateToLogin',
+  steps: [
+    {
+      id: 'navigateToLogin',
+      block: {
+        name: 'navigate',
+        url: 'https://example.com/login',
+        waitForLoad: true
+      },
+      delayAfterMs: 1000,
+      next: 'waitForLogin'
+    },
+    {
+      id: 'waitForLogin',
+      block: {
+        name: 'wait-for-condition',
+        conditions: {
+          // 자동 조건: 로그인 성공 시 URL 변경 또는 프로필 요소 등장
+          urlPattern: 'https://example\\.com/dashboard',
+          elementExists: {
+            selector: '.user-profile',
+            findBy: 'cssSelector'
+          },
+          // 수동 확인: 사용자가 로그인 완료 버튼 클릭
+          userConfirmation: true,
+          message: '로그인을 완료하셨나요?',
+          buttonText: '로그인 완료'
+        },
+        mode: 'auto-or-manual',  // 자동 조건 또는 수동 확인 중 먼저 충족되는 것
+        pollingIntervalMs: 1000,
+        timeoutMs: 300000,  // 5분
+        position: 'bottom-right'
+      },
+      onSuccess: 'collectData',
+      onFailure: 'handleLoginTimeout'
+    },
+    {
+      id: 'collectData',
+      block: {
+        name: 'get-text',
+        selector: '.welcome-message',
+        findBy: 'cssSelector',
+        option: {},
+        useTextContent: true
+      }
+    },
+    {
+      id: 'handleLoginTimeout',
+      block: {
+        name: 'get-text',
+        selector: 'body',
+        findBy: 'cssSelector',
+        option: {},
+        useTextContent: true
+      }
+    }
+  ]
+};
+```
+
+### 예제 7: JSONata 데이터 변환 (data-extract)
+
+```typescript
+const workflow = {
+  version: '1.0',
+  start: 'getProducts',
+  steps: [
+    {
+      id: 'getProducts',
+      block: {
+        name: 'get-element-data',
+        selector: '.product-item',
+        findBy: 'cssSelector',
+        option: { multiple: true },
+        extractors: [
+          { type: 'text', selector: '.name', saveAs: 'name' },
+          { type: 'text', selector: '.price', saveAs: 'price' },
+          { type: 'text', selector: '.quantity', saveAs: 'quantity' }
+        ]
+      },
+      next: 'transformData'
+    },
+    {
+      id: 'transformData',
+      block: {
+        name: 'data-extract',
+        inputData: { valueFrom: 'steps.getProducts.result.data' },
+        code: `
+          $map($, function($item) {
+            {
+              "productName": $item.name,
+              "unitPrice": $number($item.price),
+              "qty": $number($item.quantity),
+              "totalPrice": $number($item.price) * $number($item.quantity)
+            }
+          })[totalPrice > 10000]
+        `
+      },
+      next: 'summarize'
+    },
+    {
+      id: 'summarize',
+      block: {
+        name: 'data-extract',
+        inputData: { valueFrom: 'steps.transformData.result.data' },
+        code: `
+          {
+            "totalItems": $count($),
+            "totalAmount": $sum($.totalPrice),
+            "averagePrice": $sum($.totalPrice) / $count($),
+            "products": $
+          }
+        `
+      }
+    }
+  ]
+};
+```
+
+### 예제 8: 다중 페이지 네비게이션
+
+```typescript
+const workflow = {
+  version: '1.0',
+  start: 'navigateToPage1',
+  vars: {
+    pages: [
+      'https://example.com/page1',
+      'https://example.com/page2',
+      'https://example.com/page3'
+    ]
+  },
+  steps: [
+    {
+      id: 'navigateToPage1',
+      repeat: {
+        forEach: 'vars.pages',
+        delayBetween: 2000
+      },
+      block: {
+        name: 'navigate',
+        url: { valueFrom: 'forEach.item' },
+        waitForLoad: true,
+        timeout: 30000
+      },
+      delayAfterMs: 1000,
+      next: 'collectPageData'
+    },
+    {
+      id: 'collectPageData',
+      repeat: {
+        forEach: 'vars.pages',
+        delayBetween: 2000
+      },
+      block: {
+        name: 'get-element-data',
+        selector: '.content',
+        findBy: 'cssSelector',
+        option: { multiple: true },
+        extractors: [
+          { type: 'text', selector: '.title', saveAs: 'title' },
+          { type: 'text', selector: '.description', saveAs: 'description' }
+        ]
       }
     }
   ]
@@ -797,7 +971,7 @@ const workflow = {
 }
 ```
 
-**예외:** `keypress`, `wait`, `fetch-api`, `ai-parse-data` 블록은 `selector`, `findBy`, `option` 불필요
+**예외:** `keypress`, `wait`, `fetch-api`, `ai-parse-data`, `navigate`, `wait-for-condition`, `data-extract` 블록은 `selector`, `findBy`, `option` 불필요
 
 ### delayAfterMs 활용
 

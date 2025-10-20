@@ -4,9 +4,19 @@ import { ExtensionResponseMessage, isExtensionResponseMessage } from '@/types/ex
 import { z } from 'zod';
 
 // Zod 스키마 정의
+/*
+{
+    name: "01Republic",
+    key: "01Republic",
+    image: "https://avatars.slack-edge.com/2023-09-18/5909002618259_7d2d9705b28fbbc4a832_88.png"
+}
+ */
 export const WorkspaceItemSchema = z.object({
+  // 워크스페이스 이름
   name: z.string(),
+  // 워크스페이스를 구분할 수 있는 구분자, ex) slug 같은 것들 01republic
   key: z.string(),
+  // 워크스페이스의 프로필 이미지
   image: z.string(),
 });
 
@@ -23,10 +33,15 @@ export enum BillingCycleTerm {
 }
 
 export const CurrencySchema = z.object({
+  // 실제 표시되는 통화 표시
   text: z.string(),
+  // 통화 코드
   code: z.string(),
+  // 통화 기호
   symbol: z.string(),
+  // 통화 표시 형식
   format: z.string(),
+  // 통화 금액
   amount: z.number(),
 });
 
@@ -48,37 +63,110 @@ export const CurrencyValues = {
   ko: {code: 'KRW', symbol: '₩'},
 } as const;
 
+/*
+{
+    "planName": "Pro",
+    "currentCycleBillAmount": {
+        "text": "US$57.75",
+        "code": "USD",
+        "symbol": "$",
+        "format": "%u%n",
+        "amount": 57.75
+    },
+    "nextPaymentDue": "2025-11-18",
+    "cycleTerm": "MONTHLY",
+    "isFreeTier": false,
+    "isPerUser": false,
+    "paidMemberCount": 6,
+    "usedMemberCount": 6,
+    "unitPrice": {
+        "text": "US$52.50",
+        "code": "USD",
+        "symbol": "$",
+        "format": "%u%n",
+        "amount": 52.5
+    }
+}
+*/
 export const WorkspaceBillingSchema = z.object({
+  // 플랜 이름
   planName: z.string(),
+  // 현재 주기 결제 금액
   currentCycleBillAmount: CurrencySchema,
+  // 다음 결제 예정일
   nextPaymentDue: z.string(),
+  // 주기 단위
   cycleTerm: z.nativeEnum(BillingCycleTerm).nullable(),
+  // 무료 티어 여부
   isFreeTier: z.boolean(),
+  // 플랜 단위 여부
   isPerUser: z.boolean(),
+  // 결제 멤버 수
   paidMemberCount: z.number(),
+  // 사용 멤버 수
   usedMemberCount: z.number(),
+  // 단위 가격
   unitPrice: CurrencySchema.nullable()
 });
 
 export type WorkspaceBillingDto = z.infer<typeof WorkspaceBillingSchema> & {
 };
 
+/*
+[
+    {
+        "uid": "SBIE-9880723",
+        "issuedDate": "2025-10-17T15:00:00.000Z",
+        "paidDate": "2025-10-17T15:00:00.000Z",
+        "paymentMethod": "Credit Card",
+        "amount": {
+            "text": "US$38.81",
+            "code": "USD",
+            "symbol": "$",
+            "format": "%u%n",
+            "amount": 38.81
+        },
+        "isSuccessfulPaid": true,
+        "receiptUrl": "https://01republic.slack.com/admin/billing/9720939825398/pdf"
+    }
+*/
 export const WorkspaceBillingHistorySchema = z.object({
+  // 결제 이력 고유 아이디
   uid: z.string(),
+  // 결제 일자
   issuedDate: z.coerce.date(),
+  // 결제 완료 일자
   paidDate: z.coerce.date().nullable().optional(),
+  // 결제 방법
   paymentMethod: z.string(),
+  // 결제 금액
   amount: CurrencySchema,
+  // 결제 성공 여부
   isSuccessfulPaid: z.boolean(),
+  // 결제 영수증 링크
   receiptUrl: z.string(),
 });
 
 export type WorkspaceBillingHistoryDto = z.infer<typeof WorkspaceBillingHistorySchema>;
 
+/*
+[
+    {
+        "name": "김규리",
+        "email": "diana@01republic.io",
+        "profileImageUrl": "https://ca.slack-edge.com/T03PSMRQNKV-U052AEE1UVC-91676fc53d54-24",
+        "role": "정식 멤버"
+    }
+]
+*/
 export const WorkspaceMemberSchema = z.object({
+  // 멤버 이름
   name: z.string(),
+  // 멤버 이메일
   email: z.string().email(),
+  // 멤버 프로필 이미지 링크
   profileImageUrl: z.string(),
+  // 멤버 역할
   role: z.string(),
 });
 
@@ -157,7 +245,7 @@ export class EightGClient {
     });
   }
 
-  async getWorkspaces(request: CollectWorkflowRequest): Promise<ConnectWorkspaceResponseDto & { rawData: CollectWorkflowResult }> {
+  async getWorkspaces(request: CollectWorkflowRequest): Promise<ConnectWorkspaceResponseDto & CollectWorkflowResult> {
     const result = await this.collectWorkflow(request);
     if (!result.success) {
       throw new EightGError('Failed to get workspaces', 'GET_WORKSPACES_FAILED');
@@ -167,7 +255,7 @@ export class EightGClient {
     const rawData = result.steps[result.steps.length - 1]?.result?.data;
     if (!rawData || !Array.isArray(rawData)) {
       return {
-        rawData: result,
+        ...result,
         data: [],
         isSuccess: false,
       };
@@ -185,14 +273,19 @@ export class EightGClient {
     }
 
     return {
-      rawData: result,
+      ...result,
       data: validatedWorkspaces,
       isSuccess: true,
     };
   }
 
   // 플랜, 결제주기
-  async getWorkspacePlanAndCycle(request: CollectWorkflowRequest): Promise<WorkspaceBillingDto & { rawData: CollectWorkflowResult } | { rawData: CollectWorkflowResult }> {
+  async getWorkspacePlanAndCycle(workspaceKey: string, request: CollectWorkflowRequest): Promise<WorkspaceBillingDto &  CollectWorkflowResult | CollectWorkflowResult> {
+    request.workflow.vars = {
+      ...request.workflow.vars,
+      workspaceKey,
+    };
+
     const result = await this.collectWorkflow(request);
     if (!result.success) {
       throw new EightGError('Failed to get workspace plan and cycle', 'GET_WORKSPACE_PLAN_AND_CYCLE_FAILED');
@@ -200,21 +293,26 @@ export class EightGClient {
 
     const rawData = result.steps[result.steps.length - 1]?.result?.data;
     if (!rawData) {
-      return { rawData: result };
+      return { ...result };
     }
 
     const parsed = WorkspaceBillingSchema.safeParse(rawData);
     if (parsed.success) {
       const data = parsed.data as WorkspaceBillingDto;
-      return { rawData: result, ...data };
+      return { ...result, ...data };
     } else {
       console.warn('Invalid workspace billing data:', rawData, parsed.error);
-      return { rawData: result };
+      return { ...result };
     }
   }
 
   // 결제내역
-  async getWorkspaceBillingHistories(request: CollectWorkflowRequest): Promise<{ data: WorkspaceBillingHistoryDto[], rawData: CollectWorkflowResult }> {
+  async getWorkspaceBillingHistories(workspaceKey: string, request: CollectWorkflowRequest): Promise<{ data: WorkspaceBillingHistoryDto[] } & CollectWorkflowResult> {
+    request.workflow.vars = {
+      ...request.workflow.vars,
+      workspaceKey,
+    };
+
     const result = await this.collectWorkflow(request);
     if (!result.success) {
       throw new EightGError('Failed to get workspace billing histories', 'GET_WORKSPACE_BILLING_HISTORIES_FAILED');
@@ -222,7 +320,7 @@ export class EightGClient {
 
     const rawData = result.steps[result.steps.length - 1]?.result?.data;
     if (!rawData || !Array.isArray(rawData)) {
-      return { rawData: result, data: [] };
+      return { ...result, data: [] };
     }
 
     // 배열의 각 아이템 검증
@@ -236,11 +334,16 @@ export class EightGClient {
       }
     }
 
-    return { rawData: result, data: validatedHistories };
+    return { ...result, data: validatedHistories };
   }
 
   // 구성원
-  async getWorkspaceMembers(request: CollectWorkflowRequest): Promise<{ data: WorkspaceMemberDto[], rawData: CollectWorkflowResult }> {
+  async getWorkspaceMembers(workspaceKey: string, request: CollectWorkflowRequest): Promise<{ data: WorkspaceMemberDto[] } & CollectWorkflowResult> {
+    request.workflow.vars = {₩
+      ...request.workflow.vars,
+      workspaceKey,
+    };
+
     const result = await this.collectWorkflow(request);
     if (!result.success) {
       throw new EightGError('Failed to get workspace members', 'GET_WORKSPACE_MEMBERS_FAILED');
@@ -248,7 +351,7 @@ export class EightGClient {
 
     const rawData = result.steps[result.steps.length - 1]?.result?.data;
     if (!rawData || !Array.isArray(rawData)) {
-      return { rawData: result, data: [] };
+      return { ...result, data: [] };
     }
 
     // 배열의 각 아이템 검증
@@ -262,6 +365,6 @@ export class EightGClient {
       }
     }
 
-    return { rawData: result, data: validatedMembers };
+    return { ...result, data: validatedMembers };
   }
 }

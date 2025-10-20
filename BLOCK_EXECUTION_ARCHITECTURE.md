@@ -187,6 +187,48 @@ const result = await client.collectWorkflow({
 // selector, findBy, option 불필요
 ```
 
+**wait-for-condition** - 조건 대기 (자동/수동/혼합)
+```typescript
+{
+  name: 'wait-for-condition',
+  conditions: {
+    // 자동 조건 (선택사항)
+    urlPattern?: string,           // URL 정규식 패턴
+    elementExists?: {               // 요소 존재 확인
+      selector: string,
+      findBy: 'cssSelector' | 'xpath'
+    },
+    cookieExists?: string,          // 쿠키 이름
+    storageKey?: {                  // 스토리지 키 확인
+      type: 'localStorage' | 'sessionStorage',
+      key: string
+    },
+    // 수동 확인 (선택사항)
+    userConfirmation?: boolean,     // 사용자 확인 버튼 표시
+    message?: string,               // 표시할 메시지
+    buttonText?: string             // 버튼 텍스트
+  },
+  mode?: 'auto' | 'manual' | 'auto-or-manual',  // 기본값: 'auto-or-manual'
+  pollingIntervalMs?: number,      // 체크 주기 (기본값: 1000ms)
+  timeoutMs?: number,              // 최대 대기 시간 (기본값: 300000ms)
+  position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
+}
+// selector, findBy, option 불필요
+// 결과: { success: boolean, reason: string, message?: string }
+```
+
+**navigate** - URL 이동
+```typescript
+{
+  name: 'navigate',
+  url: string,              // 이동할 URL
+  waitForLoad?: boolean,    // 페이지 로드 대기 (기본값: true)
+  timeout?: number          // 로드 타임아웃 (기본값: 30000ms)
+}
+// selector, findBy, option 불필요
+// 결과: boolean (성공 여부)
+```
+
 **save-assets** - 이미지/미디어 수집
 ```typescript
 {
@@ -233,6 +275,18 @@ const result = await client.collectWorkflow({
 // OpenAI를 사용해서 비구조화 데이터를 구조화
 ```
 
+**data-extract** - 데이터 추출/변환
+```typescript
+{
+  name: 'data-extract',
+  code: string,      // JSONata 쿼리 문자열
+  inputData?: any    // 입력 데이터 (이전 블록 결과 등)
+}
+// selector, findBy, option 불필요
+// JSONata를 사용한 유연한 데이터 변환
+// 예: "products[price > 1000].{ name: name, total: price * quantity }"
+```
+
 ## 블록 실행 파이프라인
 
 ```
@@ -264,7 +318,7 @@ const result = await client.collectWorkflow({
 }
 ```
 
-**예외:** `keypress`, `wait`, `fetch-api`, `ai-parse-data` 블록은 `selector`, `findBy`, `option` 불필요
+**예외:** `keypress`, `wait`, `fetch-api`, `ai-parse-data`, `navigate`, `wait-for-condition`, `data-extract` 블록은 `selector`, `findBy`, `option` 불필요
 
 ### waitForSelector
 
@@ -331,7 +385,7 @@ const result = await client.collectWorkflow({
       block: {
         name: 'fetch-api',
         // 이전 스텝 결과 참조
-        url: { template: 'https://api.example.com/items/${$.steps.getIds.result.data[0].id}' },
+        url: { template: 'https://api.example.com/items/${steps.getIds.result.data[0].id}' },
         method: 'GET',
         parseJson: true
       }
@@ -357,9 +411,12 @@ src/blocks/
 ├── ScrollBlock.ts            # 스크롤
 ├── ElementExistsBlock.ts     # 요소 존재 확인
 ├── WaitBlock.ts              # 대기
+├── WaitForConditionBlock.ts  # 조건 대기 (자동/수동)
+├── NavigateBlock.ts          # URL 이동
 ├── SaveAssetsBlock.ts        # 에셋 ��집
 ├── FetchApiBlock.ts          # API 호출
 ├── AiParseDataBlock.ts       # AI 파싱
+├── DataExtractBlock.ts       # 데이터 추출/변환
 ├── types.ts                  # 공통 타입
 └── index.ts                  # BlockHandler + 통합
 ```
