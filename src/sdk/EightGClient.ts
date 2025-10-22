@@ -11,6 +11,7 @@ import { z } from 'zod';
     image: "https://avatars.slack-edge.com/2023-09-18/5909002618259_7d2d9705b28fbbc4a832_88.png"
 }
  */
+// 1. 이걸로 서브스크립션 생성!
 export const WorkspaceItemSchema = z.object({
   // 워크스페이스 이름
   name: z.string(),
@@ -88,11 +89,12 @@ export const CurrencyValues = {
     }
 }
 */
+// 2. subscription 정보 추가! <- 순서는 안정해짐
 export const WorkspaceBillingSchema = z.object({
   // 플랜 이름
   planName: z.string(),
   // 현재 주기 결제 금액
-  currentCycleBillAmount: CurrencySchema,
+  currentCycleBillAmount: CurrencySchema, // 얘는 Scord api 의 money types를 보면 된다!! 그거 가져와서 하기
   // 다음 결제 예정일
   nextPaymentDue: z.string(),
   // 주기 단위
@@ -107,6 +109,22 @@ export const WorkspaceBillingSchema = z.object({
   usedMemberCount: z.number(),
   // 단위 가격
   unitPrice: CurrencySchema.nullable()
+  /*
+  카드 정보 추가
+  number4: string;
+  name: string // marster card ~~~~ optional
+
+  ----------------------------
+  isPersonal: boolean; // 추가 정보 <- 필수 추가 정보
+  isCreditCard: boolean; // 추가 정보 <- 필수 추가 정보
+
+  optional 하게 
+  cardNumber: string -> 전체
+  name : 가져온거
+  유효기간(나중에 컬럼명 찾아서 수정)
+  소지자
+  비고
+  */
 });
 
 export type WorkspaceBillingDto = z.infer<typeof WorkspaceBillingSchema> & {
@@ -118,7 +136,7 @@ export type WorkspaceBillingDto = z.infer<typeof WorkspaceBillingSchema> & {
         "uid": "SBIE-9880723",
         "issuedDate": "2025-10-17T15:00:00.000Z",
         "paidDate": "2025-10-17T15:00:00.000Z",
-        "paymentMethod": "Credit Card",
+        "paymentMethod": "Credit Card"
         "amount": {
             "text": "US$38.81",
             "code": "USD",
