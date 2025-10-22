@@ -339,7 +339,7 @@ export class EightGClient {
 
   // 구성원
   async getWorkspaceMembers(workspaceKey: string, request: CollectWorkflowRequest): Promise<{ data: WorkspaceMemberDto[] } & CollectWorkflowResult> {
-    request.workflow.vars = {₩
+    request.workflow.vars = {
       ...request.workflow.vars,
       workspaceKey,
     };
