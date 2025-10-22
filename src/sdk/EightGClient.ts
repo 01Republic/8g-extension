@@ -1,4 +1,4 @@
-import { CollectWorkflowRequest, CollectWorkflowResult } from './types';
+import { CollectWorkflowRequest, CollectWorkflowResult, CurrencyCode } from './types';
 import { EightGError } from './errors';
 import { ExtensionResponseMessage, isExtensionResponseMessage } from '@/types/external-messages';
 import { z } from 'zod';
@@ -33,20 +33,30 @@ export enum BillingCycleTerm {
   yearly = 'YEARLY',
 }
 
-export const CurrencySchema = z.object({
-  // 실제 표시되는 통화 표시
-  text: z.string(),
+/**
+ * CurrencyAmount 타입을 위한 Zod 스키마
+ * types.ts의 CurrencyAmount와 동일한 구조
+ */
+export const CurrencyAmountSchema = z.object({
   // 통화 코드
-  code: z.string(),
+  code: z.nativeEnum(CurrencyCode),
   // 통화 기호
   symbol: z.string(),
+  // 로컬 통화 이름 (optional)
+  local: z.string().optional(),
+  // 통화 약어 (optional)
+  abbreviation: z.string().optional(),
   // 통화 표시 형식
   format: z.string(),
-  // 통화 금액
+  // 통화 설명
+  desc: z.string(),
+  // 실제 금액
   amount: z.number(),
+  // 표시용 텍스트 (optional, 예: "US$57.75")
+  text: z.string().optional(),
 });
 
-export type CurrencyDto = z.infer<typeof CurrencySchema>;
+export type CurrencyDto = z.infer<typeof CurrencyAmountSchema>;
 
 export type CurrencyCodes = ValuesOf<typeof CurrencyValues>['code'];
 export type CurrencySymbols = ValuesOf<typeof CurrencyValues>['symbol'];
@@ -94,7 +104,7 @@ export const WorkspaceBillingSchema = z.object({
   // 플랜 이름
   planName: z.string(),
   // 현재 주기 결제 금액
-  currentCycleBillAmount: CurrencySchema, // 얘는 Scord api 의 money types를 보면 된다!! 그거 가져와서 하기
+  currentCycleBillAmount: CurrencyAmountSchema,
   // 다음 결제 예정일
   nextPaymentDue: z.string(),
   // 주기 단위
@@ -108,7 +118,7 @@ export const WorkspaceBillingSchema = z.object({
   // 사용 멤버 수
   usedMemberCount: z.number(),
   // 단위 가격
-  unitPrice: CurrencySchema.nullable()
+  unitPrice: CurrencyAmountSchema.nullable()
   /*
   카드 정보 추가
   number4: string;
@@ -158,7 +168,7 @@ export const WorkspaceBillingHistorySchema = z.object({
   // 결제 방법
   paymentMethod: z.string(),
   // 결제 금액
-  amount: CurrencySchema,
+  amount: CurrencyAmountSchema,
   // 결제 성공 여부
   isSuccessfulPaid: z.boolean(),
   // 결제 영수증 링크
