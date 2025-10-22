@@ -780,6 +780,142 @@ const workflow = {
 };
 ```
 
+### 예제 5-1: AI 파싱 + 통화 스키마 (CurrencySchemaMap)
+
+SDK는 다양한 통화 정보를 포함한 스키마를 제공합니다. `CurrencySchemaMap`을 사용하면 통화 코드별로 정확한 enum 값이 포함된 스키마를 선택할 수 있습니다.
+
+```typescript
+import { EightGClient, CurrencySchemaMap, createSchema, Schema } from '8g-extension';
+
+const client = new EightGClient();
+
+// 방법 1: 통화 코드로 스키마 선택
+const selectedCurrency = 'USD'; // 동적으로 선택 가능
+const currencySchema = CurrencySchemaMap[selectedCurrency];
+
+const workflow = {
+  version: '1.0',
+  start: 'getBillingInfo',
+  vars: {
+    apiKey: 'sk-...',
+    currency: 'USD'
+  },
+  steps: [
+    {
+      id: 'getBillingInfo',
+      block: {
+        name: 'get-text',
+        selector: '.billing-section',
+        findBy: 'cssSelector',
+        option: {},
+        useTextContent: true
+      },
+      next: 'parseWithAi'
+    },
+    {
+      id: 'parseWithAi',
+      block: {
+        name: 'ai-parse-data',
+        apiKey: { valueFrom: 'vars.apiKey' },
+        sourceData: { valueFrom: 'steps.getBillingInfo.result.data' },
+        schemaDefinition: {
+          type: 'object',
+          shape: {
+            planName: { type: 'string', description: '플랜 이름' },
+            // 통화별 스키마 사용 - USD 전용
+            currentCycleBillAmount: CurrencySchemaMap.USD,
+            unitPrice: CurrencySchemaMap.USD,
+            nextPaymentDue: { type: 'string', description: '다음 결제일 (YYYY-MM-DD)' },
+            cycleTerm: { 
+              type: 'string', 
+              enum: ['MONTHLY', 'YEARLY'],
+              description: '결제 주기'
+            },
+            isFreeTier: { type: 'boolean', description: '무료 티어 여부' },
+            paidMemberCount: { type: 'number', description: '결제 멤버 수' }
+          }
+        }
+      }
+    }
+  ]
+};
+
+const result = await client.collectWorkflow({
+  targetUrl: 'https://example.com/billing',
+  workflow
+});
+```
+
+**지원하는 통화 코드 (40개):**
+- 주요 통화: `USD`, `EUR`, `KRW`, `GBP`, `CAD`, `JPY`, `CNY`
+- 아시아: `VND`, `INR`, `TWD`, `HKD`, `IDR`, `SGD`, `THB`, `PHP`, `MYR`
+- 유럽: `CHF`, `SEK`, `NOK`, `DKK`, `PLN`, `CZK`, `HUF`, `RON`, `BGN`, `TRY`, `RUB`
+- 중동/아프리카: `ILS`, `ZAR`, `AED`, `SAR`, `EGP`
+- 아메리카: `MXN`, `BRL`, `ARS`, `CLP`, `COP`
+- 오세아니아: `AUD`, `NZD`
+
+**CurrencySchemaMap 특징:**
+- 각 통화별로 정확한 `code`, `symbol`, `format`, `desc` enum 값 포함
+- `local` (로컬 통화 이름): KRW (원), CNY (元), JPY (円) 등
+- `abbreviation` (약어): TRY (TL) 등
+- AI가 정확한 통화 형식으로 데이터를 파싱하도록 강제
+
+**결과 예시:**
+```json
+{
+  "planName": "Pro",
+  "currentCycleBillAmount": {
+    "code": "USD",
+    "symbol": "$",
+    "format": "%s%u",
+    "desc": "United States Dollar",
+    "amount": 57.75,
+    "text": "US$57.75"
+  },
+  "unitPrice": {
+    "code": "USD",
+    "symbol": "$",
+    "format": "%s%u",
+    "desc": "United States Dollar",
+    "amount": 52.5,
+    "text": "US$52.50"
+  },
+  "nextPaymentDue": "2025-11-18",
+  "cycleTerm": "MONTHLY",
+  "isFreeTier": false,
+  "paidMemberCount": 6
+}
+```
+
+**동적 통화 선택:**
+```typescript
+// 사용자가 선택한 통화에 따라 스키마 변경
+const userCurrency = getUserSelectedCurrency(); // 'KRW', 'EUR', 'JPY' 등
+
+const workflow = {
+  version: '1.0',
+  start: 'parsePrice',
+  steps: [
+    {
+      id: 'parsePrice',
+      block: {
+        name: 'ai-parse-data',
+        apiKey: 'sk-...',
+        sourceData: { valueFrom: 'steps.getPriceText.result.data' },
+        schemaDefinition: {
+          type: 'object',
+          shape: {
+            // 동적으로 통화 스키마 선택
+            price: CurrencySchemaMap[userCurrency],
+            discountPrice: CurrencySchemaMap[userCurrency]
+          }
+        }
+      }
+    }
+  ]
+};
+```
+
 ### 예제 6: 로그인 대기 (wait-for-condition)
 
 ```typescript
