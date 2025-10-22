@@ -16,7 +16,7 @@ export {
   Currency,
   // Schemas
   WorkspaceItemSchema,
-  CurrencySchema,
+  CurrencyAmountSchema,
   WorkspaceBillingSchema,
   WorkspaceBillingHistorySchema,
   WorkspaceMemberSchema,
