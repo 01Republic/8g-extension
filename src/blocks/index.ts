@@ -27,6 +27,7 @@ export type {
 export { createSchema, createArraySchema, Schema } from './AiParseDataBlock';
 export type { FetchApiBlock, FetchApiResponse } from './FetchApiBlock';
 export type { DataExtractBlock } from './DataExtractBlock';
+export type { CaptureNetworkBlock, CaptureNetworkResult, NetworkRequest } from './CaptureNetworkBlock';
 
 // Export all block schemas
 export { GetTextBlockSchema } from './GetTextBlock';
@@ -46,6 +47,7 @@ export { ScrollBlockSchema } from './ScrollBlock';
 export { AiParseDataBlockSchema } from './AiParseDataBlock';
 export { FetchApiBlockSchema } from './FetchApiBlock';
 export { DataExtractBlockSchema } from './DataExtractBlock';
+export { CaptureNetworkBlockSchema } from './CaptureNetworkBlock';
 
 // Import block handlers and types
 import { handlerGetText, GetTextBlock, validateGetTextBlock } from './GetTextBlock';
@@ -95,6 +97,7 @@ import { handlerScroll, ScrollBlock, validateScrollBlock } from './ScrollBlock';
 import { handlerAiParseData, AiParseDataBlock, validateAiParseDataBlock } from './AiParseDataBlock';
 import { handlerFetchApi, FetchApiBlock, validateFetchApiBlock } from './FetchApiBlock';
 import { handlerDataExtract, DataExtractBlock, validateDataExtractBlock } from './DataExtractBlock';
+import { handlerCaptureNetwork, CaptureNetworkBlock, validateCaptureNetworkBlock, CaptureNetworkResult } from './CaptureNetworkBlock';
 import { Block, BlockResult } from './types';
 import { GetTextBlockSchema } from './GetTextBlock';
 import { GetAttributeValueBlockSchema } from './GetAttributeValueBlock';
@@ -113,6 +116,7 @@ import { ScrollBlockSchema } from './ScrollBlock';
 import { AiParseDataBlockSchema } from './AiParseDataBlock';
 import { FetchApiBlockSchema } from './FetchApiBlock';
 import { DataExtractBlockSchema } from './DataExtractBlock';
+import { CaptureNetworkBlockSchema } from './CaptureNetworkBlock';
 
 // All block schemas mapped by block name
 export const AllBlockSchemas = {
@@ -133,6 +137,7 @@ export const AllBlockSchemas = {
   'ai-parse-data': AiParseDataBlockSchema,
   'fetch-api': FetchApiBlockSchema,
   'data-extract': DataExtractBlockSchema,
+  'capture-network': CaptureNetworkBlockSchema,
 } as const;
 
 export class BlockHandler {
@@ -158,10 +163,11 @@ export class BlockHandler {
   static executeBlock(block: AiParseDataBlock): Promise<BlockResult<any>>;
   static executeBlock(block: FetchApiBlock): Promise<BlockResult<any>>;
   static executeBlock(block: DataExtractBlock): Promise<BlockResult<any>>;
+  static executeBlock(block: CaptureNetworkBlock): Promise<BlockResult<CaptureNetworkResult>>;
   static executeBlock(block: Block): Promise<BlockResult>;
 
   // Implementation
-  static async executeBlock(block: Block | AiParseDataBlock | FetchApiBlock | DataExtractBlock | KeypressBlock | WaitBlock | WaitForConditionBlock | NavigateBlock): Promise<BlockResult> {
+  static async executeBlock(block: Block | AiParseDataBlock | FetchApiBlock | DataExtractBlock | CaptureNetworkBlock | KeypressBlock | WaitBlock | WaitForConditionBlock | NavigateBlock): Promise<BlockResult> {
     try {
       switch (block.name) {
         case 'get-text': {
@@ -247,6 +253,11 @@ export class BlockHandler {
         case 'data-extract': {
           const validatedBlock = validateDataExtractBlock(block);
           return await handlerDataExtract(validatedBlock);
+        }
+
+        case 'capture-network': {
+          const validatedBlock = validateCaptureNetworkBlock(block);
+          return await handlerCaptureNetwork(validatedBlock);
         }
 
         default:

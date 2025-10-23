@@ -5,9 +5,11 @@ import {
   CdpClickMessage,
   CdpKeypressMessage,
   FetchApiMessage,
+  CdpCaptureNetworkMessage,
   isCdpClickMessage,
   isCdpKeypressMessage,
   isFetchApiMessage,
+  isCdpCaptureNetworkMessage,
   ErrorResponse,
 } from '@/types/internal-messages';
 import { AiParsingService } from '../service/AiParsingService';
@@ -68,6 +70,17 @@ export class BackgroundManager {
         return true;
       }
 
+      if ((message as any).type === 'CDP_CAPTURE_NETWORK' && isCdpCaptureNetworkMessage(message)) {
+        // Get tabId from sender
+        const tabId = sender.tab?.id;
+        if (!tabId) {
+          sendResponse({ $isError: true, message: 'Tab ID not found in sender', data: null } as ErrorResponse);
+          return false;
+        }
+        this.handleAsyncCdpCaptureNetwork({ ...message.data, tabId }, sendResponse);
+        return true;
+      }
+
       sendResponse({ $isError: true, message: 'Invalid message type', data: {} } as ErrorResponse);
       return false;
     });
@@ -111,5 +124,13 @@ export class BackgroundManager {
     sendResponse: (response: any) => void
   ) {
     await this.apiService.handleRequest(requestData, sendResponse);
+  }
+
+  // CDP 네트워크 캡처 요청 처리
+  private async handleAsyncCdpCaptureNetwork(
+    requestData: CdpCaptureNetworkMessage['data'] & { tabId: number },
+    sendResponse: (response: any) => void
+  ) {
+    await this.cdpService.handleCaptureNetwork(requestData, sendResponse);
   }
 }

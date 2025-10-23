@@ -97,7 +97,7 @@ export const WorkspaceBillingSchema = z.object({
   usedMemberCount: z.number(),
   // 단위 가격
   unitPrice: CurrencyAmountSchema.nullable(),
-  
+
   // 카드 번호
   cardNumber: z.string(),
 
@@ -180,6 +180,8 @@ export const WorkspaceMemberSchema = z.object({
   profileImageUrl: z.string(),
   // 멤버 역할
   role: z.string(),
+  // 멤버 결제 여부
+  isPaid: z.boolean().nullable().optional(),
 });
 
 export type WorkspaceMemberDto = z.infer<typeof WorkspaceMemberSchema>;

@@ -50,6 +50,20 @@ export interface FetchApiMessage {
   };
 }
 
+export interface CdpCaptureNetworkMessage {
+  type: 'CDP_CAPTURE_NETWORK';
+  data: {
+    targetUrl: string;
+    waitForLoadComplete: boolean;
+    timeout: number;
+    includeRequestHeaders: boolean;
+    includeResponseHeaders: boolean;
+    includeResponseBody: boolean;
+    urlFilter?: string;
+    resourceTypes?: string[];
+  };
+}
+
 // UI Control Messages
 export interface ShowExecutionStatusMessage {
   type: 'SHOW_EXECUTION_STATUS';
@@ -63,7 +77,7 @@ export interface HideExecutionStatusMessage {
 }
 
 // Internal Message Union Types
-export type BackgroundMessage = CollectWorkflowNewTabMessage | CdpClickMessage | CdpKeypressMessage | FetchApiMessage;
+export type BackgroundMessage = CollectWorkflowNewTabMessage | CdpClickMessage | CdpKeypressMessage | FetchApiMessage | CdpCaptureNetworkMessage;
 export type ContentMessage = ExecuteBlockMessage | ShowExecutionStatusMessage | HideExecutionStatusMessage;
 
 // Response Types for Internal Communication
@@ -91,6 +105,10 @@ export function isCdpKeypressMessage(message: any): message is CdpKeypressMessag
 
 export function isFetchApiMessage(message: any): message is FetchApiMessage {
   return message && message.type === 'FETCH_API';
+}
+
+export function isCdpCaptureNetworkMessage(message: any): message is CdpCaptureNetworkMessage {
+  return message && message.type === 'CDP_CAPTURE_NETWORK';
 }
 
 export function isShowExecutionStatusMessage(message: any): message is ShowExecutionStatusMessage {
