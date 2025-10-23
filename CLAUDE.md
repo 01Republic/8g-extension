@@ -96,7 +96,7 @@ Webpage (SDK resolves Promise)
 **Blocks ([src/blocks/](src/blocks/))**
 - [index.ts](src/blocks/index.ts) - `BlockHandler.executeBlock()` entry point, routes to validate*/handler* functions
 - Each block has: TypeSchema (Zod schema), validate* function, handler* function
-- Block types: get-text, attribute-value, get-element-data, get/set/clear-value-form, element-exists, event-click, keypress, scroll, wait, save-assets, fetch-api, ai-parse-data, navigate, wait-for-condition, data-extract
+- Block types: get-text, attribute-value, get-element-data, get/set/clear-value-form, element-exists, event-click, keypress, scroll, wait, save-assets, fetch-api, ai-parse-data, navigate, wait-for-condition
 
 **SDK ([src/sdk/](src/sdk/))**
 - [index.ts](src/sdk/index.ts) - Main export entry point
@@ -214,7 +214,7 @@ Results from repeated steps are collected in arrays.
 ## Block System
 
 ### Block Structure
-All blocks (except keypress, wait, fetch-api, ai-parse-data, navigate, wait-for-condition, data-extract) have:
+All blocks (except keypress, wait, fetch-api, ai-parse-data, navigate, wait-for-condition) have:
 ```typescript
 {
   name: 'block-name',
@@ -252,10 +252,9 @@ All blocks (except keypress, wait, fetch-api, ai-parse-data, navigate, wait-for-
 - `navigate` - Navigate to specific URL with optional page load waiting
 - `save-assets` - Collect image/media URLs
 
-**API/AI/Data:**
+**API/AI:**
 - `fetch-api` - External API calls (no CORS restrictions, runs in background)
 - `ai-parse-data` - Parse unstructured data using OpenAI with schema definition
-- `data-extract` - Extract/transform data using JSONata queries
 
 ### Block Execution Pipeline
 1. `BlockHandler.executeBlock(block)` - Entry point in content script
@@ -303,7 +302,7 @@ Tests use Vitest with jsdom environment. Test files are co-located with source f
 ### Workflow Development
 - All block execution must go through workflows - no standalone block execution
 - Always provide `option: {}` for blocks even if empty (required by validation)
-- Exception: keypress, wait, fetch-api, ai-parse-data, navigate, wait-for-condition, data-extract don't need selector/findBy/option
+- Exception: keypress, wait, fetch-api, ai-parse-data, navigate, wait-for-condition don't need selector/findBy/option
 - Use `delayAfterMs` generously for animations and async UI updates
 - Set `waitForSelector: true` for dynamic content
 - Branch execution priority: switch → onSuccess/onFailure → next → end

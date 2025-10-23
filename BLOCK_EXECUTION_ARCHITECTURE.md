@@ -275,18 +275,6 @@ const result = await client.collectWorkflow({
 // OpenAI를 사용해서 비구조화 데이터를 구조화
 ```
 
-**data-extract** - 데이터 추출/변환
-```typescript
-{
-  name: 'data-extract',
-  code: string,      // JSONata 쿼리 문자열
-  inputData?: any    // 입력 데이터 (이전 블록 결과 등)
-}
-// selector, findBy, option 불필요
-// JSONata를 사용한 유연한 데이터 변환
-// 예: "products[price > 1000].{ name: name, total: price * quantity }"
-```
-
 ## 블록 실행 파이프라인
 
 ```
@@ -318,7 +306,7 @@ const result = await client.collectWorkflow({
 }
 ```
 
-**예외:** `keypress`, `wait`, `fetch-api`, `ai-parse-data`, `navigate`, `wait-for-condition`, `data-extract` 블록은 `selector`, `findBy`, `option` 불필요
+**예외:** `keypress`, `wait`, `fetch-api`, `ai-parse-data`, `navigate`, `wait-for-condition` 블록은 `selector`, `findBy`, `option` 불필요
 
 ### waitForSelector
 

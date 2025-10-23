@@ -976,64 +976,6 @@ const workflow = {
 };
 ```
 
-### 예제 7: JSONata 데이터 변환 (data-extract)
-
-```typescript
-const workflow = {
-  version: '1.0',
-  start: 'getProducts',
-  steps: [
-    {
-      id: 'getProducts',
-      block: {
-        name: 'get-element-data',
-        selector: '.product-item',
-        findBy: 'cssSelector',
-        option: { multiple: true },
-        extractors: [
-          { type: 'text', selector: '.name', saveAs: 'name' },
-          { type: 'text', selector: '.price', saveAs: 'price' },
-          { type: 'text', selector: '.quantity', saveAs: 'quantity' }
-        ]
-      },
-      next: 'transformData'
-    },
-    {
-      id: 'transformData',
-      block: {
-        name: 'data-extract',
-        inputData: { valueFrom: 'steps.getProducts.result.data' },
-        code: `
-          $map($, function($item) {
-            {
-              "productName": $item.name,
-              "unitPrice": $number($item.price),
-              "qty": $number($item.quantity),
-              "totalPrice": $number($item.price) * $number($item.quantity)
-            }
-          })[totalPrice > 10000]
-        `
-      },
-      next: 'summarize'
-    },
-    {
-      id: 'summarize',
-      block: {
-        name: 'data-extract',
-        inputData: { valueFrom: 'steps.transformData.result.data' },
-        code: `
-          {
-            "totalItems": $count($),
-            "totalAmount": $sum($.totalPrice),
-            "averagePrice": $sum($.totalPrice) / $count($),
-            "products": $
-          }
-        `
-      }
-    }
-  ]
-};
-```
 
 ### 예제 8: 다중 페이지 네비게이션
 
@@ -1102,7 +1044,7 @@ const workflow = {
 }
 ```
 
-**예외:** `keypress`, `wait`, `fetch-api`, `ai-parse-data`, `navigate`, `wait-for-condition`, `data-extract` 블록은 `selector`, `findBy`, `option` 불필요
+**예외:** `keypress`, `wait`, `fetch-api`, `ai-parse-data`, `navigate`, `wait-for-condition` 블록은 `selector`, `findBy`, `option` 불필요
 
 ### delayAfterMs 활용
 

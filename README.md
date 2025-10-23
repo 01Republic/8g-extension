@@ -208,7 +208,6 @@ Webpage(JS) ─ SDK(EightGClient)
   - `navigate`: URL 이동(페이지 로드 대기 옵션)
   - `fetch-api`: 외부 API 호출(GET, POST 등, CORS 제약 없음)
   - `ai-parse-data`: AI 기반 데이터 파싱(OpenAI, 스키마 정의 필요)
-  - `data-extract`: 데이터 추출/변환(JSONata 쿼리 지원)
 
 ### SDK 상세(브라우저에서 사용)
 - `EightGClient.checkExtension()`

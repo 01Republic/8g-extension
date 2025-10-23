@@ -44,5 +44,4 @@ export type {
   ArraySchemaDefinition,
   FetchApiBlock,
   FetchApiResponse,
-  DataExtractBlock,
 } from '../blocks';
