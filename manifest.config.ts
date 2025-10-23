@@ -22,7 +22,6 @@ export default defineManifest({
       matches: ['<all_urls>'],
       run_at: 'document_start',
       match_about_blank: true,
-      all_frames: true,
     },
   ],
   background: {

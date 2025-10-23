@@ -182,6 +182,8 @@ export const WorkspaceMemberSchema = z.object({
   role: z.string(),
   // 멤버 결제 여부
   isPaid: z.boolean().nullable().optional(),
+  // 멤버 구독 좌석 상태
+  subscriptionSeatStatus: z.enum(['FREE', 'PAID']).nullable().optional(),
 });
 
 export type WorkspaceMemberDto = z.infer<typeof WorkspaceMemberSchema>;
