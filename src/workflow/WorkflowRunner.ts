@@ -8,11 +8,16 @@ import {
 } from './step-executor';
 
 export type TabCreator = (targetUrl: string, activateTab: boolean) => Promise<number>;
+export type ExecutionStatusController = {
+  show: (tabId: number, message?: string) => Promise<void>;
+  hide: (tabId: number) => Promise<void>;
+};
 
 export class WorkflowRunner {
   constructor(
     private executeBlock: BlockExecutor,
-    private createTab: TabCreator
+    private createTab: TabCreator,
+    private statusController?: ExecutionStatusController
   ) {}
 
   async run(workflow: Workflow, targetUrl: string, activateTab: boolean = false) {
@@ -35,32 +40,40 @@ export class WorkflowRunner {
     // 탭 생성
     const tabId = await this.createTab(resolvedTargetUrl, activateTab);
 
-    const stepsById = new Map(workflow.steps.map((s) => [s.id, s]));
-    let currentId: string | undefined = workflow.start;
-    const results: WorkflowStepRunResult<any>[] = [];
+    try {
+      // 실행 상태 UI 표시
+      await this.statusController?.show(tabId, '워크플로우 실행 중');
 
-    while (currentId) {
-      const step = stepsById.get(currentId);
-      if (!step) break;
+      const stepsById = new Map(workflow.steps.map((s) => [s.id, s]));
+      let currentId: string | undefined = workflow.start;
+      const results: WorkflowStepRunResult<any>[] = [];
 
-      // 1. Step 실행
-      const stepResult = await executeStep(step, context, this.executeBlock, tabId);
+      while (currentId) {
+        const step = stepsById.get(currentId);
+        if (!step) break;
 
-      // 2. 결과 기록
-      results.push(stepResult);
-      context = stepResult.context;
+        // 1. Step 실행
+        const stepResult = await executeStep(step, context, this.executeBlock, tabId);
 
-      // 3. 다음 step 결정
-      const nextId = getNextStepId(step, stepResult.success, context);
+        // 2. 결과 기록
+        results.push(stepResult);
+        context = stepResult.context;
 
-      // 4. Step 후 대기 (다음 step이 있는 경우에만)
-      if (nextId && !stepResult.skipped) {
-        await waitAfterStep(step);
+        // 3. 다음 step 결정
+        const nextId = getNextStepId(step, stepResult.success, context);
+
+        // 4. Step 후 대기 (다음 step이 있는 경우에만)
+        if (nextId && !stepResult.skipped) {
+          await waitAfterStep(step);
+        }
+
+        currentId = nextId;
       }
 
-      currentId = nextId;
+      return { steps: results, tabId };
+    } finally {
+      // 실행 상태 UI 숨김
+      await this.statusController?.hide(tabId);
     }
-
-    return { steps: results, tabId };
   }
 }

@@ -3,14 +3,18 @@ import {
   ExecuteBlockMessage,
   BlockExecutionResponse,
   isErrorResponse,
+  ShowExecutionStatusMessage,
+  HideExecutionStatusMessage,
 } from '@/types/internal-messages';
 
 export class TabManager {
   private activeTabs: Map<number, { url: string; createdAt: number }> = new Map();
   private closedTabs: Set<number> = new Set();
+  private executingWorkflowTabs: Map<number, { message: string }> = new Map();
 
   constructor() {
     this.initializeTabClosedListener();
+    this.initializeTabUpdatedListener();
   }
 
   // 탭 닫힘 이벤트 리스너 초기화
@@ -22,11 +26,29 @@ export class TabManager {
         console.log('[TabManager] Tracked tab was closed:', tabId);
         this.activeTabs.delete(tabId);
         this.closedTabs.add(tabId);
+        this.executingWorkflowTabs.delete(tabId);
 
         // 메모리 누수 방지를 위해 1분 후 제거
         setTimeout(() => {
           this.closedTabs.delete(tabId);
         }, 60000);
+      }
+    });
+  }
+
+  // 탭 업데이트(페이지 로드) 이벤트 리스너 초기화
+  private initializeTabUpdatedListener() {
+    chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
+      // 페이지 로드가 완료되고, 워크플로우 실행 중인 탭이면 UI 재표시
+      if (changeInfo.status === 'complete' && this.executingWorkflowTabs.has(tabId)) {
+        const workflowInfo = this.executingWorkflowTabs.get(tabId);
+        if (workflowInfo) {
+          console.log('[TabManager] Page loaded in executing workflow tab, re-showing UI:', tabId);
+          // 짧은 딜레이 후 UI 재표시 (content script 준비 대기)
+          setTimeout(async () => {
+            await this.showExecutionStatus(tabId, workflowInfo.message);
+          }, 500);
+        }
       }
     });
   }
@@ -87,6 +109,51 @@ export class TabManager {
 
       chrome.tabs.onUpdated.addListener(listener);
     });
+  }
+
+  async showExecutionStatus(tabId: number, message?: string): Promise<void> {
+    if (this.isTabClosed(tabId)) {
+      console.log('[TabManager] Cannot show execution status - tab was closed:', tabId);
+      return;
+    }
+
+    const displayMessage = message || '워크플로우 실행 중';
+
+    // 워크플로우 실행 중 상태 저장
+    this.executingWorkflowTabs.set(tabId, { message: displayMessage });
+
+    const statusMessage: ShowExecutionStatusMessage = {
+      type: 'SHOW_EXECUTION_STATUS',
+      data: { message: displayMessage },
+    };
+
+    try {
+      await chrome.tabs.sendMessage(tabId, statusMessage);
+      console.log('[TabManager] Execution status shown');
+    } catch (error) {
+      console.warn('[TabManager] Failed to show execution status:', error);
+    }
+  }
+
+  async hideExecutionStatus(tabId: number): Promise<void> {
+    if (this.isTabClosed(tabId)) {
+      console.log('[TabManager] Cannot hide execution status - tab was closed:', tabId);
+      return;
+    }
+
+    // 워크플로우 실행 완료 - 상태 제거
+    this.executingWorkflowTabs.delete(tabId);
+
+    const statusMessage: HideExecutionStatusMessage = {
+      type: 'HIDE_EXECUTION_STATUS',
+    };
+
+    try {
+      await chrome.tabs.sendMessage(tabId, statusMessage);
+      console.log('[TabManager] Execution status hidden');
+    } catch (error) {
+      console.warn('[TabManager] Failed to hide execution status:', error);
+    }
   }
 
   async executeBlock(blockData: Block, tabId: number): Promise<BlockResult> {

@@ -3,6 +3,7 @@ import { MessageKernel } from './kernel/MessageKernel';
 import { InternalMessageHandler } from './handler/InternalMessageHandler';
 import { ExternalMessageHandler } from './handler/ExternalMessageHandler';
 import { ConfirmationUIContainer } from './components/ConfirmationUI';
+import { ExecutionStatusUIContainer } from './components/ExecutionStatusUI';
 
 // Prevent multiple injections
 (() => {
@@ -24,20 +25,30 @@ import { ConfirmationUIContainer } from './components/ConfirmationUI';
   internalHandler.initializeMessageListener();
   externalHandler.initializeMessageListener();
 
-  // Confirmation UI 초기화 (top frame에서만)
+  // UI 초기화 (top frame에서만)
   const isTopFrame = window.self === window.top;
 
   if (isTopFrame) {
     const initUI = () => {
-      const uiRoot = document.createElement('div');
-      uiRoot.id = '8g-confirmation-ui-root';
-      uiRoot.style.cssText = 'all: initial; position: fixed; z-index: 2147483647;';
-      document.body.appendChild(uiRoot);
+      // Confirmation UI 마운트
+      const confirmationRoot = document.createElement('div');
+      confirmationRoot.id = '8g-confirmation-ui-root';
+      confirmationRoot.style.cssText = 'all: initial; position: fixed; z-index: 2147483647;';
+      document.body.appendChild(confirmationRoot);
 
-      const root = createRoot(uiRoot);
-      root.render(<ConfirmationUIContainer />);
+      const confirmationReactRoot = createRoot(confirmationRoot);
+      confirmationReactRoot.render(<ConfirmationUIContainer />);
 
-      console.log('[8G Extension] Confirmation UI mounted (top frame only)');
+      // Execution Status UI 마운트
+      const executionStatusRoot = document.createElement('div');
+      executionStatusRoot.id = '8g-execution-status-ui-root';
+      executionStatusRoot.style.cssText = 'all: initial; position: fixed; z-index: 2147483647;';
+      document.body.appendChild(executionStatusRoot);
+
+      const executionStatusReactRoot = createRoot(executionStatusRoot);
+      executionStatusReactRoot.render(<ExecutionStatusUIContainer />);
+
+      console.log('[8G Extension] UI Components mounted (top frame only)');
     };
 
     // document.body가 준비되면 UI 초기화

@@ -22,9 +22,16 @@ export class WorkflowService {
       return tab.id;
     };
 
+    // ExecutionStatus UI 컨트롤러
+    const statusController = {
+      show: (tabId: number, message?: string) => this.tabManager.showExecutionStatus(tabId, message),
+      hide: (tabId: number) => this.tabManager.hideExecutionStatus(tabId),
+    };
+
     this.workflowRunner = new WorkflowRunner(
       executeBlock,
-      createTab
+      createTab,
+      statusController
     );
   }
 

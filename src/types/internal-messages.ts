@@ -50,9 +50,21 @@ export interface FetchApiMessage {
   };
 }
 
+// UI Control Messages
+export interface ShowExecutionStatusMessage {
+  type: 'SHOW_EXECUTION_STATUS';
+  data: {
+    message?: string;
+  };
+}
+
+export interface HideExecutionStatusMessage {
+  type: 'HIDE_EXECUTION_STATUS';
+}
+
 // Internal Message Union Types
 export type BackgroundMessage = CollectWorkflowNewTabMessage | CdpClickMessage | CdpKeypressMessage | FetchApiMessage;
-export type ContentMessage = ExecuteBlockMessage;
+export type ContentMessage = ExecuteBlockMessage | ShowExecutionStatusMessage | HideExecutionStatusMessage;
 
 // Response Types for Internal Communication
 export interface ErrorResponse {
@@ -79,6 +91,14 @@ export function isCdpKeypressMessage(message: any): message is CdpKeypressMessag
 
 export function isFetchApiMessage(message: any): message is FetchApiMessage {
   return message && message.type === 'FETCH_API';
+}
+
+export function isShowExecutionStatusMessage(message: any): message is ShowExecutionStatusMessage {
+  return message && message.type === 'SHOW_EXECUTION_STATUS';
+}
+
+export function isHideExecutionStatusMessage(message: any): message is HideExecutionStatusMessage {
+  return message && message.type === 'HIDE_EXECUTION_STATUS';
 }
 
 export function isErrorResponse(response: any): response is ErrorResponse {
