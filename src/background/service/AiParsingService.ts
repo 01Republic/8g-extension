@@ -1,6 +1,7 @@
 import { ChatOpenAI } from '@langchain/openai';
 import { z } from 'zod';
 import { ErrorResponse } from '@/types/internal-messages';
+import { CurrencyInfoSchema } from '@/sdk/types';
 
 export interface AiParsingRequest {
   sourceData: any;
@@ -186,13 +187,23 @@ export class AiParsingService {
           zodType = z.any();
         }
         break;
+      case 'currency':
+        // CurrencyInfoSchema를 Zod 객체로 변환
+        zodType = z.object({
+          code: z.enum(CurrencyInfoSchema.code.enum as unknown as [string, ...string[]]),
+          symbol: z.enum(CurrencyInfoSchema.symbol.enum as unknown as [string, ...string[]]),
+          format: z.enum(CurrencyInfoSchema.format.enum as unknown as [string, ...string[]]),
+          amount: z.number(),
+          text: z.string(),
+        });
+        break;
       default:
         zodType = z.any();
     }
 
-    // optional 처리
+    // optional 처리 - OpenAI API는 .optional() 대신 .nullable() 사용
     if (fieldDef.optional) {
-      zodType = zodType.optional();
+      zodType = zodType.nullable();
     }
 
     return zodType;
@@ -239,12 +250,17 @@ Please parse the source data and return it in the exact format specified by the 
     if (schemaDefinition.type === 'object' && schemaDefinition.shape) {
       let description = `${spaces}{\n`;
       for (const [key, fieldDef] of Object.entries(schemaDefinition.shape)) {
-        const optional = (fieldDef as any).optional ? ' (optional)' : '';
+        const optional = (fieldDef as any).optional ? ' (nullable)' : '';
         const desc = (fieldDef as any).description ? ` // ${(fieldDef as any).description}` : '';
         description += `${spaces}  ${key}: ${this.describeSchema(fieldDef, indent + 1)}${optional}${desc}\n`;
       }
       description += `${spaces}}`;
       return description;
+    }
+    
+    // currency 타입인 경우
+    if (schemaDefinition.type === 'currency') {
+      return '{ code: string, symbol: string, format: string, amount: number, text: string }';
     }
     
     // enum이 있는 경우 enum 값들 표시
