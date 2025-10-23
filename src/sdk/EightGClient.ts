@@ -42,14 +42,8 @@ export const CurrencyAmountSchema = z.object({
   code: z.nativeEnum(CurrencyCode),
   // 통화 기호
   symbol: z.string(),
-  // 로컬 통화 이름 (optional)
-  local: z.string().optional(),
-  // 통화 약어 (optional)
-  abbreviation: z.string().optional(),
   // 통화 표시 형식
   format: z.string(),
-  // 통화 설명
-  desc: z.string(),
   // 실제 금액
   amount: z.number(),
   // 표시용 텍스트 (optional, 예: "US$57.75")
@@ -57,22 +51,6 @@ export const CurrencyAmountSchema = z.object({
 });
 
 export type CurrencyDto = z.infer<typeof CurrencyAmountSchema>;
-
-export type CurrencyCodes = ValuesOf<typeof CurrencyValues>['code'];
-export type CurrencySymbols = ValuesOf<typeof CurrencyValues>['symbol'];
-export type CurrencyFormats = '%u%n';
-
-export type ValuesOf<OBJ> = OBJ[keyof OBJ];
-
-export enum Currency {
-  USD = 'USD',
-  KRW = 'KRW',
-}
-
-export const CurrencyValues = {
-  en: {code: 'USD', symbol: '$'},
-  ko: {code: 'KRW', symbol: '₩'},
-} as const;
 
 /*
 {
@@ -118,7 +96,13 @@ export const WorkspaceBillingSchema = z.object({
   // 사용 멤버 수
   usedMemberCount: z.number(),
   // 단위 가격
-  unitPrice: CurrencyAmountSchema.nullable()
+  unitPrice: CurrencyAmountSchema.nullable(),
+  
+  // 카드 번호
+  cardNumber: z.string(),
+
+  // 카드 이름
+  cardName: z.string()
   /*
   카드 정보 추가
   number4: string;

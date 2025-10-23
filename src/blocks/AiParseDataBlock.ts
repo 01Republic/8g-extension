@@ -1,5 +1,6 @@
 import z from 'zod';
 import { Block, BlockResult } from './types';
+import { CurrencyInfoSchema } from '../sdk/types';
 
 /**
  * 스키마 필드 정의 (Union 타입)
@@ -39,12 +40,20 @@ export interface ObjectSchemaField {
   optional?: boolean;
 }
 
+export interface CurrencySchemaField {
+  type: 'currency';
+  shape: typeof CurrencyInfoSchema;
+  description?: string;
+  optional?: boolean;
+}
+
 export type SchemaField =
   | StringSchemaField
   | NumberSchemaField
   | BooleanSchemaField
   | ArraySchemaField
-  | ObjectSchemaField;
+  | ObjectSchemaField
+  | CurrencySchemaField;
 
 /**
  * 스키마 정의 (JSON 형식)
@@ -179,7 +188,8 @@ export async function handlerAiParseData(data: AiParseDataBlock): Promise<BlockR
  *   priority: Schema.number({ 
  *     enum: [1, 2, 3] as const, 
  *     optional: true 
- *   })
+ *   }),
+ *   price: Schema.currency({ description: 'Price with currency info' })
  * });
  * 
  * // 객체 배열
@@ -230,6 +240,12 @@ export const Schema = {
     type: 'object',
     shape,
     ...options,
+  }),
+  currency: (options?: { description?: string; optional?: boolean }): CurrencySchemaField => ({
+    type: 'currency',
+    shape: CurrencyInfoSchema,
+    description: options?.description || 'Currency information with code, symbol, format, amount, and text',
+    optional: options?.optional,
   }),
 };
 

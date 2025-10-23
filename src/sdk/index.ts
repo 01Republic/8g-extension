@@ -7,20 +7,13 @@ export {
   type WorkspaceBillingHistoryDto,
   type WorkspaceMemberDto,
   type ConnectWorkspaceResponseDto,
-  type CurrencyCodes,
-  type CurrencySymbols,
-  type CurrencyFormats,
-  type ValuesOf,
   // Enums
   BillingCycleTerm,
-  Currency,
   // Schemas
   WorkspaceItemSchema,
-  CurrencyAmountSchema,
   WorkspaceBillingSchema,
   WorkspaceBillingHistorySchema,
   WorkspaceMemberSchema,
-  CurrencyValues,
 } from './EightGClient';
 export * from './types';
 export { EightGError } from './errors';
