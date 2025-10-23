@@ -20,7 +20,7 @@ export class AnthropicModel implements IAiModel {
   private llm: ChatAnthropic;
   public readonly modelName: string;
   
-  private static readonly DEFAULT_MODEL = 'claude-3-5-sonnet-20241022';
+  private static readonly DEFAULT_MODEL = 'claude-haiku-4-5';
 
   constructor(config: AnthropicModelConfig) {
     const { apiKey, model = AnthropicModel.DEFAULT_MODEL, temperature = 0 } = config;

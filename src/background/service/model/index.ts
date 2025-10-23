@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { OpenAIModel } from './OpenAIModel';
+import { AnthropicModel } from './AnthropicModel';
 
 /**
  * AI 모델의 공통 인터페이스
@@ -41,24 +43,19 @@ export class AiModelFactory {
     const { provider, apiKey, model, temperature = 0 } = config;
 
     switch (provider) {
-      case 'openai': {
-        // Lazy import to avoid circular dependencies
-        const { OpenAIModel } = require('./OpenAIModel');
+      case 'openai':
         return new OpenAIModel({
           apiKey,
           model,
           temperature,
         });
-      }
 
-      case 'anthropic': {
-        const { AnthropicModel } = require('./AnthropicModel');
+      case 'anthropic':
         return new AnthropicModel({
           apiKey,
           model,
           temperature,
         });
-      }
 
       default:
         throw new Error(`Unsupported AI provider: ${provider}`);
