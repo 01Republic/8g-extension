@@ -741,7 +741,58 @@ const workflow = {
 };
 ```
 
-### 예제 5: AI 파싱
+### 예제 5: 데이터 변환 (transform-data)
+
+JSONata를 사용하여 이전 스텝의 데이터를 변환/필터링/집계할 수 있습니다.
+
+```typescript
+const workflow = {
+  version: '1.0',
+  start: 'getProducts',
+  steps: [
+    {
+      id: 'getProducts',
+      block: {
+        name: 'get-element-data',
+        selector: '.product',
+        findBy: 'cssSelector',
+        option: { multiple: true },
+        extractors: [
+          { type: 'text', selector: '.name', saveAs: 'name' },
+          { type: 'text', selector: '.price', saveAs: 'price' }
+        ]
+      },
+      next: 'transformData'
+    },
+    {
+      id: 'transformData',
+      block: {
+        name: 'transform-data',
+        sourceData: { valueFrom: 'steps.getProducts.result.data' },
+        expression: '$sum([price > 100].price)'  // 100원 이상 상품의 합계
+      },
+      next: 'filterProducts'
+    },
+    {
+      id: 'filterProducts',
+      block: {
+        name: 'transform-data',
+        sourceData: { valueFrom: 'steps.getProducts.result.data' },
+        expression: '[price > 100]'  // 100원 이상 상품만 필터링
+      }
+    }
+  ]
+};
+```
+
+**JSONata 표현식 예제:**
+- 필터링: `[price > 100]`
+- 집계: `$sum(items.price)`, `$average(items.price)`, `$max(items.price)`
+- 조건: `count > 10 ? "high" : "low"`
+- 변환: `$map(items, function($v) { { "id": $v.id, "total": $v.price * 1.1 } })`
+- 문자열: `$uppercase(text)`, `$lowercase(text)`
+
+### 예제 6: AI 파싱
 
 ```typescript
 const workflow = {
@@ -764,6 +815,7 @@ const workflow = {
       block: {
         name: 'ai-parse-data',
         apiKey: 'sk-...',
+        provider: 'openai',
         sourceData: { valueFrom: 'steps.getRawText.result.data' },
         schemaDefinition: {
           type: 'object',
@@ -780,7 +832,7 @@ const workflow = {
 };
 ```
 
-### 예제 5-1: AI 파싱 + 통화 스키마 (Schema.currency)
+### 예제 6-1: AI 파싱 + 통화 스키마 (Schema.currency)
 
 SDK는 다양한 통화 정보를 포함한 통합 스키마를 제공합니다. `Schema.currency()`를 사용하면 40개 통화 코드와 27개 통화 심볼, 8개 포맷 패턴을 지원하는 통화 필드를 쉽게 정의할 수 있습니다.
 
@@ -911,7 +963,7 @@ const multiCurrencyWorkflow = {
 // 출력: 각 통화가 자동으로 올바른 코드와 심볼로 파싱됨
 ```
 
-### 예제 6: 로그인 대기 (wait-for-condition)
+### 예제 7: 로그인 대기 (wait-for-condition)
 
 ```typescript
 const workflow = {
@@ -1025,6 +1077,27 @@ const workflow = {
     }
   ]
 };
+```
+
+## ExecutionContext 헬퍼 함수
+
+워크플로우 실행 후 `context`에서 데이터를 쉽게 추출할 수 있습니다.
+
+```typescript
+const result = await client.collectWorkflow({ ... });
+
+// Step 데이터 추출 (가장 많이 사용)
+const products = EightGClient.getStepData(result.context, 'getProducts');
+
+// 변수 추출
+const userId = EightGClient.getVar(result.context, 'userId');
+
+// 경로로 추출
+const firstProduct = EightGClient.getFromContext(result.context, 'steps.getProducts.result.data.0');
+
+// Step 전체 결과
+const stepResult = EightGClient.getStepResult(result.context, 'getProducts');
+console.log(stepResult.success, stepResult.skipped);
 ```
 
 ## 참고 사항

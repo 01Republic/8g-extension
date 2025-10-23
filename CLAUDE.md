@@ -96,7 +96,7 @@ Webpage (SDK resolves Promise)
 **Blocks ([src/blocks/](src/blocks/))**
 - [index.ts](src/blocks/index.ts) - `BlockHandler.executeBlock()` entry point, routes to validate*/handler* functions
 - Each block has: TypeSchema (Zod schema), validate* function, handler* function
-- Block types: get-text, attribute-value, get-element-data, get/set/clear-value-form, element-exists, event-click, keypress, scroll, wait, save-assets, fetch-api, ai-parse-data, navigate, wait-for-condition
+- Block types: get-text, attribute-value, get-element-data, get/set/clear-value-form, element-exists, event-click, keypress, scroll, wait, save-assets, fetch-api, ai-parse-data, transform-data, navigate, wait-for-condition
 
 **SDK ([src/sdk/](src/sdk/))**
 - [index.ts](src/sdk/index.ts) - Main export entry point

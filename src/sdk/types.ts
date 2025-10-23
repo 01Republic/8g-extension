@@ -1,5 +1,31 @@
 import { Block } from '../blocks';
+import type {
+  StepResult as WorkflowStepResult,
+  ForEachContext as WorkflowForEachContext,
+  CountLoopContext as WorkflowCountLoopContext,
+} from '../workflow/context/execution-context';
+
 export * from '../blocks';
+
+// =========================
+// Execution Context Types
+// =========================
+
+// Re-export types from workflow for reference
+export type { StepResult } from '../workflow/context/execution-context';
+
+/**
+ * SDK용 ExecutionContext (플레인 객체)
+ *
+ * workflow의 ExecutionContext를 평면화한 구조입니다.
+ * WorkflowService에서 toPlainObject()로 변환하여 전달됩니다.
+ */
+export interface ExecutionContext {
+  steps: Record<string, WorkflowStepResult>;
+  vars: Record<string, any>;
+  forEach?: WorkflowForEachContext;
+  loop?: WorkflowCountLoopContext;
+}
 
 // =========================
 // Workflow Types
@@ -92,6 +118,7 @@ export class WorkflowStepRunResult<T = any> {
 export class CollectWorkflowResult<T = any> {
   success!: boolean;
   steps!: WorkflowStepRunResult<T>[];
+  context!: ExecutionContext;
   targetUrl!: string;
   timestamp!: string;
   error?: string;

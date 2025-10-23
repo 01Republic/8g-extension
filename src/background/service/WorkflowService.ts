@@ -69,12 +69,19 @@ export class WorkflowService {
 
       tabId = result.tabId;
 
-      // 3) 성공 응답 전송
+      // 3) 성공 응답 전송 (context를 플레인 객체로 변환)
+      const plainContext = {
+        steps: result.context.stepContext.steps,
+        vars: result.context.varContext.vars,
+        forEach: result.context.loopContext.forEach,
+        loop: result.context.loopContext.loop,
+      };
+
       sendResponse({
         success: true,
         targetUrl: requestData.targetUrl,
         tabId: result.tabId,
-        result: { steps: result.steps },
+        result: { steps: result.steps, context: plainContext },
         timestamp: new Date().toISOString(),
         closeTabAfterCollection: requestData.closeTabAfterCollection !== false,
       });

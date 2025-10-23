@@ -1,4 +1,4 @@
-import { CollectWorkflowRequest, CollectWorkflowResult, CurrencyCode } from './types';
+import { CollectWorkflowRequest, CollectWorkflowResult, CurrencyCode, ExecutionContext } from './types';
 import { EightGError } from './errors';
 import { ExtensionResponseMessage, isExtensionResponseMessage } from '@/types/external-messages';
 import { z } from 'zod';
@@ -238,10 +238,15 @@ export class EightGClient {
             response?.result?.steps ??
             response?.result?.result?.steps ??
             [];
+          const context =
+            response?.result?.context ??
+            response?.result?.result?.context ??
+            { steps: {}, vars: {} };
 
           resolve({
             success: response.success,
             steps,
+            context,
             error: response.success ? undefined : 'Workflow failed',
             timestamp: new Date().toISOString(),
             targetUrl: request.targetUrl,
@@ -382,5 +387,31 @@ export class EightGClient {
     }
 
     return { ...result, data: validatedMembers };
+  }
+
+  static getFromContext(context: ExecutionContext, path: string): any {
+    const parts = path.split('.');
+    let current: any = context;
+
+    for (const part of parts) {
+      if (current === undefined || current === null) {
+        return undefined;
+      }
+      current = current[part];
+    }
+
+    return current;
+  }
+
+  static getStepResult(context: ExecutionContext, stepId: string): any {
+    return context.steps[stepId];
+  }
+
+  static getStepData(context: ExecutionContext, stepId: string): any {
+    return context.steps[stepId]?.result?.data;
+  }
+
+  static getVar(context: ExecutionContext, varKey: string): any {
+    return context.vars[varKey];
   }
 }

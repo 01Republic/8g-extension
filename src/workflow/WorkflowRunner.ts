@@ -70,7 +70,7 @@ export class WorkflowRunner {
         currentId = nextId;
       }
 
-      return { steps: results, tabId };
+      return { steps: results, tabId, context };
     } finally {
       // 실행 상태 UI 숨김
       await this.statusController?.hide(tabId);
