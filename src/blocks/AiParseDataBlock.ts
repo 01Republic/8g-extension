@@ -75,8 +75,9 @@ export interface AiParseDataBlock extends Omit<Block, 'selector' | 'findBy' | 'o
   sourceData?: any; // 직접 전달할 데이터 또는 이전 스텝 결과
   schemaDefinition: SchemaDefinition; // JSON 스키마 정의
   prompt?: string; // AI에게 추가 지시사항
-  model?: string; // 사용할 OpenAI 모델 (기본: gpt-4o-mini)
-  apiKey: string; // OpenAI API 키 (필수)
+  model?: string; // 사용할 AI 모델
+  apiKey: string; // AI API 키 (필수)
+  provider: 'openai' | 'anthropic'; // AI 제공자 (필수)
 }
 
 // Schema Definition Zod 스키마
@@ -102,7 +103,8 @@ export const AiParseDataBlockSchema = z.object({
   schemaDefinition: SchemaDefinitionSchema,
   prompt: z.string().optional(),
   model: z.string().optional(),
-  apiKey: z.string().min(1, 'OpenAI API key is required'), // 필수
+  apiKey: z.string().min(1, 'AI API key is required'), // 필수
+  provider: z.enum(['openai', 'anthropic']), // 필수
 });
 
 export function validateAiParseDataBlock(data: unknown): AiParseDataBlock {
@@ -121,8 +123,9 @@ export async function handlerAiParseData(data: AiParseDataBlock): Promise<BlockR
       sourceData,
       schemaDefinition,
       prompt,
-      model = 'gpt-4o-mini',
+      model,
       apiKey,
+      provider,
     } = data;
 
     // sourceData가 없으면 에러
@@ -143,7 +146,8 @@ export async function handlerAiParseData(data: AiParseDataBlock): Promise<BlockR
         schemaDefinition,
         prompt,
         model,
-        apiKey, // API 키 포함
+        apiKey,
+        provider,
       },
     });
 

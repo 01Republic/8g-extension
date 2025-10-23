@@ -1,14 +1,15 @@
-import { ChatOpenAI } from '@langchain/openai';
 import { z } from 'zod';
 import { ErrorResponse } from '@/types/internal-messages';
 import { CurrencyInfoSchema } from '@/sdk/types';
+import { AiModelFactory } from './model';
 
 export interface AiParsingRequest {
   sourceData: any;
   schemaDefinition: any;
   prompt?: string;
   model?: string;
-  apiKey: string; // OpenAI API 키
+  apiKey: string; // AI API 키 (OpenAI 또는 Anthropic)
+  provider: 'openai' | 'anthropic'; // AI 제공자
 }
 
 export interface AiParsingResult {
@@ -69,13 +70,13 @@ export class AiParsingService {
    */
   async parseData(request: AiParsingRequest): Promise<AiParsingResult> {
     try {
-      const { sourceData, schemaDefinition, prompt, model = 'gpt-4o-mini', apiKey } = request;
+      const { sourceData, schemaDefinition, prompt, model, apiKey, provider } = request;
 
       // API 키 확인
       if (!apiKey || apiKey.trim() === '') {
         return {
           success: false,
-          error: 'OpenAI API key is required. Please provide it in the ai-parse-data block.',
+          error: 'AI API key is required. Please provide it in the ai-parse-data block.',
         };
       }
 
@@ -85,21 +86,19 @@ export class AiParsingService {
       // Zod 스키마 재구성
       const zodSchema = this.reconstructZodSchema(schemaDefinition);
 
-      // OpenAI 모델 초기화
-      const llm = new ChatOpenAI({
+      // AI 모델 생성 (전략 패턴)
+      const aiModel = AiModelFactory.createModel({
+        provider: provider,
         apiKey: apiKey,
-        modelName: model,
+        model: model,
         temperature: 0, // 일관된 출력을 위해 0으로 설정
       });
-
-      // Structured Output 사용
-      const structuredLlm = llm.withStructuredOutput(zodSchema);
 
       // 프롬프트 구성
       const systemPrompt = this.buildPrompt(sourceData, schemaDefinition, prompt);
 
       // AI 호출
-      const result = await structuredLlm.invoke(systemPrompt);
+      const result = await aiModel.parseStructuredData(systemPrompt, zodSchema);
 
       // 배열 스키마인 경우 wrapper 제거
       const finalResult = isArraySchema && result && typeof result === 'object' && 'items' in result
