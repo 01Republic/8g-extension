@@ -45,4 +45,5 @@ export type {
   FetchApiBlock,
   FetchApiResponse,
   TransformDataBlock,
+  ExportDataBlock,
 } from '../blocks';

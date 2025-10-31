@@ -5,15 +5,18 @@ import {
   CdpClickMessage,
   CdpKeypressMessage,
   FetchApiMessage,
+  ExportDataMessage,
   isCdpClickMessage,
   isCdpKeypressMessage,
   isFetchApiMessage,
+  isExportDataMessage,
   ErrorResponse,
 } from '@/types/internal-messages';
 import { AiParsingService } from '../service/AiParsingService';
 import { CdpService } from '../service/CdpService';
 import { WorkflowService } from '../service/WorkflowService';
 import { ApiService } from '../service/ApiService';
+import { ExportDataService } from '../service/ExportDataService';
 
 export class BackgroundManager {
   private aiParsingService: AiParsingService;
@@ -68,6 +71,11 @@ export class BackgroundManager {
         return true;
       }
 
+      if ((message as any).type === 'EXPORT_DATA' && isExportDataMessage(message)) {
+        this.handleAsyncExportData(message.data, sendResponse);
+        return true;
+      }
+
       sendResponse({ $isError: true, message: 'Invalid message type', data: {} } as ErrorResponse);
       return false;
     });
@@ -111,5 +119,23 @@ export class BackgroundManager {
     sendResponse: (response: any) => void
   ) {
     await this.apiService.handleRequest(requestData, sendResponse);
+  }
+
+  // Export Data 요청 처리
+  private async handleAsyncExportData(
+    requestData: ExportDataMessage['data'],
+    sendResponse: (response: any) => void
+  ) {
+    try {
+      const result = await ExportDataService.exportData(requestData);
+      sendResponse({ data: result });
+    } catch (error) {
+      console.error('[BackgroundManager] Export data error:', error);
+      sendResponse({
+        $isError: true,
+        message: error instanceof Error ? error.message : 'Unknown error in export data',
+        data: null,
+      } as ErrorResponse);
+    }
   }
 }
