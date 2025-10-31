@@ -27,6 +27,7 @@ export type {
 export { createSchema, createArraySchema, Schema } from './AiParseDataBlock';
 export type { FetchApiBlock, FetchApiResponse } from './FetchApiBlock';
 export type { TransformDataBlock } from './TransformDataBlock';
+export type { ExportDataBlock } from './ExportDataBlock';
 
 // Export all block schemas
 export { GetTextBlockSchema } from './GetTextBlock';
@@ -46,6 +47,7 @@ export { ScrollBlockSchema } from './ScrollBlock';
 export { AiParseDataBlockSchema } from './AiParseDataBlock';
 export { FetchApiBlockSchema } from './FetchApiBlock';
 export { TransformDataBlockSchema } from './TransformDataBlock';
+export { ExportDataBlockSchema } from './ExportDataBlock';
 
 // Import block handlers and types
 import { handlerGetText, GetTextBlock, validateGetTextBlock } from './GetTextBlock';
@@ -95,6 +97,7 @@ import { handlerScroll, ScrollBlock, validateScrollBlock } from './ScrollBlock';
 import { handlerAiParseData, AiParseDataBlock, validateAiParseDataBlock } from './AiParseDataBlock';
 import { handlerFetchApi, FetchApiBlock, validateFetchApiBlock } from './FetchApiBlock';
 import { handlerTransformData, TransformDataBlock, validateTransformDataBlock } from './TransformDataBlock';
+import { handlerExportData, ExportDataBlock, validateExportDataBlock } from './ExportDataBlock';
 import { Block, BlockResult } from './types';
 import { GetTextBlockSchema } from './GetTextBlock';
 import { GetAttributeValueBlockSchema } from './GetAttributeValueBlock';
@@ -113,6 +116,7 @@ import { ScrollBlockSchema } from './ScrollBlock';
 import { AiParseDataBlockSchema } from './AiParseDataBlock';
 import { FetchApiBlockSchema } from './FetchApiBlock';
 import { TransformDataBlockSchema } from './TransformDataBlock';
+import { ExportDataBlockSchema } from './ExportDataBlock';
 
 // All block schemas mapped by block name
 export const AllBlockSchemas = {
@@ -133,6 +137,7 @@ export const AllBlockSchemas = {
   'ai-parse-data': AiParseDataBlockSchema,
   'fetch-api': FetchApiBlockSchema,
   'transform-data': TransformDataBlockSchema,
+  'export-data': ExportDataBlockSchema,
 } as const;
 
 export class BlockHandler {
@@ -158,10 +163,11 @@ export class BlockHandler {
   static executeBlock(block: AiParseDataBlock): Promise<BlockResult<any>>;
   static executeBlock(block: FetchApiBlock): Promise<BlockResult<any>>;
   static executeBlock(block: TransformDataBlock): Promise<BlockResult<any>>;
+  static executeBlock(block: ExportDataBlock): Promise<BlockResult<{ filename: string; downloadId?: number }>>;
   static executeBlock(block: Block): Promise<BlockResult>;
 
   // Implementation
-  static async executeBlock(block: Block | AiParseDataBlock | FetchApiBlock | TransformDataBlock | KeypressBlock | WaitBlock | WaitForConditionBlock | NavigateBlock): Promise<BlockResult> {
+  static async executeBlock(block: Block | AiParseDataBlock | FetchApiBlock | TransformDataBlock | ExportDataBlock | KeypressBlock | WaitBlock | WaitForConditionBlock | NavigateBlock): Promise<BlockResult> {
     try {
       switch (block.name) {
         case 'get-text': {
@@ -247,6 +253,11 @@ export class BlockHandler {
         case 'transform-data': {
           const validatedBlock = validateTransformDataBlock(block);
           return await handlerTransformData(validatedBlock);
+        }
+
+        case 'export-data': {
+          const validatedBlock = validateExportDataBlock(block);
+          return await handlerExportData(validatedBlock);
         }
 
         default:
