@@ -72,7 +72,7 @@ export async function handlerNetworkCatch(data: NetworkCatchBlock): Promise<Bloc
       return {
         hasError: true,
         message: response.message || 'Failed to fetch network data',
-        data: null,
+        data: undefined,
       };
     }
 
@@ -85,8 +85,7 @@ export async function handlerNetworkCatch(data: NetworkCatchBlock): Promise<Bloc
     console.error('[NetworkCatchBlock] Error:', error);
     return {
       hasError: true,
-      message: error instanceof Error ? error.message : 'Failed to fetch network data',
-      data: null,
+      message: error instanceof Error ? error.message : 'Failed to fetch network data'
     };
   }
 }

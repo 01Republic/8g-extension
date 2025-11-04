@@ -51,6 +51,7 @@ export class WorkflowRunner {
       while (currentId) {
         const step = stepsById.get(currentId);
         if (!step) break;
+        console.log('step', step);
 
         // 1. Step 실행
         const stepResult = await executeStep(step, context, this.executeBlock, tabId);

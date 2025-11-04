@@ -27,7 +27,10 @@ export class ApiService {
   ): Promise<void> {
     try {
       console.log('[ApiService] Handle API request:', requestData.url);
-
+      if (requestData.body) {
+        console.log('requestData.body', requestData.body);
+      }
+      
       const result = await this.fetchData(requestData);
 
       sendResponse({

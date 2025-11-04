@@ -147,8 +147,6 @@ export class CdpService {
         button: 'left',
         clickCount: 1,
       });
-
-      console.log('[CdpService] Click completed successfully');
     } finally {
       // Debugger 연결 해제
       await chrome.debugger.detach({ tabId });
@@ -361,7 +359,6 @@ export class CdpService {
     };
 
     requests.set(requestId, networkRequest);
-    console.log(`[CdpService] Request started [${tabId}]:`, request.url);
   }
 
   /**
@@ -383,7 +380,6 @@ export class CdpService {
         mimeType: response.mimeType,
         encodedDataLength: response.encodedDataLength,
       };
-      console.log(`[CdpService] Response received [${tabId}]:`, response.status, request.url);
     }
   }
 
@@ -424,8 +420,6 @@ export class CdpService {
         // 응답 본문을 가져올 수 없는 경우도 있음 (예: 리다이렉트, 이미지 등)
         console.debug(`[CdpService] Could not get response body for ${request.url}:`, error);
       }
-      
-      console.log(`[CdpService] Loading finished [${tabId}]:`, request.url);
     }
   }
 
@@ -446,7 +440,6 @@ export class CdpService {
         errorText,
         canceled,
       };
-      console.log(`[CdpService] Loading failed [${tabId}]:`, errorText, request.url);
     }
   }
 

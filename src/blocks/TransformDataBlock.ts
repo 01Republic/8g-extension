@@ -58,6 +58,7 @@ export async function handlerTransformData(data: TransformDataBlock): Promise<Bl
     try {
       result = await compiledExpression.evaluate(input);
     } catch (error) {
+      console.error('JSONata evaluation failed:', error);
       throw new Error(
         `JSONata evaluation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
