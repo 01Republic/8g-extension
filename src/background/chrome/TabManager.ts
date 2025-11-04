@@ -6,24 +6,39 @@ import {
   ShowExecutionStatusMessage,
   HideExecutionStatusMessage,
 } from '@/types/internal-messages';
+import { CdpService, NetworkRequest } from '../service/CdpService';
 
 export class TabManager {
   private activeTabs: Map<number, { url: string; createdAt: number }> = new Map();
   private closedTabs: Set<number> = new Set();
   private executingWorkflowTabs: Map<number, { message: string }> = new Map();
+  private cdpService: CdpService;
 
-  constructor() {
+  constructor(cdpService: CdpService) {
+    this.cdpService = cdpService;
     this.initializeTabClosedListener();
     this.initializeTabUpdatedListener();
   }
 
   // 탭 닫힘 이벤트 리스너 초기화
   private initializeTabClosedListener() {
-    chrome.tabs.onRemoved.addListener((tabId) => {
+    chrome.tabs.onRemoved.addListener(async (tabId) => {
       console.log('[TabManager] Tab closed:', tabId);
 
       if (this.activeTabs.has(tabId)) {
         console.log('[TabManager] Tracked tab was closed:', tabId);
+        
+        // 네트워크 추적 중지
+        try {
+          await this.cdpService.stopNetworkTracking(tabId);
+          console.log('[TabManager] Network tracking stopped for closed tab:', tabId);
+        } catch (error) {
+          console.warn('[TabManager] Failed to stop network tracking:', error);
+        }
+        
+        // 네트워크 데이터 정리
+        this.cdpService.clearNetworkRequests(tabId);
+        
         this.activeTabs.delete(tabId);
         this.closedTabs.add(tabId);
         this.executingWorkflowTabs.delete(tabId);
@@ -61,7 +76,8 @@ export class TabManager {
   async createTab(
     url: string,
     activate: boolean = false,
-    contentScriptDelay: number = 2000
+    contentScriptDelay: number = 2000,
+    enableNetworkTracking: boolean = true
   ): Promise<chrome.tabs.Tab> {
     const tab = await chrome.tabs.create({
       url,
@@ -77,6 +93,17 @@ export class TabManager {
       createdAt: Date.now(),
     });
 
+    // 네트워크 추적 시작 (옵션)
+    if (enableNetworkTracking) {
+      try {
+        await this.cdpService.startNetworkTracking(tab.id);
+        console.log('[TabManager] Network tracking started for tab:', tab.id);
+      } catch (error) {
+        console.warn('[TabManager] Failed to start network tracking:', error);
+        // 네트워크 추적 실패해도 계속 진행
+      }
+    }
+
     // 탭이 로드될 때까지 대기
     await this.waitForTabLoad(tab.id!);
 
@@ -87,6 +114,17 @@ export class TabManager {
   }
 
   async closeTab(tabId: number): Promise<void> {
+    // 네트워크 추적 중지
+    try {
+      await this.cdpService.stopNetworkTracking(tabId);
+      console.log('[TabManager] Network tracking stopped before closing tab:', tabId);
+    } catch (error) {
+      console.warn('[TabManager] Failed to stop network tracking:', error);
+    }
+    
+    // 네트워크 데이터 정리
+    this.cdpService.clearNetworkRequests(tabId);
+    
     await chrome.tabs.remove(tabId);
     this.activeTabs.delete(tabId);
   }
@@ -230,5 +268,33 @@ export class TabManager {
         }
       });
     });
+  }
+
+  /**
+   * 특정 탭의 네트워크 요청 데이터를 가져옵니다.
+   * 
+   * @param tabId - 탭 ID
+   * @returns 네트워크 요청 배열
+   */
+  getNetworkRequests(tabId: number): NetworkRequest[] {
+    return this.cdpService.getNetworkRequests(tabId);
+  }
+
+  /**
+   * 특정 탭의 네트워크 추적을 시작합니다.
+   * 
+   * @param tabId - 탭 ID
+   */
+  async startNetworkTracking(tabId: number): Promise<void> {
+    await this.cdpService.startNetworkTracking(tabId);
+  }
+
+  /**
+   * 특정 탭의 네트워크 추적을 중지합니다.
+   * 
+   * @param tabId - 탭 ID
+   */
+  async stopNetworkTracking(tabId: number): Promise<void> {
+    await this.cdpService.stopNetworkTracking(tabId);
   }
 }

@@ -6,10 +6,12 @@ import {
   CdpKeypressMessage,
   FetchApiMessage,
   ExportDataMessage,
+  NetworkCatchMessage,
   isCdpClickMessage,
   isCdpKeypressMessage,
   isFetchApiMessage,
   isExportDataMessage,
+  isNetworkCatchMessage,
   ErrorResponse,
 } from '@/types/internal-messages';
 import { AiParsingService } from '../service/AiParsingService';
@@ -23,11 +25,13 @@ export class BackgroundManager {
   private cdpService: CdpService;
   private workflowService: WorkflowService;
   private apiService: ApiService;
+  private tabManager: TabManager;
 
   constructor() {
     this.aiParsingService = new AiParsingService();
     this.cdpService = new CdpService();
-    this.workflowService = new WorkflowService(new TabManager());
+    this.tabManager = new TabManager(this.cdpService);
+    this.workflowService = new WorkflowService(this.tabManager);
     this.apiService = new ApiService();
   }
 
@@ -73,6 +77,16 @@ export class BackgroundManager {
 
       if ((message as any).type === 'EXPORT_DATA' && isExportDataMessage(message)) {
         this.handleAsyncExportData(message.data, sendResponse);
+        return true;
+      }
+
+      if ((message as any).type === 'NETWORK_CATCH' && isNetworkCatchMessage(message)) {
+        const tabId = message.data.tabId || sender.tab?.id;
+        if (!tabId) {
+          sendResponse({ $isError: true, message: 'Tab ID not found', data: null } as ErrorResponse);
+          return false;
+        }
+        this.handleAsyncNetworkCatch({ ...message.data, tabId }, sendResponse);
         return true;
       }
 
@@ -134,6 +148,114 @@ export class BackgroundManager {
       sendResponse({
         $isError: true,
         message: error instanceof Error ? error.message : 'Unknown error in export data',
+        data: null,
+      } as ErrorResponse);
+    }
+  }
+
+  // Network Catch 요청 처리
+  private async handleAsyncNetworkCatch(
+    requestData: NetworkCatchMessage['data'] & { tabId: number },
+    sendResponse: (response: any) => void
+  ) {
+    try {
+      console.log('[BackgroundManager] Handle network catch request:', requestData);
+      
+      // TabManager에서 네트워크 요청 데이터 가져오기
+      const allRequests = this.tabManager.getNetworkRequests(requestData.tabId);
+      
+      // 필터링 로직
+      let filteredRequests = allRequests;
+      
+      // URL 패턴 필터
+      if (requestData.urlPattern) {
+        const pattern = new RegExp(requestData.urlPattern);
+        filteredRequests = filteredRequests.filter(req => pattern.test(req.url));
+      }
+      
+      // Method 필터
+      if (requestData.method) {
+        filteredRequests = filteredRequests.filter(req => req.method === requestData.method);
+      }
+      
+      // Status 필터
+      if (requestData.status !== undefined) {
+        if (typeof requestData.status === 'number') {
+          filteredRequests = filteredRequests.filter(req => req.response?.status === requestData.status);
+        } else {
+          const { min, max } = requestData.status;
+          filteredRequests = filteredRequests.filter(req => {
+            const status = req.response?.status;
+            if (!status) return false;
+            if (min !== undefined && status < min) return false;
+            if (max !== undefined && status > max) return false;
+            return true;
+          });
+        }
+      }
+      
+      // MIME Type 필터
+      if (requestData.mimeType) {
+        filteredRequests = filteredRequests.filter(req => 
+          req.response?.mimeType?.includes(requestData.mimeType!)
+        );
+      }
+      
+      // 응답 데이터 구성
+      const responses = filteredRequests.map(req => {
+        const response: any = {
+          url: req.url,
+          method: req.method,
+          status: req.response?.status,
+          statusText: req.response?.statusText,
+          mimeType: req.response?.mimeType,
+          timestamp: req.timestamp,
+        };
+        
+        // 헤더 포함 옵션
+        if (requestData.includeHeaders) {
+          response.requestHeaders = req.requestHeaders;
+          response.responseHeaders = req.response?.headers;
+        }
+        
+        // 요청 본문
+        if (req.requestPostData) {
+          response.requestBody = req.requestPostData;
+        }
+        
+        // 응답 본문 처리
+        if (req.responseBody) {
+          if (req.responseBody.base64Encoded) {
+            // Base64 디코딩이 필요한 경우
+            response.responseBody = req.responseBody.body;
+          } else {
+            // JSON 파싱 시도
+            try {
+              response.responseBody = JSON.parse(req.responseBody.body);
+            } catch {
+              // 파싱 실패시 원본 문자열 반환
+              response.responseBody = req.responseBody.body;
+            }
+          }
+        }
+        
+        // 소요 시간 계산
+        if (req.loadingFinished) {
+          response.duration = (req.loadingFinished.timestamp - req.timestamp) * 1000; // ms
+        }
+        
+        return response;
+      });
+      
+      // 반환 형식 결정
+      const result = requestData.returnAll ? responses : responses[responses.length - 1] || null;
+      
+      sendResponse({ data: result });
+    } catch (error) {
+      console.error('[BackgroundManager] Network catch error:', error);
+      sendResponse({
+        $isError: true,
+        message: error instanceof Error ? error.message : 'Failed to fetch network data',
         data: null,
       } as ErrorResponse);
     }

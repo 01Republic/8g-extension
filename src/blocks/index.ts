@@ -28,6 +28,7 @@ export { createSchema, createArraySchema, Schema } from './AiParseDataBlock';
 export type { FetchApiBlock, FetchApiResponse } from './FetchApiBlock';
 export type { TransformDataBlock } from './TransformDataBlock';
 export type { ExportDataBlock } from './ExportDataBlock';
+export type { NetworkCatchBlock, NetworkCatchResponse } from './NetworkCatchBlock';
 
 // Export all block schemas
 export { GetTextBlockSchema } from './GetTextBlock';
@@ -48,6 +49,7 @@ export { AiParseDataBlockSchema } from './AiParseDataBlock';
 export { FetchApiBlockSchema } from './FetchApiBlock';
 export { TransformDataBlockSchema } from './TransformDataBlock';
 export { ExportDataBlockSchema } from './ExportDataBlock';
+export { NetworkCatchBlockSchema } from './NetworkCatchBlock';
 
 // Import block handlers and types
 import { handlerGetText, GetTextBlock, validateGetTextBlock } from './GetTextBlock';
@@ -98,6 +100,7 @@ import { handlerAiParseData, AiParseDataBlock, validateAiParseDataBlock } from '
 import { handlerFetchApi, FetchApiBlock, validateFetchApiBlock } from './FetchApiBlock';
 import { handlerTransformData, TransformDataBlock, validateTransformDataBlock } from './TransformDataBlock';
 import { handlerExportData, ExportDataBlock, validateExportDataBlock } from './ExportDataBlock';
+import { handlerNetworkCatch, NetworkCatchBlock, validateNetworkCatchBlock } from './NetworkCatchBlock';
 import { Block, BlockResult } from './types';
 import { GetTextBlockSchema } from './GetTextBlock';
 import { GetAttributeValueBlockSchema } from './GetAttributeValueBlock';
@@ -117,6 +120,7 @@ import { AiParseDataBlockSchema } from './AiParseDataBlock';
 import { FetchApiBlockSchema } from './FetchApiBlock';
 import { TransformDataBlockSchema } from './TransformDataBlock';
 import { ExportDataBlockSchema } from './ExportDataBlock';
+import { NetworkCatchBlockSchema } from './NetworkCatchBlock';
 
 // All block schemas mapped by block name
 export const AllBlockSchemas = {
@@ -138,6 +142,7 @@ export const AllBlockSchemas = {
   'fetch-api': FetchApiBlockSchema,
   'transform-data': TransformDataBlockSchema,
   'export-data': ExportDataBlockSchema,
+  'network-catch': NetworkCatchBlockSchema,
 } as const;
 
 export class BlockHandler {
@@ -164,10 +169,11 @@ export class BlockHandler {
   static executeBlock(block: FetchApiBlock): Promise<BlockResult<any>>;
   static executeBlock(block: TransformDataBlock): Promise<BlockResult<any>>;
   static executeBlock(block: ExportDataBlock): Promise<BlockResult<{ filename: string; downloadId?: number }>>;
+  static executeBlock(block: NetworkCatchBlock): Promise<BlockResult<any>>;
   static executeBlock(block: Block): Promise<BlockResult>;
 
   // Implementation
-  static async executeBlock(block: Block | AiParseDataBlock | FetchApiBlock | TransformDataBlock | ExportDataBlock | KeypressBlock | WaitBlock | WaitForConditionBlock | NavigateBlock): Promise<BlockResult> {
+  static async executeBlock(block: Block | AiParseDataBlock | FetchApiBlock | TransformDataBlock | ExportDataBlock | NetworkCatchBlock | KeypressBlock | WaitBlock | WaitForConditionBlock | NavigateBlock): Promise<BlockResult> {
     try {
       switch (block.name) {
         case 'get-text': {
@@ -258,6 +264,11 @@ export class BlockHandler {
         case 'export-data': {
           const validatedBlock = validateExportDataBlock(block);
           return await handlerExportData(validatedBlock);
+        }
+
+        case 'network-catch': {
+          const validatedBlock = validateNetworkCatchBlock(block as NetworkCatchBlock);
+          return await handlerNetworkCatch(validatedBlock);
         }
 
         default:

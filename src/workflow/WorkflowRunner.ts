@@ -54,6 +54,7 @@ export class WorkflowRunner {
 
         // 1. Step 실행
         const stepResult = await executeStep(step, context, this.executeBlock, tabId);
+        console.log('stepResult', stepResult);
 
         // 2. 결과 기록
         results.push(stepResult);

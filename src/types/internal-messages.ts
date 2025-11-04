@@ -63,6 +63,21 @@ export interface ExportDataMessage {
   };
 }
 
+export interface NetworkCatchMessage {
+  type: 'NETWORK_CATCH';
+  data: {
+    tabId?: number; // Optional tabId, will use sender tab if not provided
+    urlPattern?: string;
+    method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS';
+    status?: number | { min?: number; max?: number };
+    mimeType?: string;
+    waitForRequest?: boolean;
+    waitTimeout?: number;
+    returnAll?: boolean;
+    includeHeaders?: boolean;
+  };
+}
+
 // UI Control Messages
 export interface ShowExecutionStatusMessage {
   type: 'SHOW_EXECUTION_STATUS';
@@ -76,7 +91,7 @@ export interface HideExecutionStatusMessage {
 }
 
 // Internal Message Union Types
-export type BackgroundMessage = CollectWorkflowNewTabMessage | CdpClickMessage | CdpKeypressMessage | FetchApiMessage | ExportDataMessage;
+export type BackgroundMessage = CollectWorkflowNewTabMessage | CdpClickMessage | CdpKeypressMessage | FetchApiMessage | ExportDataMessage | NetworkCatchMessage;
 export type ContentMessage = ExecuteBlockMessage | ShowExecutionStatusMessage | HideExecutionStatusMessage;
 
 // Response Types for Internal Communication
@@ -108,6 +123,10 @@ export function isFetchApiMessage(message: any): message is FetchApiMessage {
 
 export function isExportDataMessage(message: any): message is ExportDataMessage {
   return message && message.type === 'EXPORT_DATA';
+}
+
+export function isNetworkCatchMessage(message: any): message is NetworkCatchMessage {
+  return message && message.type === 'NETWORK_CATCH';
 }
 
 export function isShowExecutionStatusMessage(message: any): message is ShowExecutionStatusMessage {
