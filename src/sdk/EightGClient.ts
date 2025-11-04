@@ -13,12 +13,16 @@ import { z } from 'zod';
  */
 // 1. 이걸로 서브스크립션 생성!
 export const WorkspaceItemSchema = z.object({
+  // 워크스페이스를 구분할 수 있는 구분자, ex) slug 같은 것들 01republic
+  id: z.string(),
   // 워크스페이스 이름
   name: z.string(),
-  // 워크스페이스를 구분할 수 있는 구분자, ex) slug 같은 것들 01republic
-  key: z.string(),
   // 워크스페이스의 프로필 이미지
   image: z.string(),
+  // member 수
+  memberCount: z.number(),
+  // 관리자 여부
+  isAdmin: z.boolean().nullable().optional(),
 });
 
 export type WorkspaceItemDto = z.infer<typeof WorkspaceItemSchema>;

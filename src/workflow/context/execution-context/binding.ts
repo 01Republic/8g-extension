@@ -18,6 +18,7 @@ export interface Binding {
  * @example
  * interpolate('${vars.userId}', context) // -> 값 그대로 (타입 유지)
  * interpolate('${steps.step1.result.data}', context) // -> 값 그대로 (타입 유지)
+ * interpolate('$.steps.step1.result.data', context) // -> 값 그대로 (타입 유지, $ 접두사)
  * interpolate('Hello ${vars.name}!', context)        // -> 'Hello World!' (문자열 보간)
  */
 export const interpolate = (
@@ -30,7 +31,12 @@ export const interpolate = (
     return getByPath(context, singleMatch[1].trim());
   }
 
-  // 2. "Hello ${name}!" 형태 - 문자열 보간
+  // 2. "$.path" 형태 ($ 접두사) - 값 그대로 반환 (타입 유지)
+  if (template.startsWith('$.')) {
+    return getByPath(context, template.substring(2)); // $ 제거
+  }
+
+  // 3. "Hello ${name}!" 형태 - 문자열 보간
   return template.replace(/\$\{([^}]+)\}/g, (_match, path) => {
     const value = getByPath(context, path.trim());
     if (value == null) return '';
