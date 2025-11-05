@@ -201,6 +201,39 @@ export class BackgroundManager {
         );
       }
       
+      // Request Body 필터
+      if (requestData.requestBodyPattern) {
+        filteredRequests = filteredRequests.filter(req => {
+          if (!req.requestPostData) return false;
+          
+          // 문자열 패턴인 경우 - 부분 일치 검사
+          if (typeof requestData.requestBodyPattern === 'string') {
+            return req.requestPostData.includes(requestData.requestBodyPattern);
+          }
+          
+          // 객체 패턴인 경우 - JSON 파싱 후 속성 매칭
+          if (typeof requestData.requestBodyPattern === 'object') {
+            try {
+              const bodyJson = JSON.parse(req.requestPostData);
+              const pattern = requestData.requestBodyPattern as Record<string, any>;
+              
+              // 패턴의 모든 키-값이 요청 body에 포함되어 있는지 확인
+              return Object.entries(pattern).every(([key, value]) => {
+                if (typeof value === 'object' && value !== null) {
+                  return JSON.stringify(bodyJson[key]) === JSON.stringify(value);
+                }
+                return bodyJson[key] === value;
+              });
+            } catch {
+              // JSON 파싱 실패시 false 반환
+              return false;
+            }
+          }
+          
+          return false;
+        });
+      }
+      
       // 응답 데이터 구성
       const responses = filteredRequests.map(req => {
         const response: any = {

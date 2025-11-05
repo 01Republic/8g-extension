@@ -71,6 +71,7 @@ export interface NetworkCatchMessage {
     method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS';
     status?: number | { min?: number; max?: number };
     mimeType?: string;
+    requestBodyPattern?: string | Record<string, any>; // Request body 필터 추가
     waitForRequest?: boolean;
     waitTimeout?: number;
     returnAll?: boolean;

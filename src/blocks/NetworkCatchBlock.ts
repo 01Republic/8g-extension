@@ -7,6 +7,7 @@ export interface NetworkCatchBlock extends Omit<Block, 'selector' | 'findBy' | '
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS';
   status?: number | { min?: number; max?: number }; // 특정 상태 코드 또는 범위
   mimeType?: string; // MIME 타입 필터 (예: 'application/json')
+  requestBodyPattern?: string | Record<string, any>; // Request body 필터 (문자열 패턴 또는 JSON 객체)
   waitForRequest?: boolean; // 요청 완료까지 대기 (기본: false)
   waitTimeout?: number; // 대기 타임아웃 (ms, 기본: 5000)
   returnAll?: boolean; // 모든 매칭 요청 반환 (기본: false, 마지막 것만)
@@ -39,6 +40,10 @@ export const NetworkCatchBlockSchema = z.object({
     })
   ]).optional(),
   mimeType: z.string().optional(),
+  requestBodyPattern: z.union([
+    z.string(),
+    z.record(z.any())
+  ]).optional(),
   waitForRequest: z.boolean().optional(),
   waitTimeout: z.number().min(0).optional(),
   returnAll: z.boolean().optional(),
@@ -61,6 +66,7 @@ export async function handlerNetworkCatch(data: NetworkCatchBlock): Promise<Bloc
         method: data.method,
         status: data.status,
         mimeType: data.mimeType,
+        requestBodyPattern: data.requestBodyPattern,
         waitForRequest: data.waitForRequest || false,
         waitTimeout: data.waitTimeout || 5000,
         returnAll: data.returnAll || false,
