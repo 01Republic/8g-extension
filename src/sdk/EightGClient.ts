@@ -305,7 +305,7 @@ export class EightGClient {
   }
 
   // 플랜, 결제주기
-  async getWorkspacePlanAndCycle(workspaceKey: string, request: CollectWorkflowRequest): Promise<WorkspaceBillingDto &  CollectWorkflowResult | CollectWorkflowResult> {
+  async getWorkspacePlanAndCycle(workspaceKey: string, request: CollectWorkflowRequest): Promise<{data: WorkspaceBillingDto} &  CollectWorkflowResult | CollectWorkflowResult> {
     request.workflow.vars = {
       ...request.workflow.vars,
       workspaceKey,
@@ -324,10 +324,10 @@ export class EightGClient {
     const parsed = WorkspaceBillingSchema.safeParse(rawData);
     if (parsed.success) {
       const data = parsed.data as WorkspaceBillingDto;
-      return { ...result, ...data };
+      return { ...result, data: data };
     } else {
       console.warn('Invalid workspace billing data:', rawData, parsed.error);
-      return { ...result };
+      return { ...result, data: undefined };
     }
   }
 
