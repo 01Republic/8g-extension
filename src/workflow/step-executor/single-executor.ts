@@ -49,7 +49,15 @@ export const executeSingleStep = async (
   while (attempts < maxAttempts) {
     attempts++;
     try {
-      const boundBlock = resolveBindings(block, context);
+      let boundBlock = resolveBindings(block, context);
+      
+      if (boundBlock.name === 'transform-data' && boundBlock.sourceData === undefined) {
+        boundBlock = {
+          ...boundBlock,
+          sourceData: context.stepContext.steps
+        };
+      }
+      
       result = await runWithTimeout(
         () => executeBlock(boundBlock as any, tabId),
         options.timeoutMs
