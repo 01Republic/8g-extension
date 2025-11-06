@@ -2,6 +2,7 @@ export {
   EightGClient,
   // Types
   type WorkspaceItemDto,
+  type WorkspaceDetailItemDto,
   type CurrencyDto,
   type WorkspaceBillingDto,
   type WorkspaceBillingHistoryDto,
@@ -11,6 +12,7 @@ export {
   BillingCycleTerm,
   // Schemas
   WorkspaceItemSchema,
+  WorkspaceDetailItemSchema,
   WorkspaceBillingSchema,
   WorkspaceBillingHistorySchema,
   WorkspaceMemberSchema,
