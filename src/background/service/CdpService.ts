@@ -56,8 +56,6 @@ export class CdpService {
     sendResponse: (response: any) => void
   ): Promise<void> {
     try {
-      console.log('[CdpService] Handle click request:', requestData);
-
       const { tabId, x, y } = requestData;
 
       await this.click(tabId, x, y);
@@ -90,8 +88,6 @@ export class CdpService {
     sendResponse: (response: any) => void
   ): Promise<void> {
     try {
-      console.log('[CdpService] Handle keypress request:', requestData);
-
       const { tabId, key, code, keyCode, modifiers } = requestData;
 
       await this.keypress(tabId, key, code, keyCode, modifiers);
@@ -114,11 +110,8 @@ export class CdpService {
    * @param y - 클릭할 Y 좌표
    */
   async click(tabId: number, x: number, y: number): Promise<void> {
-    console.log('[CdpService] Click request - tabId:', tabId, 'x:', x, 'y:', y);
-
     // Debugger 연결
     await chrome.debugger.attach({ tabId }, '1.3');
-    console.log('[CdpService] Debugger attached to tab:', tabId);
 
     try {
       // 1. Mouse move to position
@@ -150,7 +143,6 @@ export class CdpService {
     } finally {
       // Debugger 연결 해제
       await chrome.debugger.detach({ tabId });
-      console.log('[CdpService] Debugger detached from tab:', tabId);
     }
   }
 
@@ -170,11 +162,8 @@ export class CdpService {
     keyCode: number,
     modifiers: string[] = []
   ): Promise<void> {
-    console.log('[CdpService] Keypress request - tabId:', tabId, 'key:', key);
-
     // Debugger 연결
     await chrome.debugger.attach({ tabId }, '1.3');
-    console.log('[CdpService] Debugger attached to tab:', tabId);
 
     try {
       // Convert modifiers to CDP format
@@ -200,11 +189,9 @@ export class CdpService {
         modifiers: cdpModifiers,
       });
 
-      console.log('[CdpService] Keypress completed successfully');
     } finally {
       // Debugger 연결 해제
       await chrome.debugger.detach({ tabId });
-      console.log('[CdpService] Debugger detached from tab:', tabId);
     }
   }
 
@@ -229,14 +216,12 @@ export class CdpService {
    * @param tabId - 추적할 탭 ID
    */
   async startNetworkTracking(tabId: number): Promise<void> {
-    console.log('[CdpService] Starting network tracking for tab:', tabId);
     
     try {
       // 이미 연결되어 있지 않으면 디버거 연결
       if (!this.attachedTabs.has(tabId)) {
         await chrome.debugger.attach({ tabId }, '1.3');
         this.attachedTabs.add(tabId);
-        console.log('[CdpService] Debugger attached for network tracking:', tabId);
       }
 
       // 네트워크 요청 저장소 초기화
@@ -253,8 +238,6 @@ export class CdpService {
         this.attachNetworkListeners();
         this.networkListenersAttached.add(tabId);
       }
-
-      console.log('[CdpService] Network tracking started for tab:', tabId);
     } catch (error) {
       console.error('[CdpService] Failed to start network tracking:', error);
       throw error;
@@ -267,7 +250,6 @@ export class CdpService {
    * @param tabId - 추적 중지할 탭 ID
    */
   async stopNetworkTracking(tabId: number): Promise<void> {
-    console.log('[CdpService] Stopping network tracking for tab:', tabId);
     
     try {
       if (this.attachedTabs.has(tabId)) {
@@ -277,8 +259,6 @@ export class CdpService {
         // 디버거 연결 해제
         await chrome.debugger.detach({ tabId });
         this.attachedTabs.delete(tabId);
-        
-        console.log('[CdpService] Network tracking stopped for tab:', tabId);
       }
 
       // 리스너 등록 상태 제거
@@ -301,7 +281,6 @@ export class CdpService {
     }
 
     chrome.debugger.onEvent.addListener(this.handleDebuggerEvent.bind(this));
-    console.log('[CdpService] Network event listeners attached');
   }
 
   /**
@@ -409,12 +388,10 @@ export class CdpService {
         );
         
         if (response) {
-          console.log('response', response);
           request.responseBody = {
             body: (response as any).body,
             base64Encoded: (response as any).base64Encoded || false,
           };
-          console.log(`[CdpService] Response body captured [${tabId}]:`, request.url);
         }
       } catch (error) {
         // 응답 본문을 가져올 수 없는 경우도 있음 (예: 리다이렉트, 이미지 등)
@@ -464,7 +441,6 @@ export class CdpService {
    */
   clearNetworkRequests(tabId: number): void {
     this.networkRequests.delete(tabId);
-    console.log('[CdpService] Network requests cleared for tab:', tabId);
   }
 
 }
