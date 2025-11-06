@@ -1,4 +1,9 @@
-import { CollectWorkflowRequest, CollectWorkflowResult, CurrencyCode, ExecutionContext } from './types';
+import {
+  CollectWorkflowRequest,
+  CollectWorkflowResult,
+  CurrencyCode,
+  ExecutionContext,
+} from './types';
 import { EightGError } from './errors';
 import { ExtensionResponseMessage, isExtensionResponseMessage } from '@/types/external-messages';
 import { z } from 'zod';
@@ -26,6 +31,25 @@ export const WorkspaceItemSchema = z.object({
 });
 
 export type WorkspaceItemDto = z.infer<typeof WorkspaceItemSchema>;
+
+export const WorkspaceDetailItemSchema = z.object({
+  // 워크스페이스를 구분할 수 있는 구분자, ex) slug 같은 것들 01republic
+  slug: z.string(),
+  // 워크스페이스 이름
+  displayName: z.string(),
+  // 워크스페이스의 프로필 이미지
+  profileImageUrl: z.string(),
+  // 설명
+  description: z.string(),
+  // 공개 이메일
+  publicEmail: z.string(),
+  // 결제 이메일
+  billingEmail: z.string(),
+  // 조직 메인 페이지 URL
+  orgPageUrl: z.string(),
+});
+
+export type WorkspaceDetailItemDto = z.infer<typeof WorkspaceDetailItemSchema>;
 
 export type ConnectWorkspaceResponseDto = {
   data: WorkspaceItemDto[];
@@ -106,7 +130,7 @@ export const WorkspaceBillingSchema = z.object({
   cardNumber: z.string(),
 
   // 카드 이름
-  cardName: z.string()
+  cardName: z.string(),
   /*
   카드 정보 추가
   number4: string;
@@ -116,7 +140,7 @@ export const WorkspaceBillingSchema = z.object({
   isPersonal: boolean; // 추가 정보 <- 필수 추가 정보
   isCreditCard: boolean; // 추가 정보 <- 필수 추가 정보
 
-  optional 하게 
+  optional 하게
   cardNumber: string -> 전체
   name : 가져온거
   유효기간(나중에 컬럼명 찾아서 수정)
@@ -125,8 +149,7 @@ export const WorkspaceBillingSchema = z.object({
   */
 });
 
-export type WorkspaceBillingDto = z.infer<typeof WorkspaceBillingSchema> & {
-};
+export type WorkspaceBillingDto = z.infer<typeof WorkspaceBillingSchema> & {};
 
 /*
 [
@@ -238,14 +261,9 @@ export class EightGClient {
           window.removeEventListener('message', handleResponse);
 
           const response = event.data as any;
-          const steps =
-            response?.result?.steps ??
-            response?.result?.result?.steps ??
-            [];
-          const context =
-            response?.result?.context ??
-            response?.result?.result?.context ??
-            { steps: {}, vars: {} };
+          const steps = response?.result?.steps ?? response?.result?.result?.steps ?? [];
+          const context = response?.result?.context ??
+            response?.result?.result?.context ?? { steps: {}, vars: {} };
 
           resolve({
             success: response.success,
@@ -259,18 +277,23 @@ export class EightGClient {
       };
 
       window.addEventListener('message', handleResponse);
-      window.postMessage({
-        type: '8G_COLLECT_WORKFLOW',
-        requestId,
-        targetUrl: request.targetUrl,
-        workflow: request.workflow,
-        closeTabAfterCollection: request.closeTabAfterCollection !== false,
-        activateTab: request.activateTab === true,
-      }, '*');
+      window.postMessage(
+        {
+          type: '8G_COLLECT_WORKFLOW',
+          requestId,
+          targetUrl: request.targetUrl,
+          workflow: request.workflow,
+          closeTabAfterCollection: request.closeTabAfterCollection !== false,
+          activateTab: request.activateTab === true,
+        },
+        '*'
+      );
     });
   }
 
-  async getWorkspaces(request: CollectWorkflowRequest): Promise<ConnectWorkspaceResponseDto & CollectWorkflowResult> {
+  async getWorkspaces(
+    request: CollectWorkflowRequest
+  ): Promise<ConnectWorkspaceResponseDto & CollectWorkflowResult> {
     const result = await this.collectWorkflow(request);
     if (!result.success) {
       throw new EightGError('Failed to get workspaces', 'GET_WORKSPACES_FAILED');
@@ -304,8 +327,38 @@ export class EightGClient {
     };
   }
 
+  // 워크스페이스 상세
+  async getWorkspaceDetail(
+    request: CollectWorkflowRequest
+  ): Promise<({ data: WorkspaceDetailItemDto } & CollectWorkflowResult) | CollectWorkflowResult> {
+    const result = await this.collectWorkflow(request);
+    if (!result.success) {
+      throw new EightGError('Failed to get workspaces', 'GET_WORKSPACES_FAILED');
+    }
+
+    // steps에서 데이터 추출
+    const rawData = result.steps[result.steps.length - 1]?.result?.data;
+
+    if (!rawData) {
+      return { ...result };
+    }
+
+    const parsed = WorkspaceDetailItemSchema.safeParse(rawData);
+
+    if (parsed.success) {
+      const data = parsed.data as WorkspaceDetailItemDto;
+      return { ...result, data: data };
+    } else {
+      console.warn('Invalid workspace detail data:', rawData, parsed.error);
+      return { ...result, data: undefined };
+    }
+  }
+
   // 플랜, 결제주기
-  async getWorkspacePlanAndCycle(workspaceKey: string, request: CollectWorkflowRequest): Promise<{data: WorkspaceBillingDto} &  CollectWorkflowResult | CollectWorkflowResult> {
+  async getWorkspacePlanAndCycle(
+    workspaceKey: string,
+    request: CollectWorkflowRequest
+  ): Promise<({ data: WorkspaceBillingDto } & CollectWorkflowResult) | CollectWorkflowResult> {
     request.workflow.vars = {
       ...request.workflow.vars,
       workspaceKey,
@@ -313,7 +366,10 @@ export class EightGClient {
 
     const result = await this.collectWorkflow(request);
     if (!result.success) {
-      throw new EightGError('Failed to get workspace plan and cycle', 'GET_WORKSPACE_PLAN_AND_CYCLE_FAILED');
+      throw new EightGError(
+        'Failed to get workspace plan and cycle',
+        'GET_WORKSPACE_PLAN_AND_CYCLE_FAILED'
+      );
     }
 
     const rawData = result.steps[result.steps.length - 1]?.result?.data;
@@ -332,7 +388,10 @@ export class EightGClient {
   }
 
   // 결제내역
-  async getWorkspaceBillingHistories(workspaceKey: string, request: CollectWorkflowRequest): Promise<{ data: WorkspaceBillingHistoryDto[] } & CollectWorkflowResult> {
+  async getWorkspaceBillingHistories(
+    workspaceKey: string,
+    request: CollectWorkflowRequest
+  ): Promise<{ data: WorkspaceBillingHistoryDto[] } & CollectWorkflowResult> {
     request.workflow.vars = {
       ...request.workflow.vars,
       workspaceKey,
@@ -340,7 +399,10 @@ export class EightGClient {
 
     const result = await this.collectWorkflow(request);
     if (!result.success) {
-      throw new EightGError('Failed to get workspace billing histories', 'GET_WORKSPACE_BILLING_HISTORIES_FAILED');
+      throw new EightGError(
+        'Failed to get workspace billing histories',
+        'GET_WORKSPACE_BILLING_HISTORIES_FAILED'
+      );
     }
 
     const rawData = result.steps[result.steps.length - 1]?.result?.data;
@@ -363,7 +425,10 @@ export class EightGClient {
   }
 
   // 구성원
-  async getWorkspaceMembers(workspaceKey: string, request: CollectWorkflowRequest): Promise<{ data: WorkspaceMemberDto[] } & CollectWorkflowResult> {
+  async getWorkspaceMembers(
+    workspaceKey: string,
+    request: CollectWorkflowRequest
+  ): Promise<{ data: WorkspaceMemberDto[] } & CollectWorkflowResult> {
     request.workflow.vars = {
       ...request.workflow.vars,
       workspaceKey,
