@@ -18,8 +18,10 @@ import { z } from 'zod';
  */
 // 1. 이걸로 서브스크립션 생성!
 export const WorkspaceItemSchema = z.object({
-  // 워크스페이스를 구분할 수 있는 구분자, ex) slug 같은 것들 01republic
+  // 워크스페이스를 구분할 수 있는 구분자
   id: z.string(),
+  // 워크스페이스 슬러그
+  slug: z.string(),
   // 워크스페이스 이름
   name: z.string(),
   // 워크스페이스의 프로필 이미지
@@ -329,8 +331,16 @@ export class EightGClient {
 
   // 워크스페이스 상세
   async getWorkspaceDetail(
+    workspaceKey: string,
+    slug: string,
     request: CollectWorkflowRequest
   ): Promise<({ data: WorkspaceDetailItemDto } & CollectWorkflowResult) | CollectWorkflowResult> {
+    request.workflow.vars = {
+      ...request.workflow.vars,
+      workspaceKey,
+      slug,
+    };
+
     const result = await this.collectWorkflow(request);
     if (!result.success) {
       throw new EightGError('Failed to get workspaces', 'GET_WORKSPACES_FAILED');
@@ -355,13 +365,15 @@ export class EightGClient {
   }
 
   // 플랜, 결제주기
-  async getWorkspacePlanAndCycle(
+  async getWorkspaceBilling(
     workspaceKey: string,
+    slug: string,
     request: CollectWorkflowRequest
   ): Promise<({ data: WorkspaceBillingDto } & CollectWorkflowResult) | CollectWorkflowResult> {
     request.workflow.vars = {
       ...request.workflow.vars,
       workspaceKey,
+      slug,
     };
 
     const result = await this.collectWorkflow(request);
@@ -390,11 +402,13 @@ export class EightGClient {
   // 결제내역
   async getWorkspaceBillingHistories(
     workspaceKey: string,
+    slug: string,
     request: CollectWorkflowRequest
   ): Promise<{ data: WorkspaceBillingHistoryDto[] } & CollectWorkflowResult> {
     request.workflow.vars = {
       ...request.workflow.vars,
       workspaceKey,
+      slug,
     };
 
     const result = await this.collectWorkflow(request);
@@ -427,11 +441,13 @@ export class EightGClient {
   // 구성원
   async getWorkspaceMembers(
     workspaceKey: string,
+    slug: string,
     request: CollectWorkflowRequest
   ): Promise<{ data: WorkspaceMemberDto[] } & CollectWorkflowResult> {
     request.workflow.vars = {
       ...request.workflow.vars,
       workspaceKey,
+      slug,
     };
 
     const result = await this.collectWorkflow(request);
