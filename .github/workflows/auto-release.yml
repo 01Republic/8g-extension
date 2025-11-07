@@ -67,8 +67,8 @@ jobs:
         if: success()
         uses: slackapi/slack-github-action@v1.27.0
         with:
-          webhook-type: incoming-webhook
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: webhook-trigger
           payload: |
             {
               "text": "배포 완료! 🚀",
