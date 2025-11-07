@@ -13,10 +13,12 @@ export interface EventClickBlock extends Block {
 
 export const EventClickBlockSchema = BaseBlockSchema.extend({
   name: z.literal('event-click'),
-  textFilter: z.object({
-    text: z.union([z.string(), z.array(z.string())]),
-    mode: z.enum(['exact', 'contains', 'startsWith', 'endsWith', 'regex']),
-  }).optional(),
+  textFilter: z
+    .object({
+      text: z.union([z.string(), z.array(z.string())]),
+      mode: z.enum(['exact', 'contains', 'startsWith', 'endsWith', 'regex']),
+    })
+    .optional(),
 });
 
 export function validateEventClickBlock(data: unknown): EventClickBlock {
@@ -32,7 +34,7 @@ export async function handlerEventClick(data: EventClickBlock): Promise<BlockRes
     }
 
     const elements = await findElement({ selector, findBy, option });
-    
+
     if (!elements) {
       throw new Error('Element not found for clicking');
     }
@@ -43,10 +45,18 @@ export async function handlerEventClick(data: EventClickBlock): Promise<BlockRes
       // 여러 요소가 찾아진 경우
       if (textFilter) {
         // 텍스트 필터로 요소 선택
-        const filteredElement = selectElementByText(elements as HTMLElement[], textFilter.text, textFilter.mode);
+        const filteredElement = selectElementByText(
+          elements as HTMLElement[],
+          textFilter.text,
+          textFilter.mode
+        );
         if (!filteredElement) {
-          const textDisplay = Array.isArray(textFilter.text) ? textFilter.text.join(', ') : textFilter.text;
-          throw new Error(`No element found with text filter: "${textDisplay}" (mode: ${textFilter.mode})`);
+          const textDisplay = Array.isArray(textFilter.text)
+            ? textFilter.text.join(', ')
+            : textFilter.text;
+          throw new Error(
+            `No element found with text filter: "${textDisplay}" (mode: ${textFilter.mode})`
+          );
         }
         targetElement = filteredElement;
       } else {
@@ -72,19 +82,19 @@ export async function handlerEventClick(data: EventClickBlock): Promise<BlockRes
 }
 
 function selectElementByText(
-  elements: HTMLElement[], 
-  textFilter: string | string[], 
+  elements: HTMLElement[],
+  textFilter: string | string[],
   mode: 'exact' | 'contains' | 'startsWith' | 'endsWith' | 'regex'
 ): HTMLElement | null {
   for (const element of elements) {
     const text = getElementText(element);
-    
+
     // 텍스트 필터가 배열인 경우 각 텍스트에 대해 확인
     const textsToCheck = Array.isArray(textFilter) ? textFilter : [textFilter];
-    
+
     for (const filterText of textsToCheck) {
       let matches = false;
-      
+
       switch (mode) {
         case 'exact':
           matches = text === filterText;
@@ -108,13 +118,13 @@ function selectElementByText(
           }
           break;
       }
-      
+
       if (matches) {
         return element;
       }
     }
   }
-  
+
   return null;
 }
 
@@ -123,58 +133,58 @@ function getElementText(element: HTMLElement): string {
   if (element.innerText) {
     return element.innerText.trim();
   }
-  
+
   // textContent 대체 사용
   if (element.textContent) {
     return element.textContent.trim();
   }
-  
+
   // input 요소의 경우 value 사용
   if (element instanceof HTMLInputElement && element.value) {
     return element.value.trim();
   }
-  
+
   // placeholder나 title 속성 사용
   const placeholder = element.getAttribute('placeholder');
   if (placeholder) {
     return placeholder.trim();
   }
-  
+
   const title = element.getAttribute('title');
   if (title) {
     return title.trim();
   }
-  
+
   // aria-label 사용
   const ariaLabel = element.getAttribute('aria-label');
   if (ariaLabel) {
     return ariaLabel.trim();
   }
-  
+
   return '';
 }
 
 async function simulateClickElement(element: HTMLElement): Promise<void> {
   // 1. Scroll element into view
-  element.scrollIntoView({ 
-    behavior: 'instant', 
+  element.scrollIntoView({
+    behavior: 'instant',
     block: 'center',
-    inline: 'center' 
+    inline: 'center',
   });
-  
+
   // Small delay to ensure scroll completes
-  await new Promise(resolve => setTimeout(resolve, 50));
-  
+  await new Promise((resolve) => setTimeout(resolve, 50));
+
   // 2. Focus the element (handles window focus issues)
   if (element.focus) {
     element.focus();
   }
-  
+
   // 3. Get element position for realistic coordinates
   const rect = element.getBoundingClientRect();
   const centerX = rect.left + rect.width / 2;
   const centerY = rect.top + rect.height / 2;
-  
+
   // 4. Use CDP to click via background service (isTrusted: true)
   // Note: tabId will be automatically detected by background service from sender.tab.id
   try {
@@ -185,7 +195,7 @@ async function simulateClickElement(element: HTMLElement): Promise<void> {
         y: centerY,
       },
     });
-    
+
     if (response && !response.$isError) {
       console.log('[EventClick] CDP click successful:', response);
     } else {
@@ -193,13 +203,13 @@ async function simulateClickElement(element: HTMLElement): Promise<void> {
     }
   } catch (error) {
     console.error('[EventClick] CDP click failed, falling back to native click:', error);
-    
+
     // Fallback: Use native click method
     if (element.click) {
       element.click();
     }
   }
-  
+
   // 5. Small delay to ensure click is processed
-  await new Promise(resolve => setTimeout(resolve, 50));
+  await new Promise((resolve) => setTimeout(resolve, 50));
 }

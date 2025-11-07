@@ -73,4 +73,3 @@ export async function handlerFetchApi(data: FetchApiBlock): Promise<BlockResult<
     };
   }
 }
-

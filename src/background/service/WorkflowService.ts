@@ -13,7 +13,8 @@ export class WorkflowService {
 
   constructor(private tabManager: TabManager) {
     // TabManager의 executeBlock 메서드를 executor 함수로 주입
-    const executeBlock = (block: Block, tabId: number) => this.tabManager.executeBlock(block, tabId);
+    const executeBlock = (block: Block, tabId: number) =>
+      this.tabManager.executeBlock(block, tabId);
     const createTab = async (targetUrl: string, activateTab: boolean) => {
       const tab = await this.tabManager.createTab(targetUrl, activateTab);
       if (tab.id === undefined) {
@@ -24,20 +25,17 @@ export class WorkflowService {
 
     // ExecutionStatus UI 컨트롤러
     const statusController = {
-      show: (tabId: number, message?: string) => this.tabManager.showExecutionStatus(tabId, message),
+      show: (tabId: number, message?: string) =>
+        this.tabManager.showExecutionStatus(tabId, message),
       hide: (tabId: number) => this.tabManager.hideExecutionStatus(tabId),
     };
 
-    this.workflowRunner = new WorkflowRunner(
-      executeBlock,
-      createTab,
-      statusController
-    );
+    this.workflowRunner = new WorkflowRunner(executeBlock, createTab, statusController);
   }
 
   /**
    * 워크플로우 실행 요청을 처리하고 응답을 전송합니다.
-   * 
+   *
    * @param requestData - 워크플로우 실행 요청 데이터
    * @param sendResponse - 응답 전송 함수
    */
@@ -102,13 +100,14 @@ export class WorkflowService {
 
   /**
    * 워크플로우 요청 데이터의 유효성을 검증합니다.
-   * 
+   *
    * @param requestData - 워크플로우 실행 요청 데이터
    * @returns 유효성 검증 결과
    */
-  private validateRequest(
-    requestData: CollectWorkflowNewTabMessage['data']
-  ): { success: boolean; error?: string } {
+  private validateRequest(requestData: CollectWorkflowNewTabMessage['data']): {
+    success: boolean;
+    error?: string;
+  } {
     if (!requestData.targetUrl) {
       return {
         success: false,
@@ -128,7 +127,7 @@ export class WorkflowService {
 
   /**
    * 정리 작업을 수행합니다 (탭 닫기).
-   * 
+   *
    * @param tabId - 닫을 탭 ID
    */
   private async cleanup(tabId: number): Promise<void> {
@@ -137,4 +136,3 @@ export class WorkflowService {
     await this.tabManager.closeTab(tabId);
   }
 }
-

@@ -20,9 +20,9 @@ export async function handlerWait(data: WaitBlock): Promise<BlockResult<boolean>
     const { duration } = data;
 
     console.log(`[Wait] Waiting for ${duration}ms...`);
-    
-    await new Promise(resolve => setTimeout(resolve, duration));
-    
+
+    await new Promise((resolve) => setTimeout(resolve, duration));
+
     console.log(`[Wait] Wait completed after ${duration}ms`);
 
     return { data: true };
@@ -35,4 +35,3 @@ export async function handlerWait(data: WaitBlock): Promise<BlockResult<boolean>
     };
   }
 }
-

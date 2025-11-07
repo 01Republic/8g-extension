@@ -11,7 +11,12 @@ describe('EightGClient Context Helper Functions', () => {
       const context: ExecutionContext = {
         steps: {
           getProducts: {
-            result: { data: [{ id: 1, name: 'Apple' }, { id: 2, name: 'Banana' }] },
+            result: {
+              data: [
+                { id: 1, name: 'Apple' },
+                { id: 2, name: 'Banana' },
+              ],
+            },
             success: true,
             skipped: false,
           },
@@ -20,7 +25,10 @@ describe('EightGClient Context Helper Functions', () => {
       };
 
       const data = EightGClient.getFromContext(context, 'steps.getProducts.result.data');
-      expect(data).toEqual([{ id: 1, name: 'Apple' }, { id: 2, name: 'Banana' }]);
+      expect(data).toEqual([
+        { id: 1, name: 'Apple' },
+        { id: 2, name: 'Banana' },
+      ]);
     });
 
     it('should get var by path', () => {
@@ -102,7 +110,10 @@ describe('EightGClient Context Helper Functions', () => {
         vars: {},
       };
 
-      const name = EightGClient.getFromContext(context, 'steps.fetchUser.result.data.user.profile.name');
+      const name = EightGClient.getFromContext(
+        context,
+        'steps.fetchUser.result.data.user.profile.name'
+      );
       expect(name).toBe('John Doe');
     });
   });
@@ -162,7 +173,12 @@ describe('EightGClient Context Helper Functions', () => {
       const context: ExecutionContext = {
         steps: {
           getProducts: {
-            result: { data: [{ id: 1, name: 'Apple' }, { id: 2, name: 'Banana' }] },
+            result: {
+              data: [
+                { id: 1, name: 'Apple' },
+                { id: 2, name: 'Banana' },
+              ],
+            },
             success: true,
             skipped: false,
           },
@@ -171,7 +187,10 @@ describe('EightGClient Context Helper Functions', () => {
       };
 
       const data = EightGClient.getStepData(context, 'getProducts');
-      expect(data).toEqual([{ id: 1, name: 'Apple' }, { id: 2, name: 'Banana' }]);
+      expect(data).toEqual([
+        { id: 1, name: 'Apple' },
+        { id: 2, name: 'Banana' },
+      ]);
     });
 
     it('should return undefined for non-existent step', () => {

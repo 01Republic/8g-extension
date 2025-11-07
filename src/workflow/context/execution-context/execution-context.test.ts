@@ -95,11 +95,15 @@ describe('ExecutionContext', () => {
       });
 
       expect(evaluateCondition({ exists: 'vars.status' }, context)).toBe(true);
-      expect(evaluateCondition({ equals: { left: 'vars.status', right: 'OK' } }, context)).toBe(true);
+      expect(evaluateCondition({ equals: { left: 'vars.status', right: 'OK' } }, context)).toBe(
+        true
+      );
       expect(evaluateCondition({ equals: { left: 'vars.count', right: 10 } }, context)).toBe(true);
       expect(evaluateCondition({ equals: { left: 'vars.count', right: 5 } }, context)).toBe(false);
       expect(evaluateCondition({ exists: 'steps.step1' }, context)).toBe(true);
-      expect(evaluateCondition({ equals: { left: 'steps.step1.success', right: true } }, context)).toBe(true);
+      expect(
+        evaluateCondition({ equals: { left: 'steps.step1.success', right: true } }, context)
+      ).toBe(true);
     });
 
     it('should evaluate expression conditions', () => {
@@ -141,8 +145,12 @@ describe('ExecutionContext', () => {
 
       // Check conditions
       expect(evaluateCondition({ exists: 'steps.fetchUser' }, context)).toBe(true);
-      expect(evaluateCondition({ equals: { left: 'forEach.index', right: 0 } }, context)).toBe(true);
-      expect(evaluateCondition({ equals: { left: 'steps.fetchUser.success', right: true } }, context)).toBe(true);
+      expect(evaluateCondition({ equals: { left: 'forEach.index', right: 0 } }, context)).toBe(
+        true
+      );
+      expect(
+        evaluateCondition({ equals: { left: 'steps.fetchUser.success', right: true } }, context)
+      ).toBe(true);
 
       // Exit forEach
       context = exitLoopInContext(context);

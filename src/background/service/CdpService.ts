@@ -39,15 +39,15 @@ export interface NetworkRequest {
 export class CdpService {
   // 탭별 디버거 연결 상태 관리
   private attachedTabs: Set<number> = new Set();
-  
+
   // 탭별 네트워크 요청 데이터
   private networkRequests: Map<number, Map<string, NetworkRequest>> = new Map();
-  
+
   // 네트워크 이벤트 리스너 등록 여부
   private networkListenersAttached: Set<number> = new Set();
   /**
    * CDP 클릭 요청을 처리하고 응답을 전송합니다.
-   * 
+   *
    * @param requestData - 클릭 요청 데이터 (tabId, x, y 포함)
    * @param sendResponse - 응답 전송 함수
    */
@@ -73,7 +73,7 @@ export class CdpService {
 
   /**
    * CDP 키보드 입력 요청을 처리하고 응답을 전송합니다.
-   * 
+   *
    * @param requestData - 키보드 입력 요청 데이터
    * @param sendResponse - 응답 전송 함수
    */
@@ -104,7 +104,7 @@ export class CdpService {
   }
   /**
    * CDP를 사용하여 지정된 좌표에 마우스 클릭을 실행합니다.
-   * 
+   *
    * @param tabId - 대상 탭 ID
    * @param x - 클릭할 X 좌표
    * @param y - 클릭할 Y 좌표
@@ -148,7 +148,7 @@ export class CdpService {
 
   /**
    * CDP를 사용하여 키보드 입력을 실행합니다.
-   * 
+   *
    * @param tabId - 대상 탭 ID
    * @param key - 입력할 키
    * @param code - 키 코드
@@ -188,7 +188,6 @@ export class CdpService {
         nativeVirtualKeyCode: keyCode,
         modifiers: cdpModifiers,
       });
-
     } finally {
       // Debugger 연결 해제
       await chrome.debugger.detach({ tabId });
@@ -197,7 +196,7 @@ export class CdpService {
 
   /**
    * 수정자 키 배열을 CDP 수정자 비트마스크로 변환합니다.
-   * 
+   *
    * @param modifiers - 수정자 키 배열
    * @returns CDP 수정자 비트마스크
    */
@@ -212,11 +211,10 @@ export class CdpService {
 
   /**
    * 네트워크 추적을 시작합니다.
-   * 
+   *
    * @param tabId - 추적할 탭 ID
    */
   async startNetworkTracking(tabId: number): Promise<void> {
-    
     try {
       // 이미 연결되어 있지 않으면 디버거 연결
       if (!this.attachedTabs.has(tabId)) {
@@ -230,7 +228,7 @@ export class CdpService {
       // Network 도메인 활성화
       await chrome.debugger.sendCommand({ tabId }, 'Network.enable', {
         maxTotalBufferSize: 10000000,
-        maxResourceBufferSize: 5000000
+        maxResourceBufferSize: 5000000,
       });
 
       // 이벤트 리스너가 등록되지 않았으면 등록
@@ -246,16 +244,15 @@ export class CdpService {
 
   /**
    * 네트워크 추적을 중지합니다.
-   * 
+   *
    * @param tabId - 추적 중지할 탭 ID
    */
   async stopNetworkTracking(tabId: number): Promise<void> {
-    
     try {
       if (this.attachedTabs.has(tabId)) {
         // Network 도메인 비활성화
         await chrome.debugger.sendCommand({ tabId }, 'Network.disable', {});
-        
+
         // 디버거 연결 해제
         await chrome.debugger.detach({ tabId });
         this.attachedTabs.delete(tabId);
@@ -307,7 +304,7 @@ export class CdpService {
         break;
       case 'Network.loadingFinished':
         // async 처리를 위해 별도로 실행
-        this.handleLoadingFinished(tabId, params, requests).catch(error => 
+        this.handleLoadingFinished(tabId, params, requests).catch((error) =>
           console.warn('[CdpService] Error handling loadingFinished:', error)
         );
         break;
@@ -326,7 +323,7 @@ export class CdpService {
     requests: Map<string, NetworkRequest>
   ): void {
     const { requestId, request, timestamp, type } = params;
-    
+
     const networkRequest: NetworkRequest = {
       requestId,
       url: request.url,
@@ -350,7 +347,7 @@ export class CdpService {
   ): void {
     const { requestId, response } = params;
     const request = requests.get(requestId);
-    
+
     if (request) {
       request.response = {
         status: response.status,
@@ -372,21 +369,19 @@ export class CdpService {
   ): Promise<void> {
     const { requestId, timestamp, encodedDataLength } = params;
     const request = requests.get(requestId);
-    
+
     if (request) {
       request.loadingFinished = {
         timestamp,
         encodedDataLength,
       };
-      
+
       // 응답 본문 가져오기 시도 (실패해도 계속 진행)
       try {
-        const response = await chrome.debugger.sendCommand(
-          { tabId },
-          'Network.getResponseBody',
-          { requestId }
-        );
-        
+        const response = await chrome.debugger.sendCommand({ tabId }, 'Network.getResponseBody', {
+          requestId,
+        });
+
         if (response) {
           request.responseBody = {
             body: (response as any).body,
@@ -410,7 +405,7 @@ export class CdpService {
   ): void {
     const { requestId, timestamp, errorText, canceled } = params;
     const request = requests.get(requestId);
-    
+
     if (request) {
       request.loadingFailed = {
         timestamp,
@@ -422,7 +417,7 @@ export class CdpService {
 
   /**
    * 특정 탭의 네트워크 요청 데이터를 가져옵니다.
-   * 
+   *
    * @param tabId - 탭 ID
    * @returns 네트워크 요청 배열
    */
@@ -436,12 +431,10 @@ export class CdpService {
 
   /**
    * 특정 탭의 네트워크 요청 데이터를 초기화합니다.
-   * 
+   *
    * @param tabId - 탭 ID
    */
   clearNetworkRequests(tabId: number): void {
     this.networkRequests.delete(tabId);
   }
-
 }
-

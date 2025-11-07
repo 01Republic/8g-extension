@@ -48,7 +48,7 @@ export const evaluateJsonCondition = (
     const search = String(condition.contains.search);
 
     if (Array.isArray(value)) {
-      return value.some(v => String(v).includes(search));
+      return value.some((v) => String(v).includes(search));
     }
     return String(value).includes(search);
   }
@@ -60,11 +60,11 @@ export const evaluateJsonCondition = (
   }
 
   if ('and' in condition) {
-    return condition.and.every(c => evaluateJsonCondition(c, context));
+    return condition.and.every((c) => evaluateJsonCondition(c, context));
   }
 
   if ('or' in condition) {
-    return condition.or.some(c => evaluateJsonCondition(c, context));
+    return condition.or.some((c) => evaluateJsonCondition(c, context));
   }
 
   if ('not' in condition) {
@@ -81,10 +81,7 @@ export const evaluateJsonCondition = (
  * evaluateExpression('steps.step1.result.data === "OK"', context)
  * evaluateExpression('vars.count > 10', context)
  */
-export const evaluateExpression = (
-  expr: string,
-  context: ExecutionContext
-): boolean => {
+export const evaluateExpression = (expr: string, context: ExecutionContext): boolean => {
   try {
     const vars = context.varContext.vars;
     const steps = context.stepContext.steps;
@@ -106,16 +103,14 @@ const isDirectJsonCondition = (condition: any): condition is JsonCondition => {
   return (
     typeof condition === 'object' &&
     condition !== null &&
-    (
-      'exists' in condition ||
+    ('exists' in condition ||
       'equals' in condition ||
       'notEquals' in condition ||
       'contains' in condition ||
       'regex' in condition ||
       'and' in condition ||
       'or' in condition ||
-      'not' in condition
-    )
+      'not' in condition)
   );
 };
 

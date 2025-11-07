@@ -5,10 +5,5 @@
  */
 
 export type { StepContext, StepResult } from './types';
-export {
-  createStepContext,
-  setStepResult,
-  getStepResult,
-  hasStep,
-} from './step-context';
+export { createStepContext, setStepResult, getStepResult, hasStep } from './step-context';
 export { isStepPath, getByStepPath } from './resolver';

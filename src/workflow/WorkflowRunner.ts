@@ -1,11 +1,6 @@
 import type { Workflow, WorkflowStepRunResult } from '@/sdk/types';
 import { createExecutionContext, setVarsInContext, resolveBindings } from './context';
-import {
-  executeStep,
-  getNextStepId,
-  waitAfterStep,
-  type BlockExecutor,
-} from './step-executor';
+import { executeStep, getNextStepId, waitAfterStep, type BlockExecutor } from './step-executor';
 
 export type TabCreator = (targetUrl: string, activateTab: boolean) => Promise<number>;
 export type ExecutionStatusController = {
@@ -32,9 +27,8 @@ export class WorkflowRunner {
     console.log('targetUrl', targetUrl);
     console.log(context);
     // targetUrl 바인딩 처리 (vars를 사용할 수 있도록)
-    const resolvedTargetUrl = typeof targetUrl === 'string'
-      ? resolveBindings(targetUrl, context)
-      : targetUrl;
+    const resolvedTargetUrl =
+      typeof targetUrl === 'string' ? resolveBindings(targetUrl, context) : targetUrl;
     console.log('resolvedTargetUrl', resolvedTargetUrl);
 
     // 탭 생성

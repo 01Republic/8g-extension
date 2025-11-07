@@ -27,9 +27,9 @@ function dataToCsv(data: any, options?: { delimiter?: string; includeHeaders?: b
 
   // 모든 키 수집
   const allKeys = new Set<string>();
-  items.forEach(item => {
+  items.forEach((item) => {
     if (typeof item === 'object' && item !== null) {
-      Object.keys(item).forEach(key => allKeys.add(key));
+      Object.keys(item).forEach((key) => allKeys.add(key));
     }
   });
 
@@ -38,13 +38,13 @@ function dataToCsv(data: any, options?: { delimiter?: string; includeHeaders?: b
 
   // 헤더 추가
   if (includeHeaders && keys.length > 0) {
-    lines.push(keys.map(key => escapeCsvValue(key, delimiter)).join(delimiter));
+    lines.push(keys.map((key) => escapeCsvValue(key, delimiter)).join(delimiter));
   }
 
   // 데이터 행 추가
-  items.forEach(item => {
+  items.forEach((item) => {
     if (typeof item === 'object' && item !== null) {
-      const values = keys.map(key => {
+      const values = keys.map((key) => {
         const value = item[key];
         return escapeCsvValue(value, delimiter);
       });
@@ -89,9 +89,9 @@ function dataToXlsx(data: any): string {
 
   // 모든 키 수집
   const allKeys = new Set<string>();
-  items.forEach(item => {
+  items.forEach((item) => {
     if (typeof item === 'object' && item !== null) {
-      Object.keys(item).forEach(key => allKeys.add(key));
+      Object.keys(item).forEach((key) => allKeys.add(key));
     }
   });
 
@@ -104,9 +104,9 @@ function dataToXlsx(data: any): string {
   }
 
   // 데이터 행 추가
-  items.forEach(item => {
+  items.forEach((item) => {
     if (typeof item === 'object' && item !== null) {
-      const row = keys.map(key => item[key]);
+      const row = keys.map((key) => item[key]);
       rows.push(row);
     } else {
       rows.push([item]);
@@ -120,14 +120,18 @@ function dataToXlsx(data: any): string {
  * SpreadsheetML XML 생성 (Excel이 열 수 있는 형식)
  */
 function createSpreadsheetXml(rows: any[][]): string {
-  const xmlRows = rows.map((row) => {
-    const cells = row.map((cell) => {
-      const cellValue = cell === null || cell === undefined ? '' : String(cell);
-      const escapedValue = escapeXml(cellValue);
-      return `   <Cell><Data ss:Type="String">${escapedValue}</Data></Cell>`;
-    }).join('\n');
-    return `  <Row>\n${cells}\n  </Row>`;
-  }).join('\n');
+  const xmlRows = rows
+    .map((row) => {
+      const cells = row
+        .map((cell) => {
+          const cellValue = cell === null || cell === undefined ? '' : String(cell);
+          const escapedValue = escapeXml(cellValue);
+          return `   <Cell><Data ss:Type="String">${escapedValue}</Data></Cell>`;
+        })
+        .join('\n');
+      return `  <Row>\n${cells}\n  </Row>`;
+    })
+    .join('\n');
 
   return `<?xml version="1.0"?>
 <?mso-application progid="Excel.Sheet"?>

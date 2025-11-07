@@ -146,11 +146,11 @@ async function scrollUntilLoaded(
     await new Promise((resolve) => setTimeout(resolve, waitAfterScroll));
 
     const newHeight = document.body.scrollHeight;
-    
+
     // Check if we've reached the bottom
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
     const windowHeight = window.innerHeight;
-    
+
     if (scrollTop + windowHeight >= newHeight - 10) {
       // We're at the bottom
       if (newHeight === lastHeight) {
@@ -165,4 +165,3 @@ async function scrollUntilLoaded(
 
   return { data: true };
 }
-

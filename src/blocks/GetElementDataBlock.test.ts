@@ -198,9 +198,9 @@ describe('handlerGetElementData 테스트', () => {
     expect(result.hasError).toBeFalsy();
     expect(result.data).toEqual({
       attributes: {
-        'data-value': 'child-value',  // span에서 찾음
-        'href': '/child-link',         // a에서 찾음
-        'data-link': 'child-link',     // a에서 찾음
+        'data-value': 'child-value', // span에서 찾음
+        href: '/child-link', // a에서 찾음
+        'data-link': 'child-link', // a에서 찾음
       },
     });
   });
@@ -226,7 +226,7 @@ describe('handlerGetElementData 테스트', () => {
     expect(result.hasError).toBeFalsy();
     expect(result.data).toEqual({
       attributes: {
-        'data-id': 'parent-id',  // 부모 값만 반환
+        'data-id': 'parent-id', // 부모 값만 반환
       },
     });
   });

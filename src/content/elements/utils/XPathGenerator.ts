@@ -9,7 +9,6 @@ export class XPathGenerator {
    * @returns 생성된 XPath
    */
   static generate(element: Element): string {
-
     // 전체 경로를 따라가며 XPath 생성
     const path: string[] = [];
     let current: Element | null = element;
@@ -18,9 +17,10 @@ export class XPathGenerator {
       let selector = current.tagName.toLowerCase();
 
       // 같은 태그명의 형제 요소가 있는 경우 인덱스 추가
-      const siblings = Array.from(current.parentElement?.children || [])
-        .filter(sibling => sibling.tagName === current!.tagName);
-      
+      const siblings = Array.from(current.parentElement?.children || []).filter(
+        (sibling) => sibling.tagName === current!.tagName
+      );
+
       if (siblings.length > 1) {
         const index = siblings.indexOf(current) + 1;
         selector += `[${index}]`;
@@ -46,10 +46,10 @@ export class XPathGenerator {
    */
   private static getStableAttributes(element: Element): string[] {
     const stableAttributes: string[] = [];
-    
+
     // 안정적인 속성들 (동적이지 않은 것들)
     const stableAttrs = ['data-testid', 'aria-label', 'title', 'alt', 'role'];
-    
+
     for (const attr of stableAttrs) {
       const value = element.getAttribute(attr);
       if (value && !this.isDynamicValue(value)) {
@@ -73,7 +73,7 @@ export class XPathGenerator {
       /^[a-zA-Z0-9]+-\d+$/, // name-123 pattern
       /^[a-zA-Z0-9]+_[a-zA-Z0-9]+$/, // underscore pattern
     ];
-    
-    return dynamicPatterns.some(pattern => pattern.test(value));
+
+    return dynamicPatterns.some((pattern) => pattern.test(value));
   }
 }

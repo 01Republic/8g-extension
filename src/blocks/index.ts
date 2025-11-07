@@ -22,7 +22,7 @@ export type {
   SchemaField,
   SchemaDefinition,
   ObjectSchemaDefinition,
-  ArraySchemaDefinition
+  ArraySchemaDefinition,
 } from './AiParseDataBlock';
 export { createSchema, createArraySchema, Schema } from './AiParseDataBlock';
 export type { FetchApiBlock, FetchApiResponse } from './FetchApiBlock';
@@ -85,7 +85,7 @@ import {
   handlerWaitForCondition,
   WaitForConditionBlock,
   WaitForConditionResult,
-  validateWaitForConditionBlock
+  validateWaitForConditionBlock,
 } from './WaitForConditionBlock';
 import { handlerNavigate, NavigateBlock, validateNavigateBlock } from './NavigateBlock';
 import { handlerSaveAssets, SaveAssetsBlock, validateSaveAssetsBlock } from './SaveAssetsBlock';
@@ -98,9 +98,17 @@ import {
 import { handlerScroll, ScrollBlock, validateScrollBlock } from './ScrollBlock';
 import { handlerAiParseData, AiParseDataBlock, validateAiParseDataBlock } from './AiParseDataBlock';
 import { handlerFetchApi, FetchApiBlock, validateFetchApiBlock } from './FetchApiBlock';
-import { handlerTransformData, TransformDataBlock, validateTransformDataBlock } from './TransformDataBlock';
+import {
+  handlerTransformData,
+  TransformDataBlock,
+  validateTransformDataBlock,
+} from './TransformDataBlock';
 import { handlerExportData, ExportDataBlock, validateExportDataBlock } from './ExportDataBlock';
-import { handlerNetworkCatch, NetworkCatchBlock, validateNetworkCatchBlock } from './NetworkCatchBlock';
+import {
+  handlerNetworkCatch,
+  NetworkCatchBlock,
+  validateNetworkCatchBlock,
+} from './NetworkCatchBlock';
 import { Block, BlockResult } from './types';
 import { GetTextBlockSchema } from './GetTextBlock';
 import { GetAttributeValueBlockSchema } from './GetAttributeValueBlock';
@@ -131,13 +139,13 @@ export const AllBlockSchemas = {
   'clear-value-form': ClearValueFormsBlockSchema,
   'element-exists': ElementExistsBlockSchema,
   'event-click': EventClickBlockSchema,
-  'keypress': KeypressBlockSchema,
-  'wait': WaitBlockSchema,
+  keypress: KeypressBlockSchema,
+  wait: WaitBlockSchema,
   'wait-for-condition': WaitForConditionBlockSchema,
-  'navigate': NavigateBlockSchema,
+  navigate: NavigateBlockSchema,
   'save-assets': SaveAssetsBlockSchema,
   'get-element-data': GetElementDataBlockSchema,
-  'scroll': ScrollBlockSchema,
+  scroll: ScrollBlockSchema,
   'ai-parse-data': AiParseDataBlockSchema,
   'fetch-api': FetchApiBlockSchema,
   'transform-data': TransformDataBlockSchema,
@@ -168,12 +176,26 @@ export class BlockHandler {
   static executeBlock(block: AiParseDataBlock): Promise<BlockResult<any>>;
   static executeBlock(block: FetchApiBlock): Promise<BlockResult<any>>;
   static executeBlock(block: TransformDataBlock): Promise<BlockResult<any>>;
-  static executeBlock(block: ExportDataBlock): Promise<BlockResult<{ filename: string; downloadId?: number }>>;
+  static executeBlock(
+    block: ExportDataBlock
+  ): Promise<BlockResult<{ filename: string; downloadId?: number }>>;
   static executeBlock(block: NetworkCatchBlock): Promise<BlockResult<any>>;
   static executeBlock(block: Block): Promise<BlockResult>;
 
   // Implementation
-  static async executeBlock(block: Block | AiParseDataBlock | FetchApiBlock | TransformDataBlock | ExportDataBlock | NetworkCatchBlock | KeypressBlock | WaitBlock | WaitForConditionBlock | NavigateBlock): Promise<BlockResult> {
+  static async executeBlock(
+    block:
+      | Block
+      | AiParseDataBlock
+      | FetchApiBlock
+      | TransformDataBlock
+      | ExportDataBlock
+      | NetworkCatchBlock
+      | KeypressBlock
+      | WaitBlock
+      | WaitForConditionBlock
+      | NavigateBlock
+  ): Promise<BlockResult> {
     try {
       switch (block.name) {
         case 'get-text': {

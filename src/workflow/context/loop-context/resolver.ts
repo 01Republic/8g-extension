@@ -20,17 +20,12 @@ export const isLoopPath = (path: string): boolean => {
  * getByLoopPath(context, 'forEach.item.id')
  * getByLoopPath(context, 'loop.count')
  */
-export const getByLoopPath = (
-  context: LoopContext,
-  path: string
-): any => {
+export const getByLoopPath = (context: LoopContext, path: string): any => {
   // forEach 또는 loop로 시작하는지 체크
   if (!path.startsWith('forEach.') && !path.startsWith('loop.')) {
     return undefined;
   }
 
   // 전체 경로로 탐색 (forEach/loop 포함)
-  return path
-    .split('.')
-    .reduce((acc, key) => (acc == null ? undefined : acc[key]), context as any);
+  return path.split('.').reduce((acc, key) => (acc == null ? undefined : acc[key]), context as any);
 };

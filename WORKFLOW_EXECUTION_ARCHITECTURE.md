@@ -46,11 +46,11 @@ const result = await client.collectWorkflow({
           selector: '#title',
           findBy: 'cssSelector',
           option: {},
-          useTextContent: true
-        }
-      }
-    ]
-  }
+          useTextContent: true,
+        },
+      },
+    ],
+  },
 });
 ```
 
@@ -140,6 +140,7 @@ const result = await client.collectWorkflow({
 ```
 
 **템플릿 문법:**
+
 - `${steps.stepId.result.data}` - 스텝 결과 참조
 - `${forEach.item.id}` - forEach 반복의 현재 항목
 - `${forEach.index}` - forEach 반복의 현재 인덱스
@@ -201,7 +202,7 @@ const workflow = {
   vars: {
     userId: '12345',
     apiKey: 'sk-...',
-    baseUrl: 'https://api.example.com'
+    baseUrl: 'https://api.example.com',
   },
   steps: [
     {
@@ -211,11 +212,11 @@ const workflow = {
         url: { template: '${vars.baseUrl}/users/${vars.userId}' },
         method: 'GET',
         headers: {
-          'Authorization': { template: 'Bearer ${vars.apiKey}' }
+          Authorization: { template: 'Bearer ${vars.apiKey}' },
         },
-        parseJson: true
+        parseJson: true,
       },
-      next: 'displayName'
+      next: 'displayName',
     },
     {
       id: 'displayName',
@@ -224,19 +225,20 @@ const workflow = {
         selector: '.user-name',
         findBy: 'cssSelector',
         option: {},
-        useTextContent: true
-      }
-    }
-  ]
+        useTextContent: true,
+      },
+    },
+  ],
 };
 
 const result = await client.collectWorkflow({
   targetUrl: 'https://example.com',
-  workflow
+  workflow,
 });
 ```
 
 **장점:**
+
 - 워크플로우를 재사용 가능하게 만듦
 - 환경별로 다른 설정 값 사용 가능 (개발/운영)
 - API 키, URL 등 설정값을 워크플로우 외부에서 주입
@@ -251,7 +253,7 @@ const workflow = {
   start: 'fetchUserData',
   vars: {
     userId: userId,
-    apiEndpoint: process.env.API_ENDPOINT
+    apiEndpoint: process.env.API_ENDPOINT,
   },
   steps: [
     {
@@ -260,10 +262,10 @@ const workflow = {
         name: 'fetch-api',
         url: { template: '${vars.apiEndpoint}/users/${vars.userId}' },
         method: 'GET',
-        parseJson: true
-      }
-    }
-  ]
+        parseJson: true,
+      },
+    },
+  ],
 };
 ```
 
@@ -402,11 +404,13 @@ const workflow = {
 ```
 
 **forEach 컨텍스트 변수:**
+
 - `forEach.item` - 현재 배열 항목
 - `forEach.index` - 현재 인덱스 (0부터)
 - `forEach.total` - 전체 배열 길이
 
 **결과:** 결과는 배열로 수집됩니다
+
 ```typescript
 steps.fetchEachProduct.result.data = [result1, result2, result3, ...]
 ```
@@ -431,6 +435,7 @@ steps.fetchEachProduct.result.data = [result1, result2, result3, ...]
 ```
 
 **동적 count:**
+
 ```typescript
 {
   id: 'dynamicRepeat',
@@ -442,6 +447,7 @@ steps.fetchEachProduct.result.data = [result1, result2, result3, ...]
 ```
 
 **loop 컨텍스트 변수:**
+
 - `loop.index` - 현재 반복 인덱스 (0부터)
 - `loop.count` - 전체 반복 횟수
 
@@ -532,10 +538,10 @@ const workflow = {
         selector: 'input[name="email"]',
         findBy: 'cssSelector',
         option: {},
-        value: 'user@example.com'
+        value: 'user@example.com',
       },
       delayAfterMs: 200,
-      next: 'inputPassword'
+      next: 'inputPassword',
     },
     {
       id: 'inputPassword',
@@ -544,10 +550,10 @@ const workflow = {
         selector: 'input[name="password"]',
         findBy: 'cssSelector',
         option: {},
-        value: 'password123'
+        value: 'password123',
       },
       delayAfterMs: 200,
-      next: 'clickLogin'
+      next: 'clickLogin',
     },
     {
       id: 'clickLogin',
@@ -555,10 +561,10 @@ const workflow = {
         name: 'event-click',
         selector: 'button[type="submit"]',
         findBy: 'cssSelector',
-        option: {}
+        option: {},
       },
-      delayAfterMs: 2000,  // 로그인 처리 대기
-      next: 'checkLoginSuccess'
+      delayAfterMs: 2000, // 로그인 처리 대기
+      next: 'checkLoginSuccess',
     },
     {
       id: 'checkLoginSuccess',
@@ -566,10 +572,10 @@ const workflow = {
         name: 'element-exists',
         selector: '.user-profile',
         findBy: 'cssSelector',
-        option: { waitForSelector: true, waitSelectorTimeout: 3000 }
+        option: { waitForSelector: true, waitSelectorTimeout: 3000 },
       },
       onSuccess: 'collectData',
-      onFailure: 'loginFailed'
+      onFailure: 'loginFailed',
     },
     {
       id: 'collectData',
@@ -578,8 +584,8 @@ const workflow = {
         selector: '.user-name',
         findBy: 'cssSelector',
         option: {},
-        useTextContent: true
-      }
+        useTextContent: true,
+      },
     },
     {
       id: 'loginFailed',
@@ -588,10 +594,10 @@ const workflow = {
         selector: '.error-message',
         findBy: 'cssSelector',
         option: {},
-        useTextContent: true
-      }
-    }
-  ]
+        useTextContent: true,
+      },
+    },
+  ],
 };
 ```
 
@@ -609,17 +615,17 @@ const workflow = {
         scrollType: 'untilLoaded',
         distance: 800,
         maxScrolls: 50,
-        waitAfterScroll: 1000
+        waitAfterScroll: 1000,
       },
-      next: 'waitForContent'
+      next: 'waitForContent',
     },
     {
       id: 'waitForContent',
       block: {
         name: 'wait',
-        duration: 2000
+        duration: 2000,
       },
-      next: 'getItems'
+      next: 'getItems',
     },
     {
       id: 'getItems',
@@ -631,11 +637,11 @@ const workflow = {
         extractors: [
           { type: 'text', saveAs: 'title', selector: '.title' },
           { type: 'attribute', attribute: 'href', saveAs: 'link', selector: 'a' },
-          { type: 'attribute', attribute: 'data-id', saveAs: 'id' }
-        ]
-      }
-    }
-  ]
+          { type: 'attribute', attribute: 'data-id', saveAs: 'id' },
+        ],
+      },
+    },
+  ],
 };
 ```
 
@@ -653,45 +659,43 @@ const workflow = {
         selector: '.total-pages',
         findBy: 'cssSelector',
         option: {},
-        useTextContent: true
+        useTextContent: true,
       },
-      next: 'collectPages'
+      next: 'collectPages',
     },
     {
       id: 'collectPages',
       repeat: {
         count: 'steps.getPageCount.result.data',
-        delayBetween: 1000
+        delayBetween: 1000,
       },
       block: {
         name: 'get-element-data',
         selector: '.item',
         findBy: 'cssSelector',
         option: { multiple: true },
-        extractors: [
-          { type: 'text', saveAs: 'title' }
-        ]
+        extractors: [{ type: 'text', saveAs: 'title' }],
       },
-      next: 'clickNextPage'
+      next: 'clickNextPage',
     },
     {
       id: 'clickNextPage',
       when: {
         notEquals: {
           left: 'loop.index',
-          right: { valueFrom: 'steps.getPageCount.result.data' }
-        }
+          right: { valueFrom: 'steps.getPageCount.result.data' },
+        },
       },
       block: {
         name: 'event-click',
         selector: '.next-page',
         findBy: 'cssSelector',
-        option: {}
+        option: {},
       },
       delayAfterMs: 1000,
-      next: 'collectPages'
-    }
-  ]
+      next: 'collectPages',
+    },
+  ],
 };
 ```
 
@@ -709,18 +713,16 @@ const workflow = {
         selector: '.product',
         findBy: 'cssSelector',
         option: { multiple: true },
-        extractors: [
-          { type: 'attribute', attribute: 'data-id', saveAs: 'id' }
-        ]
+        extractors: [{ type: 'attribute', attribute: 'data-id', saveAs: 'id' }],
       },
-      next: 'enrichWithApi'
+      next: 'enrichWithApi',
     },
     {
       id: 'enrichWithApi',
       repeat: {
         forEach: 'steps.getProductIds.result.data',
         continueOnError: true,
-        delayBetween: 500
+        delayBetween: 500,
       },
       block: {
         name: 'fetch-api',
@@ -728,16 +730,16 @@ const workflow = {
         method: 'GET',
         parseJson: true,
         headers: {
-          'Authorization': 'Bearer YOUR_TOKEN'
-        }
+          Authorization: 'Bearer YOUR_TOKEN',
+        },
       },
       retry: {
         attempts: 3,
         delayMs: 1000,
-        backoffFactor: 2
-      }
-    }
-  ]
+        backoffFactor: 2,
+      },
+    },
+  ],
 };
 ```
 
@@ -759,33 +761,34 @@ const workflow = {
         option: { multiple: true },
         extractors: [
           { type: 'text', selector: '.name', saveAs: 'name' },
-          { type: 'text', selector: '.price', saveAs: 'price' }
-        ]
+          { type: 'text', selector: '.price', saveAs: 'price' },
+        ],
       },
-      next: 'transformData'
+      next: 'transformData',
     },
     {
       id: 'transformData',
       block: {
         name: 'transform-data',
         sourceData: { valueFrom: 'steps.getProducts.result.data' },
-        expression: '$sum([price > 100].price)'  // 100원 이상 상품의 합계
+        expression: '$sum([price > 100].price)', // 100원 이상 상품의 합계
       },
-      next: 'filterProducts'
+      next: 'filterProducts',
     },
     {
       id: 'filterProducts',
       block: {
         name: 'transform-data',
         sourceData: { valueFrom: 'steps.getProducts.result.data' },
-        expression: '[price > 100]'  // 100원 이상 상품만 필터링
-      }
-    }
-  ]
+        expression: '[price > 100]', // 100원 이상 상품만 필터링
+      },
+    },
+  ],
 };
 ```
 
 **JSONata 표현식 예제:**
+
 - 필터링: `[price > 100]`
 - 집계: `$sum(items.price)`, `$average(items.price)`, `$max(items.price)`
 - 조건: `count > 10 ? "high" : "low"`
@@ -806,9 +809,9 @@ const workflow = {
         selector: '.product-description',
         findBy: 'cssSelector',
         option: {},
-        useTextContent: true
+        useTextContent: true,
       },
-      next: 'parseWithAi'
+      next: 'parseWithAi',
     },
     {
       id: 'parseWithAi',
@@ -823,12 +826,12 @@ const workflow = {
             name: { type: 'string', description: '상품명' },
             price: { type: 'number', description: '가격 (숫자만)' },
             category: { type: 'string', description: '카테고리' },
-            features: { type: 'array', description: '주요 특징 목록' }
-          }
-        }
-      }
-    }
-  ]
+            features: { type: 'array', description: '주요 특징 목록' },
+          },
+        },
+      },
+    },
+  ],
 };
 ```
 
@@ -845,7 +848,7 @@ const workflow = {
   version: '1.0',
   start: 'getBillingInfo',
   vars: {
-    apiKey: 'sk-...'
+    apiKey: 'sk-...',
   },
   steps: [
     {
@@ -855,9 +858,9 @@ const workflow = {
         selector: '.billing-section',
         findBy: 'cssSelector',
         option: {},
-        useTextContent: true
+        useTextContent: true,
       },
-      next: 'parseWithAi'
+      next: 'parseWithAi',
     },
     {
       id: 'parseWithAi',
@@ -871,25 +874,26 @@ const workflow = {
           currentCycleBillAmount: Schema.currency({ description: '현재 주기 결제 금액' }),
           unitPrice: Schema.currency({ description: '단위 가격' }),
           nextPaymentDue: Schema.string({ description: '다음 결제일 (YYYY-MM-DD)' }),
-          cycleTerm: Schema.string({ 
+          cycleTerm: Schema.string({
             enum: ['MONTHLY', 'YEARLY'] as const,
-            description: '결제 주기'
+            description: '결제 주기',
           }),
           isFreeTier: Schema.boolean({ description: '무료 티어 여부' }),
-          paidMemberCount: Schema.number({ description: '결제 멤버 수' })
-        })
-      }
-    }
-  ]
+          paidMemberCount: Schema.number({ description: '결제 멤버 수' }),
+        }),
+      },
+    },
+  ],
 };
 
 const result = await client.collectWorkflow({
   targetUrl: 'https://example.com/billing',
-  workflow
+  workflow,
 });
 ```
 
 **지원하는 통화 코드 (40개):**
+
 - 주요 통화: `USD`, `EUR`, `KRW`, `GBP`, `CAD`, `JPY`, `CNY`
 - 아시아: `VND`, `INR`, `TWD`, `HKD`, `IDR`, `SGD`, `THB`, `PHP`, `MYR`
 - 유럽: `CHF`, `SEK`, `NOK`, `DKK`, `PLN`, `CZK`, `HUF`, `RON`, `BGN`, `TRY`, `RUB`
@@ -902,15 +906,18 @@ const result = await client.collectWorkflow({
 
 **지원하는 포맷 패턴 (8개):**
 `%s%u`, `%s%n`, `%u%s`, `%n%s`, `%s %u`, `%s %n`, `%u %s`, `%n %s`
+
 - `%s`: 통화 심볼
 - `%u` / `%n`: 금액
 
 **Schema.currency() 특징:**
+
 - 단일 통합 스키마로 모든 통화 지원
 - AI가 자동으로 적절한 통화 코드, 심볼, 포맷을 선택
 - 5개 필드 포함: `code`, `symbol`, `format`, `amount`, `text`
 
 **결과 예시:**
+
 ```json
 {
   "planName": "Pro",
@@ -936,6 +943,7 @@ const result = await client.collectWorkflow({
 ```
 
 **다국어 통화 지원 예시:**
+
 ```typescript
 // AI가 자동으로 한국어, 영어, 일본어 등 다양한 통화를 인식
 const multiCurrencyWorkflow = {
@@ -952,11 +960,11 @@ const multiCurrencyWorkflow = {
           // 모든 통화를 자동으로 파싱
           originalPrice: Schema.currency({ description: '원래 가격' }),
           discountPrice: Schema.currency({ description: '할인 가격', optional: true }),
-          shippingCost: Schema.currency({ description: '배송비', optional: true })
-        })
-      }
-    }
-  ]
+          shippingCost: Schema.currency({ description: '배송비', optional: true }),
+        }),
+      },
+    },
+  ],
 };
 
 // 입력: "₩50,000원, 할인가 $45.00, 배송비 €5.99"
@@ -975,10 +983,10 @@ const workflow = {
       block: {
         name: 'navigate',
         url: 'https://example.com/login',
-        waitForLoad: true
+        waitForLoad: true,
       },
       delayAfterMs: 1000,
-      next: 'waitForLogin'
+      next: 'waitForLogin',
     },
     {
       id: 'waitForLogin',
@@ -989,20 +997,20 @@ const workflow = {
           urlPattern: 'https://example\\.com/dashboard',
           elementExists: {
             selector: '.user-profile',
-            findBy: 'cssSelector'
+            findBy: 'cssSelector',
           },
           // 수동 확인: 사용자가 로그인 완료 버튼 클릭
           userConfirmation: true,
           message: '로그인을 완료하셨나요?',
-          buttonText: '로그인 완료'
+          buttonText: '로그인 완료',
         },
-        mode: 'auto-or-manual',  // 자동 조건 또는 수동 확인 중 먼저 충족되는 것
+        mode: 'auto-or-manual', // 자동 조건 또는 수동 확인 중 먼저 충족되는 것
         pollingIntervalMs: 1000,
-        timeoutMs: 300000,  // 5분
-        position: 'bottom-right'
+        timeoutMs: 300000, // 5분
+        position: 'bottom-right',
       },
       onSuccess: 'collectData',
-      onFailure: 'handleLoginTimeout'
+      onFailure: 'handleLoginTimeout',
     },
     {
       id: 'collectData',
@@ -1011,8 +1019,8 @@ const workflow = {
         selector: '.welcome-message',
         findBy: 'cssSelector',
         option: {},
-        useTextContent: true
-      }
+        useTextContent: true,
+      },
     },
     {
       id: 'handleLoginTimeout',
@@ -1021,13 +1029,12 @@ const workflow = {
         selector: 'body',
         findBy: 'cssSelector',
         option: {},
-        useTextContent: true
-      }
-    }
-  ]
+        useTextContent: true,
+      },
+    },
+  ],
 };
 ```
-
 
 ### 예제 8: 다중 페이지 네비게이션
 
@@ -1036,33 +1043,29 @@ const workflow = {
   version: '1.0',
   start: 'navigateToPage1',
   vars: {
-    pages: [
-      'https://example.com/page1',
-      'https://example.com/page2',
-      'https://example.com/page3'
-    ]
+    pages: ['https://example.com/page1', 'https://example.com/page2', 'https://example.com/page3'],
   },
   steps: [
     {
       id: 'navigateToPage1',
       repeat: {
         forEach: 'vars.pages',
-        delayBetween: 2000
+        delayBetween: 2000,
       },
       block: {
         name: 'navigate',
         url: { valueFrom: 'forEach.item' },
         waitForLoad: true,
-        timeout: 30000
+        timeout: 30000,
       },
       delayAfterMs: 1000,
-      next: 'collectPageData'
+      next: 'collectPageData',
     },
     {
       id: 'collectPageData',
       repeat: {
         forEach: 'vars.pages',
-        delayBetween: 2000
+        delayBetween: 2000,
       },
       block: {
         name: 'get-element-data',
@@ -1071,11 +1074,11 @@ const workflow = {
         option: { multiple: true },
         extractors: [
           { type: 'text', selector: '.title', saveAs: 'title' },
-          { type: 'text', selector: '.description', saveAs: 'description' }
-        ]
-      }
-    }
-  ]
+          { type: 'text', selector: '.description', saveAs: 'description' },
+        ],
+      },
+    },
+  ],
 };
 ```
 

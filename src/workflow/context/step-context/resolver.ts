@@ -18,10 +18,7 @@ export const isStepPath = (path: string): boolean => {
  * @example
  * getByStepPath(context, 'steps.step1.result.data')
  */
-export const getByStepPath = (
-  context: StepContext,
-  path: string
-): any => {
+export const getByStepPath = (context: StepContext, path: string): any => {
   // steps로 시작하는지 체크
   if (!path.startsWith('steps.')) {
     return undefined;

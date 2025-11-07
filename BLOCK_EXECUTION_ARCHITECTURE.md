@@ -36,11 +36,11 @@ const result = await client.collectWorkflow({
           selector: '#title',
           findBy: 'cssSelector',
           option: {},
-          useTextContent: true
-        }
-      }
-    ]
-  }
+          useTextContent: true,
+        },
+      },
+    ],
+  },
 });
 ```
 
@@ -49,6 +49,7 @@ const result = await client.collectWorkflow({
 ### 데이터 추출 블록
 
 **get-text** - 텍스트 추출
+
 ```typescript
 {
   name: 'get-text',
@@ -67,6 +68,7 @@ const result = await client.collectWorkflow({
 ```
 
 **attribute-value** - 속성 값 추출
+
 ```typescript
 {
   name: 'attribute-value',
@@ -78,6 +80,7 @@ const result = await client.collectWorkflow({
 ```
 
 **get-element-data** - 복합 데이터 추출
+
 ```typescript
 {
   name: 'get-element-data',
@@ -96,6 +99,7 @@ const result = await client.collectWorkflow({
 ### 폼 처리 블록
 
 **get-value-form** - 폼 값 가져오기
+
 ```typescript
 {
   name: 'get-value-form',
@@ -106,6 +110,7 @@ const result = await client.collectWorkflow({
 ```
 
 **set-value-form** - 폼 값 설정
+
 ```typescript
 {
   name: 'set-value-form',
@@ -117,6 +122,7 @@ const result = await client.collectWorkflow({
 ```
 
 **clear-value-form** - 폼 값 초기화
+
 ```typescript
 {
   name: 'clear-value-form',
@@ -129,6 +135,7 @@ const result = await client.collectWorkflow({
 ### 상호작용 블록
 
 **event-click** - 클릭 이벤트
+
 ```typescript
 {
   name: 'event-click',
@@ -141,6 +148,7 @@ const result = await client.collectWorkflow({
 ```
 
 **keypress** - 키보드 입력
+
 ```typescript
 {
   name: 'keypress',
@@ -151,6 +159,7 @@ const result = await client.collectWorkflow({
 ```
 
 **scroll** - 페이지 스크롤
+
 ```typescript
 {
   name: 'scroll',
@@ -165,6 +174,7 @@ const result = await client.collectWorkflow({
 ### 유틸리티 블록
 
 **element-exists** - 요소 존재 확인
+
 ```typescript
 {
   name: 'element-exists',
@@ -179,6 +189,7 @@ const result = await client.collectWorkflow({
 ```
 
 **wait** - 대기
+
 ```typescript
 {
   name: 'wait',
@@ -188,6 +199,7 @@ const result = await client.collectWorkflow({
 ```
 
 **wait-for-condition** - 조건 대기 (자동/수동/혼합)
+
 ```typescript
 {
   name: 'wait-for-condition',
@@ -218,6 +230,7 @@ const result = await client.collectWorkflow({
 ```
 
 **navigate** - URL 이동
+
 ```typescript
 {
   name: 'navigate',
@@ -230,6 +243,7 @@ const result = await client.collectWorkflow({
 ```
 
 **save-assets** - 이미지/미디어 수집
+
 ```typescript
 {
   name: 'save-assets',
@@ -243,6 +257,7 @@ const result = await client.collectWorkflow({
 ### API/AI 블록
 
 **fetch-api** - 외부 API 호출
+
 ```typescript
 {
   name: 'fetch-api',
@@ -257,6 +272,7 @@ const result = await client.collectWorkflow({
 ```
 
 **ai-parse-data** - AI 데이터 파싱
+
 ```typescript
 {
   name: 'ai-parse-data',
@@ -328,7 +344,7 @@ const result = await client.collectWorkflow({
 ```typescript
 {
   option: {
-    multiple: true
+    multiple: true;
   }
 }
 // 결과: ['text1', 'text2', 'text3']
@@ -428,9 +444,7 @@ export const validateBlockName = (block: Block): BlockNameBlock => {
 };
 
 // 4. 핸들러 함수
-export const handlerBlockName = async (
-  block: BlockNameBlock
-): Promise<BlockResult<ReturnType>> => {
+export const handlerBlockName = async (block: BlockNameBlock): Promise<BlockResult<ReturnType>> => {
   // 실제 작업 수행
   return { data: result };
 };

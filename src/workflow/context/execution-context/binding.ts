@@ -21,10 +21,7 @@ export interface Binding {
  * interpolate('$.steps.step1.result.data', context) // -> 값 그대로 (타입 유지, $ 접두사)
  * interpolate('Hello ${vars.name}!', context)        // -> 'Hello World!' (문자열 보간)
  */
-export const interpolate = (
-  template: string,
-  context: ExecutionContext
-): any => {
+export const interpolate = (template: string, context: ExecutionContext): any => {
   // 1. "${path}" 형태 - 값 그대로 반환 (타입 유지)
   const singleMatch = /^\$\{([^}]+)\}$/.exec(template);
   if (singleMatch) {
@@ -53,10 +50,7 @@ export const interpolate = (
  * resolveBinding({ template: 'User ${vars.userId}' }, context)
  * resolveBinding({ valueFrom: 'vars.missing', default: 'fallback' }, context)
  */
-export const resolveBinding = (
-  binding: Binding,
-  context: ExecutionContext
-): any => {
+export const resolveBinding = (binding: Binding, context: ExecutionContext): any => {
   const { valueFrom, template, default: defaultValue } = binding;
 
   try {
@@ -86,10 +80,7 @@ export const resolveBinding = (
  *   nested: { value: { valueFrom: 'steps.step2.result' } }
  * }, context)
  */
-export const resolveBindings = (
-  obj: any,
-  context: ExecutionContext
-): any => {
+export const resolveBindings = (obj: any, context: ExecutionContext): any => {
   if (obj == null) return obj;
 
   // 문자열은 interpolate
@@ -99,7 +90,7 @@ export const resolveBindings = (
 
   // 배열은 map
   if (Array.isArray(obj)) {
-    return obj.map(item => resolveBindings(item, context));
+    return obj.map((item) => resolveBindings(item, context));
   }
 
   // 객체는 재귀

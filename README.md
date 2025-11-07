@@ -4,7 +4,7 @@
 
 ## How to Run
 
-1) 의존성 설치
+1. 의존성 설치
 
 ```bash
 npm install
@@ -12,26 +12,26 @@ npm install
 pnpm install
 ```
 
-2) 개발 서버 실행(확장 개발)
+2. 개발 서버 실행(확장 개발)
 
 ```bash
 npm run dev
 ```
 
-3) 크롬에서 로컬 확장 로딩
+3. 크롬에서 로컬 확장 로딩
 
 - 주소창에 `chrome://extensions/` 접속 → 우상단 "개발자 모드" 활성화
 - "압축 해제된 확장 프로그램을 로드" 클릭 후 `dist` 디렉터리 선택
-![chrome_extension](.github/chrome_extension.png)
+  ![chrome_extension](.github/chrome_extension.png)
 
-4) SDK 빌드(패키지 용)
+4. SDK 빌드(패키지 용)
 
 ```bash
 npm run build
 # SDK: vite.sdk.config.ts 기반 번들 + ts 타입 생성(tsconfig.sdk.json)
 ```
 
-5) 확장 번들(Zip) 생성
+5. 확장 번들(Zip) 생성
 
 ```bash
 npm run build:extension
@@ -49,9 +49,10 @@ npm run build:extension
 - `lint`, `lint:fix`: ESLint 검사/수정
 - `format`, `format:check`: Prettier 포맷팅
 
-
 ## 전체적인 구조 소개
+
 `8g-extension`은 다음을 포함합니다.
+
 - **Chrome Extension**: `content script`, `background service worker`, `popup` UI 구성
 - **브라우저/번들러용 SDK**: 웹페이지에서 확장과 메시지로 통신하여 블록/워크플로우를 실행
 
@@ -81,22 +82,22 @@ const simpleWorkflow = {
   version: '1.0',
   start: 'getTitle',
   steps: [
-    { 
-      id: 'getTitle', 
-      block: { 
-        name: 'get-text', 
-        selector: '#title', 
-        findBy: 'cssSelector', 
+    {
+      id: 'getTitle',
+      block: {
+        name: 'get-text',
+        selector: '#title',
+        findBy: 'cssSelector',
         option: {},
-        useTextContent: true 
-      }
-    }
-  ]
+        useTextContent: true,
+      },
+    },
+  ],
 };
 
 const result1 = await client.collectWorkflow({
   targetUrl: location.href,
-  workflow: simpleWorkflow
+  workflow: simpleWorkflow,
 });
 
 // 복잡한 워크플로우: 분기, 조건, 순차 실행
@@ -104,17 +105,41 @@ const complexWorkflow = {
   version: '1.0',
   start: 'readStatus',
   steps: [
-    { 
-      id: 'readStatus', 
-      block: { name: 'get-text', selector: '.status', findBy: 'cssSelector', useTextContent: true, option: {} },
-      switch: [ 
-        { when: { equals: { left: "steps.readStatus.result.data", right: 'OK' } }, next: 'go' } 
-      ], 
-      next: 'retry' 
+    {
+      id: 'readStatus',
+      block: {
+        name: 'get-text',
+        selector: '.status',
+        findBy: 'cssSelector',
+        useTextContent: true,
+        option: {},
+      },
+      switch: [
+        { when: { equals: { left: 'steps.readStatus.result.data', right: 'OK' } }, next: 'go' },
+      ],
+      next: 'retry',
     },
-    { id: 'go', block: { name: 'event-click', selector: '.go', findBy: 'cssSelector', option: {} }, delayAfterMs: 300, next: 'done' },
-    { id: 'retry', block: { name: 'event-click', selector: '.retry', findBy: 'cssSelector', option: {} }, delayAfterMs: 300, next: 'done' },
-    { id: 'done', block: { name: 'get-text', selector: '.result', findBy: 'cssSelector', option: { waitForSelector: true } } },
+    {
+      id: 'go',
+      block: { name: 'event-click', selector: '.go', findBy: 'cssSelector', option: {} },
+      delayAfterMs: 300,
+      next: 'done',
+    },
+    {
+      id: 'retry',
+      block: { name: 'event-click', selector: '.retry', findBy: 'cssSelector', option: {} },
+      delayAfterMs: 300,
+      next: 'done',
+    },
+    {
+      id: 'done',
+      block: {
+        name: 'get-text',
+        selector: '.result',
+        findBy: 'cssSelector',
+        option: { waitForSelector: true },
+      },
+    },
   ],
 };
 
@@ -147,6 +172,7 @@ const result2 = await client.collectWorkflow({
 ## 전체 아키텍처와 실행 흐름
 
 ### 구성 요소 개요
+
 - **SDK (`src/sdk/*`)**: 웹페이지(JavaScript)에서 사용하는 클라이언트. 확장과 `window.postMessage` → Content Script → Background 메시지로 통신합니다. 대표 엔트리: `EightGClient`.
 - **Content Script (`src/content/*`)**: 웹페이지와 확장 내부를 잇는 브리지. 외부/내부 메시지를 라우팅하는 `MessageKernel`, `ExternalMessageHandler`, `InternalMessageHandler`가 핵심입니다.
 - **Background (`src/background/*`)**: 탭 생성/제어, 블록 실행 지휘, 워크플로우 런 실행 등의 오케스트레이션을 담당합니다. `BackgroundManager`, `TabManager`, `WorkflowRunner`가 핵심입니다.
@@ -154,6 +180,7 @@ const result2 = await client.collectWorkflow({
 - **Popup (`src/popup/*`)**: 데모/수동 실행 UI.
 
 ### 연결 관계(요약 다이어그램)
+
 ```
 Webpage(JS) ─ SDK(EightGClient)
      │            │  window.postMessage('8G_*')
@@ -172,6 +199,7 @@ Webpage(JS) ─ SDK(EightGClient)
 ```
 
 ### 요청 흐름: 워크플로우 실행 (`collectWorkflow`)
+
 1. 웹페이지에서 SDK `EightGClient.collectWorkflow` 호출 → `window.postMessage({ type: '8G_COLLECT_WORKFLOW', ... })` 전송
 2. Content Script의 `ExternalMessageHandler`가 수신 → Background로 `COLLECT_WORKFLOW_NEW_TAB` 메시지 전달
 3. Background `WorkflowService`가 탭 생성 후, 워크플로우 실행 시작
@@ -185,8 +213,8 @@ Webpage(JS) ─ SDK(EightGClient)
 
 참고: `delayAfterMs`로 스텝 간 대기 시간을 조정할 수 있습니다.
 
-
 ### 블록 시스템 구조
+
 - 공통 형태(`src/blocks/types.ts`)
   - `Block`: `name`, `selector`, `findBy('cssSelector'|'xpath')`, `option { waitForSelector?, waitSelectorTimeout?, multiple? }`
   - `BlockResult<T>`: `data`, `hasError?`, `message?`
@@ -210,6 +238,7 @@ Webpage(JS) ─ SDK(EightGClient)
   - `ai-parse-data`: AI 기반 데이터 파싱(OpenAI, 스키마 정의 필요)
 
 ### SDK 상세(브라우저에서 사용)
+
 - `EightGClient.checkExtension()`
   - 확장 주입 여부 확인. 내부적으로 `8G_EXTENSION_CHECK` 메시지를 사용
   - 타임아웃: 5초
@@ -226,6 +255,7 @@ Webpage(JS) ─ SDK(EightGClient)
   - `getWorkspaceMembers()`: 워크스페이스 구성원 조회
 
 ### 주요 내부 모듈과 연결 관계
+
 - `src/content/kernel/MessageKernel.ts`: Background 통신, 블록 실행(락 관리 포함), 런타임 메시지 처리
 - `src/content/handler/ExternalMessageHandler.ts`: 웹페이지(Window) ↔ Content Script 브리지
 - `src/content/handler/InternalMessageHandler.ts`: Background ↔ Content Script 브리지
@@ -240,11 +270,13 @@ Webpage(JS) ─ SDK(EightGClient)
 - `src/content/elements/*`: CSS/XPath 셀렉터 빌드/탐색, 대기 옵션 처리
 
 ### 응답과 에러 처리
+
 - 모든 경로는 에러 시 `$isError`(내부), 또는 SDK 측 `{ success: false, error }` 형태로 표준화
 - SDK는 응답 메시지(`8G_COLLECT_RESPONSE`)를 `requestId`로 매칭하여 Promise를 해제
 - 공통 타임아웃/통신 오류는 `EightGError`로 래핑됨
 
 ### 추가 참고 문서
+
 - **워크플로우 가이드** (필수): `WORKFLOW_EXECUTION_ARCHITECTURE.md` - 워크플로우 실행 방법, JSON 스키마, 조건식, 바인딩
 - **블록 카탈로그**: `BLOCKS.md` - 모든 블록의 상세 사용법과 예시
 - **아키텍처 문서**: `BLOCK_EXECUTION_ARCHITECTURE.md` - 내부 구조와 아키텍처 변경사항

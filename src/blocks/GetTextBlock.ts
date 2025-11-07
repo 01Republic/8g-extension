@@ -134,7 +134,13 @@ async function collectWithScroll(params: {
     maxScrollAttempts,
   } = params;
 
-  const extractText = createTextExtractor(includeTags, useTextContent, regex, prefixText, suffixText);
+  const extractText = createTextExtractor(
+    includeTags,
+    useTextContent,
+    regex,
+    prefixText,
+    suffixText
+  );
   const collectedTexts = new Set<string>();
   let scrollAttempts = 0;
   let consecutiveNoNewData = 0;
@@ -143,10 +149,10 @@ async function collectWithScroll(params: {
   while (scrollAttempts < maxScrollAttempts) {
     // Collect current visible elements
     const elements = await findElement({ selector, findBy, option });
-    
+
     if (elements && Array.isArray(elements)) {
       const beforeSize = collectedTexts.size;
-      
+
       elements.forEach((element) => {
         const text = extractText(element);
         if (!filterEmpty || text.trim() !== '') {
@@ -155,7 +161,7 @@ async function collectWithScroll(params: {
       });
 
       const afterSize = collectedTexts.size;
-      
+
       // Check if we're still collecting new data
       if (afterSize === beforeSize) {
         consecutiveNoNewData++;
@@ -172,9 +178,9 @@ async function collectWithScroll(params: {
     const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop;
     window.scrollBy({ top: scrollDistance, behavior: 'auto' });
     await new Promise((resolve) => setTimeout(resolve, scrollWaitMs));
-    
+
     const newScrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    
+
     // Check if we can't scroll anymore (reached bottom)
     if (newScrollTop === currentScrollTop) {
       break;

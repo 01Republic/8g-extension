@@ -27,4 +27,3 @@ export const BaseBlockSchema = z.object({
     multiple: z.boolean().optional(),
   }),
 });
-

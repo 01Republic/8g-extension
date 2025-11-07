@@ -14,10 +14,7 @@ import { isLoopPath, getByLoopPath } from '../loop-context';
  * getByPath(context, 'forEach.item.id')
  * getByPath(context, 'loop.index')
  */
-export const getByPath = (
-  context: ExecutionContext,
-  path: string
-): any => {
+export const getByPath = (context: ExecutionContext, path: string): any => {
   // 각 context의 isXXXPath로 영역 판단
   if (isStepPath(path)) {
     return getByStepPath(context.stepContext, path);
@@ -37,7 +34,5 @@ export const getByPath = (
 /**
  * 여러 경로 한번에 해석 (순수 함수)
  */
-export const resolveMultiplePaths = (
-  context: ExecutionContext,
-  paths: string[]
-): any[] => paths.map(path => getByPath(context, path));
+export const resolveMultiplePaths = (context: ExecutionContext, paths: string[]): any[] =>
+  paths.map((path) => getByPath(context, path));

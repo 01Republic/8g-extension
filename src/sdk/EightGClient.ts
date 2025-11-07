@@ -209,15 +209,20 @@ export const WorkspaceMemberSchema = z.object({
   profileImageUrl: z.string(),
   // 멤버 역할
   role: z.string(),
-  // 멤버 결제 여부
-  isPaid: z.boolean().nullable().optional(),
   // 멤버 구독 좌석 상태
-  subscriptionSeatStatus: z.enum([
-    'NONE', // 미정
-    'FREE', // 무료
-    'PAID', // 유료
-    'QUIT', // 해지
-  ]).nullable().optional(),
+  subscriptionSeatStatus: z
+    .enum([
+      'NONE', // 미정
+      'FREE', // 무료
+      'PAID', // 유료
+      'QUIT', // 해지
+    ])
+    .nullable()
+    .optional(),
+  // 멤버 가입 일자
+  startedAt: z.coerce.date().nullable().optional(),
+  // 멤버 해지 일자
+  deletedAt: z.coerce.date().nullable().optional(),
 });
 
 export type WorkspaceMemberDto = z.infer<typeof WorkspaceMemberSchema>;

@@ -21,12 +21,12 @@ export class CSSSelectorGenerator {
     // 2. 태그명과 nth-child 조합 (모든 형제 요소 기준)
     const tagName = element.tagName.toLowerCase();
     const parent = element.parentElement;
-    
+
     if (parent) {
       // 모든 형제 요소 중에서의 위치 (같은 태그명만이 아님)
       const siblings = Array.from(parent.children);
       const index = siblings.indexOf(element) + 1;
-      
+
       if (siblings.length > 1) {
         return `${tagName}:nth-child(${index})`;
       }
@@ -49,7 +49,7 @@ export class CSSSelectorGenerator {
    */
   private static generateParentSelector(parent: Element): string | null {
     const tagName = parent.tagName.toLowerCase();
-    
+
     // 부모의 속성 기반 셀렉터 시도
     const staticAttributes = ['data-testid', 'aria-label', 'title', 'alt', 'role'];
     for (const attr of staticAttributes) {
@@ -84,7 +84,7 @@ export class CSSSelectorGenerator {
       /^[a-zA-Z0-9]{16,}$/, // long random string
       /^[a-zA-Z0-9]+-\d+$/, // name-123 pattern
     ];
-    
-    return dynamicPatterns.some(pattern => pattern.test(value));
+
+    return dynamicPatterns.some((pattern) => pattern.test(value));
   }
 }

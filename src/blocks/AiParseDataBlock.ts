@@ -113,20 +113,13 @@ export function validateAiParseDataBlock(data: unknown): AiParseDataBlock {
 
 /**
  * AI 파싱 블록 핸들러
- * 
+ *
  * 이 블록은 Content Script에서 실행되지만,
  * 실제 AI 처리는 Background Script로 위임합니다.
  */
 export async function handlerAiParseData(data: AiParseDataBlock): Promise<BlockResult<any>> {
   try {
-    const {
-      sourceData,
-      schemaDefinition,
-      prompt,
-      model,
-      apiKey,
-      provider,
-    } = data;
+    const { sourceData, schemaDefinition, prompt, model, apiKey, provider } = data;
 
     // sourceData가 없으면 에러
     if (sourceData === undefined || sourceData === null) {
@@ -169,7 +162,7 @@ export async function handlerAiParseData(data: AiParseDataBlock): Promise<BlockR
 
 /**
  * 스키마 정의 헬퍼 함수
- * 
+ *
  * 사용 예:
  * // 단일 객체
  * const schema = createSchema({
@@ -180,22 +173,22 @@ export async function handlerAiParseData(data: AiParseDataBlock): Promise<BlockR
  *   plan: { type: 'string', enum: ['MONTHLY', 'YEARLY'] },
  *   status: { type: 'number', enum: [1, 2, 3] }
  * });
- * 
+ *
  * // Schema 헬퍼 사용 (권장)
  * const schema2 = createSchema({
  *   name: Schema.string(),
  *   email: Schema.string({ description: 'User email address' }),
- *   plan: Schema.string({ 
+ *   plan: Schema.string({
  *     enum: ['MONTHLY', 'YEARLY'] as const,
  *     description: 'Billing cycle'
  *   }),
- *   priority: Schema.number({ 
- *     enum: [1, 2, 3] as const, 
- *     optional: true 
+ *   priority: Schema.number({
+ *     enum: [1, 2, 3] as const,
+ *     optional: true
  *   }),
  *   price: Schema.currency({ description: 'Price with currency info' })
  * });
- * 
+ *
  * // 객체 배열
  * const arraySchema = createArraySchema({
  *   type: 'object',
@@ -223,11 +216,19 @@ export function createArraySchema(items: SchemaField): ArraySchemaDefinition {
  * 스키마 필드 헬퍼 함수들
  */
 export const Schema = {
-  string: (options?: { enum?: readonly string[]; description?: string; optional?: boolean }): StringSchemaField => ({
+  string: (options?: {
+    enum?: readonly string[];
+    description?: string;
+    optional?: boolean;
+  }): StringSchemaField => ({
     type: 'string',
     ...options,
   }),
-  number: (options?: { enum?: readonly number[]; description?: string; optional?: boolean }): NumberSchemaField => ({
+  number: (options?: {
+    enum?: readonly number[];
+    description?: string;
+    optional?: boolean;
+  }): NumberSchemaField => ({
     type: 'number',
     ...options,
   }),
@@ -235,12 +236,18 @@ export const Schema = {
     type: 'boolean',
     ...options,
   }),
-  array: (items: SchemaField, options?: { description?: string; optional?: boolean }): ArraySchemaField => ({
+  array: (
+    items: SchemaField,
+    options?: { description?: string; optional?: boolean }
+  ): ArraySchemaField => ({
     type: 'array',
     items,
     ...options,
   }),
-  object: (shape: Record<string, SchemaField>, options?: { description?: string; optional?: boolean }): ObjectSchemaField => ({
+  object: (
+    shape: Record<string, SchemaField>,
+    options?: { description?: string; optional?: boolean }
+  ): ObjectSchemaField => ({
     type: 'object',
     shape,
     ...options,
@@ -248,8 +255,8 @@ export const Schema = {
   currency: (options?: { description?: string; optional?: boolean }): CurrencySchemaField => ({
     type: 'currency',
     shape: CurrencyInfoSchema,
-    description: options?.description || 'Currency information with code, symbol, format, amount, and text',
+    description:
+      options?.description || 'Currency information with code, symbol, format, amount, and text',
     optional: options?.optional,
   }),
 };
-

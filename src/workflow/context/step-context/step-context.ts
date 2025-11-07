@@ -24,19 +24,13 @@ export const setStepResult = (
 /**
  * Step 결과 조회
  */
-export const getStepResult = (
-  context: StepContext,
-  stepId: string
-): StepResult | undefined => {
+export const getStepResult = (context: StepContext, stepId: string): StepResult | undefined => {
   return context.steps[stepId];
 };
 
 /**
  * Step 존재 여부 확인
  */
-export const hasStep = (
-  context: StepContext,
-  stepId: string
-): boolean => {
+export const hasStep = (context: StepContext, stepId: string): boolean => {
   return stepId in context.steps;
 };

@@ -39,7 +39,10 @@ export class BackgroundManager {
     // Chrome runtime message handler (internal communication)
     chrome.runtime.onMessage.addListener((message: BackgroundMessage, sender, sendResponse) => {
       if ((message as any).type === 'COLLECT_WORKFLOW_NEW_TAB') {
-        this.handleAsyncCollectWorkflow((message as CollectWorkflowNewTabMessage).data, sendResponse);
+        this.handleAsyncCollectWorkflow(
+          (message as CollectWorkflowNewTabMessage).data,
+          sendResponse
+        );
         return true;
       }
 
@@ -47,7 +50,11 @@ export class BackgroundManager {
         // Get tabId from sender
         const tabId = sender.tab?.id;
         if (!tabId) {
-          sendResponse({ $isError: true, message: 'Tab ID not found in sender', data: null } as ErrorResponse);
+          sendResponse({
+            $isError: true,
+            message: 'Tab ID not found in sender',
+            data: null,
+          } as ErrorResponse);
           return false;
         }
         this.handleAsyncCdpClick({ ...message.data, tabId }, sendResponse);
@@ -58,7 +65,11 @@ export class BackgroundManager {
         // Get tabId from sender
         const tabId = sender.tab?.id;
         if (!tabId) {
-          sendResponse({ $isError: true, message: 'Tab ID not found in sender', data: null } as ErrorResponse);
+          sendResponse({
+            $isError: true,
+            message: 'Tab ID not found in sender',
+            data: null,
+          } as ErrorResponse);
           return false;
         }
         this.handleAsyncCdpKeypress({ ...message.data, tabId }, sendResponse);
@@ -83,7 +94,11 @@ export class BackgroundManager {
       if ((message as any).type === 'NETWORK_CATCH' && isNetworkCatchMessage(message)) {
         const tabId = message.data.tabId || sender.tab?.id;
         if (!tabId) {
-          sendResponse({ $isError: true, message: 'Tab ID not found', data: null } as ErrorResponse);
+          sendResponse({
+            $isError: true,
+            message: 'Tab ID not found',
+            data: null,
+          } as ErrorResponse);
           return false;
         }
         this.handleAsyncNetworkCatch({ ...message.data, tabId }, sendResponse);
@@ -120,10 +135,7 @@ export class BackgroundManager {
   }
 
   // AI 파싱 요청 처리
-  private async handleAsyncAiParseData(
-    requestData: any,
-    sendResponse: (response: any) => void
-  ) {
+  private async handleAsyncAiParseData(requestData: any, sendResponse: (response: any) => void) {
     await this.aiParsingService.handleParseData(requestData, sendResponse);
   }
 
@@ -160,31 +172,33 @@ export class BackgroundManager {
   ) {
     try {
       console.log('[BackgroundManager] Handle network catch request:', requestData);
-      
+
       // TabManager에서 네트워크 요청 데이터 가져오기
       const allRequests = this.tabManager.getNetworkRequests(requestData.tabId);
-      
+
       // 필터링 로직
       let filteredRequests = allRequests;
-      
+
       // URL 패턴 필터
       if (requestData.urlPattern) {
         const pattern = new RegExp(requestData.urlPattern);
-        filteredRequests = filteredRequests.filter(req => pattern.test(req.url));
+        filteredRequests = filteredRequests.filter((req) => pattern.test(req.url));
       }
-      
+
       // Method 필터
       if (requestData.method) {
-        filteredRequests = filteredRequests.filter(req => req.method === requestData.method);
+        filteredRequests = filteredRequests.filter((req) => req.method === requestData.method);
       }
-      
+
       // Status 필터
       if (requestData.status !== undefined) {
         if (typeof requestData.status === 'number') {
-          filteredRequests = filteredRequests.filter(req => req.response?.status === requestData.status);
+          filteredRequests = filteredRequests.filter(
+            (req) => req.response?.status === requestData.status
+          );
         } else {
           const { min, max } = requestData.status;
-          filteredRequests = filteredRequests.filter(req => {
+          filteredRequests = filteredRequests.filter((req) => {
             const status = req.response?.status;
             if (!status) return false;
             if (min !== undefined && status < min) return false;
@@ -193,30 +207,30 @@ export class BackgroundManager {
           });
         }
       }
-      
+
       // MIME Type 필터
       if (requestData.mimeType) {
-        filteredRequests = filteredRequests.filter(req => 
+        filteredRequests = filteredRequests.filter((req) =>
           req.response?.mimeType?.includes(requestData.mimeType!)
         );
       }
-      
+
       // Request Body 필터
       if (requestData.requestBodyPattern) {
-        filteredRequests = filteredRequests.filter(req => {
+        filteredRequests = filteredRequests.filter((req) => {
           if (!req.requestPostData) return false;
-          
+
           // 문자열 패턴인 경우 - 부분 일치 검사
           if (typeof requestData.requestBodyPattern === 'string') {
             return req.requestPostData.includes(requestData.requestBodyPattern);
           }
-          
+
           // 객체 패턴인 경우 - JSON 파싱 후 속성 매칭
           if (typeof requestData.requestBodyPattern === 'object') {
             try {
               const bodyJson = JSON.parse(req.requestPostData);
               const pattern = requestData.requestBodyPattern as Record<string, any>;
-              
+
               // 패턴의 모든 키-값이 요청 body에 포함되어 있는지 확인
               return Object.entries(pattern).every(([key, value]) => {
                 if (typeof value === 'object' && value !== null) {
@@ -229,13 +243,13 @@ export class BackgroundManager {
               return false;
             }
           }
-          
+
           return false;
         });
       }
-      
+
       // 응답 데이터 구성
-      const responses = filteredRequests.map(req => {
+      const responses = filteredRequests.map((req) => {
         const response: any = {
           url: req.url,
           method: req.method,
@@ -244,18 +258,18 @@ export class BackgroundManager {
           mimeType: req.response?.mimeType,
           timestamp: req.timestamp,
         };
-        
+
         // 헤더 포함 옵션
         if (requestData.includeHeaders) {
           response.requestHeaders = req.requestHeaders;
           response.responseHeaders = req.response?.headers;
         }
-        
+
         // 요청 본문
         if (req.requestPostData) {
           response.requestBody = req.requestPostData;
         }
-        
+
         // 응답 본문 처리
         if (req.responseBody) {
           if (req.responseBody.base64Encoded) {
@@ -271,18 +285,18 @@ export class BackgroundManager {
             }
           }
         }
-        
+
         // 소요 시간 계산
         if (req.loadingFinished) {
           response.duration = (req.loadingFinished.timestamp - req.timestamp) * 1000; // ms
         }
-        
+
         return response;
       });
-      
+
       // 반환 형식 결정
       const result = requestData.returnAll ? responses : responses[responses.length - 1] || null;
-      
+
       sendResponse({ data: result });
     } catch (error) {
       console.error('[BackgroundManager] Network catch error:', error);

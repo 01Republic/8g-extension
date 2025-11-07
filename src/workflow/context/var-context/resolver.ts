@@ -18,10 +18,7 @@ export const isVarPath = (path: string): boolean => {
  * @example
  * getByVarPath(context, 'vars.userId')
  */
-export const getByVarPath = (
-  context: VarContext,
-  path: string
-): any => {
+export const getByVarPath = (context: VarContext, path: string): any => {
   // vars로 시작하는지 체크
   if (!path.startsWith('vars.')) {
     return undefined;

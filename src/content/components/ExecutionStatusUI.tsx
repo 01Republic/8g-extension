@@ -37,7 +37,8 @@ export function ExecutionStatusUI({ visible, message = '실행 중' }: Execution
     alignItems: 'center',
     gap: '12px',
     minWidth: '200px',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    fontFamily:
+      '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
     transform: isAnimating ? 'scale(1)' : 'scale(0.9)',
     opacity: isAnimating ? 1 : 0,
     transition: 'transform 0.2s ease-out, opacity 0.2s ease-out',
@@ -173,4 +174,3 @@ export function ExecutionStatusUIContainer() {
 
   return <ExecutionStatusUI visible={uiState.visible} message={uiState.message} />;
 }
-

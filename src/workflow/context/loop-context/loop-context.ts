@@ -21,11 +21,7 @@ export const enterForEach = (
 /**
  * count loop context 진입 (불변)
  */
-export const enterLoop = (
-  context: LoopContext,
-  index: number,
-  count: number
-): LoopContext => ({
+export const enterLoop = (context: LoopContext, index: number, count: number): LoopContext => ({
   ...context,
   loop: { index, count },
 });

@@ -2,7 +2,11 @@
  * @vitest-environment node
  */
 import { describe, it, expect } from 'vitest';
-import { handlerTransformData, validateTransformDataBlock, TransformDataBlock } from './TransformDataBlock';
+import {
+  handlerTransformData,
+  validateTransformDataBlock,
+  TransformDataBlock,
+} from './TransformDataBlock';
 
 describe('TransformDataBlock', () => {
   describe('validateTransformDataBlock', () => {
@@ -182,7 +186,8 @@ describe('TransformDataBlock', () => {
             { id: 2, items: [{ price: 30 }] },
           ],
         },
-        expression: '$map(orders, function($v) { { "orderId": $v.id, "total": $sum($v.items.price) } })',
+        expression:
+          '$map(orders, function($v) { { "orderId": $v.id, "total": $sum($v.items.price) } })',
       };
 
       const result = await handlerTransformData(block);

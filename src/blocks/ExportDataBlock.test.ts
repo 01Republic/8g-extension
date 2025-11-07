@@ -37,7 +37,10 @@ beforeAll(() => {
   // Mock Blob
   // @ts-ignore
   globalThis.Blob = class {
-    constructor(public parts: any[], public options: any) {}
+    constructor(
+      public parts: any[],
+      public options: any
+    ) {}
   };
 });
 

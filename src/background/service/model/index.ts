@@ -32,7 +32,7 @@ export interface AiModelConfig {
 
 /**
  * AI 모델 팩토리
- * 
+ *
  * 전략 패턴을 사용하여 AI 모델을 생성합니다.
  */
 export class AiModelFactory {
@@ -62,4 +62,3 @@ export class AiModelFactory {
     }
   }
 }
-

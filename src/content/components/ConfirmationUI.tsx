@@ -85,7 +85,8 @@ export function ConfirmationUI({
     gap: '12px',
     minWidth: '280px',
     maxWidth: '400px',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    fontFamily:
+      '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
     transform: isAnimating ? 'scale(1)' : 'scale(0.9)',
     opacity: isAnimating ? 1 : 0,
     transition: 'transform 0.2s ease-out, opacity 0.2s ease-out',
@@ -117,10 +118,7 @@ export function ConfirmationUI({
   };
 
   return createPortal(
-    <div
-      style={containerStyle}
-      onClick={(e) => e.stopPropagation()}
-    >
+    <div style={containerStyle} onClick={(e) => e.stopPropagation()}>
       <p style={messageStyle}>{getDisplayMessage()}</p>
       <button
         style={buttonStyle}

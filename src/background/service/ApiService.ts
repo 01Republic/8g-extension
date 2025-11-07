@@ -30,7 +30,7 @@ export class ApiService {
       if (requestData.body) {
         console.log('requestData.body', requestData.body);
       }
-      
+
       const result = await this.fetchData(requestData);
 
       sendResponse({
@@ -131,4 +131,3 @@ export class ApiService {
     }
   }
 }
-

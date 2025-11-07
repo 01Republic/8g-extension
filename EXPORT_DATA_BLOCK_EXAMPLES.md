@@ -25,10 +25,10 @@ const workflow = {
         dataConfig: {
           name: { selector: '.product-name', type: 'text' },
           price: { selector: '.product-price', type: 'text' },
-          url: { selector: 'a', type: 'attribute', attribute: 'href' }
-        }
+          url: { selector: 'a', type: 'attribute', attribute: 'href' },
+        },
       },
-      next: 'exportJson'
+      next: 'exportJson',
     },
     {
       id: 'exportJson',
@@ -36,15 +36,15 @@ const workflow = {
         name: 'export-data',
         data: { valueFrom: 'steps.scrapeData.result.data' },
         format: 'json',
-        filename: 'products'
-      }
-    }
-  ]
+        filename: 'products',
+      },
+    },
+  ],
 };
 
 const result = await client.collectWorkflow({
   targetUrl: 'https://example.com/products',
-  workflow
+  workflow,
 });
 
 console.log('Exported:', result.steps[1].result.data.filename);
@@ -68,10 +68,10 @@ const workflow = {
         dataConfig: {
           name: { selector: '.user-name', type: 'text' },
           email: { selector: '.user-email', type: 'text' },
-          role: { selector: '.user-role', type: 'text' }
-        }
+          role: { selector: '.user-role', type: 'text' },
+        },
       },
-      next: 'exportCsv'
+      next: 'exportCsv',
     },
     {
       id: 'exportCsv',
@@ -82,11 +82,11 @@ const workflow = {
         filename: 'users',
         csvOptions: {
           delimiter: ',',
-          includeHeaders: true
-        }
-      }
-    }
-  ]
+          includeHeaders: true,
+        },
+      },
+    },
+  ],
 };
 ```
 
@@ -108,10 +108,10 @@ const workflow = {
           product: { selector: '.product-name', type: 'text' },
           sku: { selector: '.sku', type: 'text' },
           quantity: { selector: '.quantity', type: 'text' },
-          price: { selector: '.price', type: 'text' }
-        }
+          price: { selector: '.price', type: 'text' },
+        },
       },
-      next: 'exportExcel'
+      next: 'exportExcel',
     },
     {
       id: 'exportExcel',
@@ -119,10 +119,10 @@ const workflow = {
         name: 'export-data',
         data: { valueFrom: 'steps.scrapeInventory.result.data' },
         format: 'xlsx',
-        filename: 'inventory'
-      }
-    }
-  ]
+        filename: 'inventory',
+      },
+    },
+  ],
 };
 ```
 
@@ -147,10 +147,10 @@ const workflow = {
         dataConfig: {
           orderId: { selector: '.order-id', type: 'text' },
           amount: { selector: '.amount', type: 'text' },
-          status: { selector: '.status', type: 'text' }
-        }
+          status: { selector: '.status', type: 'text' },
+        },
       },
-      next: 'transformData'
+      next: 'transformData',
     },
     {
       id: 'transformData',
@@ -166,9 +166,9 @@ const workflow = {
               "processedAt": $now()
             }
           })
-        `
+        `,
       },
-      next: 'exportTransformed'
+      next: 'exportTransformed',
     },
     {
       id: 'exportTransformed',
@@ -176,10 +176,10 @@ const workflow = {
         name: 'export-data',
         data: { valueFrom: 'steps.transformData.result.data' },
         format: 'json',
-        filename: 'processed-orders'
-      }
-    }
-  ]
+        filename: 'processed-orders',
+      },
+    },
+  ],
 };
 ```
 
@@ -192,7 +192,7 @@ const workflow = {
   version: '1.0',
   start: 'scrapeMultiplePages',
   vars: {
-    allProducts: []
+    allProducts: [],
   },
   steps: [
     {
@@ -204,14 +204,14 @@ const workflow = {
         option: { multiple: true },
         dataConfig: {
           name: { selector: '.name', type: 'text' },
-          price: { selector: '.price', type: 'text' }
-        }
+          price: { selector: '.price', type: 'text' },
+        },
       },
       repeat: {
         count: 5, // 5 페이지 수집
-        delayBetween: 1000
+        delayBetween: 1000,
       },
-      next: 'exportAll'
+      next: 'exportAll',
     },
     {
       id: 'exportAll',
@@ -219,10 +219,10 @@ const workflow = {
         name: 'export-data',
         data: { valueFrom: 'steps.scrapeMultiplePages.result.data' },
         format: 'xlsx',
-        filename: 'all-products'
-      }
-    }
-  ]
+        filename: 'all-products',
+      },
+    },
+  ],
 };
 ```
 
@@ -243,24 +243,24 @@ const workflow = {
         findBy: 'cssSelector',
         option: { multiple: true },
         dataConfig: {
-          value: { selector: '.value', type: 'text' }
-        }
+          value: { selector: '.value', type: 'text' },
+        },
       },
-      next: 'checkData'
+      next: 'checkData',
     },
     {
       id: 'checkData',
       when: {
-        exists: 'steps.scrapeData.result.data[0]'
+        exists: 'steps.scrapeData.result.data[0]',
       },
       block: {
         name: 'export-data',
         data: { valueFrom: 'steps.scrapeData.result.data' },
         format: 'csv',
-        filename: 'data-export'
-      }
-    }
-  ]
+        filename: 'data-export',
+      },
+    },
+  ],
 };
 ```
 
@@ -280,12 +280,10 @@ const workflow = {
         option: { multiple: true },
         dataConfig: {
           title: { selector: '.title', type: 'text' },
-          description: { selector: '.desc', type: 'text' }
-        }
+          description: { selector: '.desc', type: 'text' },
+        },
       },
-      switch: [
-        { when: { exists: 'steps.scrapeData.result.data' }, next: 'exportJson' }
-      ]
+      switch: [{ when: { exists: 'steps.scrapeData.result.data' }, next: 'exportJson' }],
     },
     {
       id: 'exportJson',
@@ -293,9 +291,9 @@ const workflow = {
         name: 'export-data',
         data: { valueFrom: 'steps.scrapeData.result.data' },
         format: 'json',
-        filename: 'data-backup'
+        filename: 'data-backup',
       },
-      next: 'exportCsv'
+      next: 'exportCsv',
     },
     {
       id: 'exportCsv',
@@ -303,9 +301,9 @@ const workflow = {
         name: 'export-data',
         data: { valueFrom: 'steps.scrapeData.result.data' },
         format: 'csv',
-        filename: 'data-report'
+        filename: 'data-report',
       },
-      next: 'exportExcel'
+      next: 'exportExcel',
     },
     {
       id: 'exportExcel',
@@ -313,10 +311,10 @@ const workflow = {
         name: 'export-data',
         data: { valueFrom: 'steps.scrapeData.result.data' },
         format: 'xlsx',
-        filename: 'data-analysis'
-      }
-    }
-  ]
+        filename: 'data-analysis',
+      },
+    },
+  ],
 };
 ```
 
@@ -365,10 +363,10 @@ const workflow = {
 
 ```typescript
 // 확장자 자동 추가
-filename: 'myfile'  // → myfile.json
+filename: 'myfile'; // → myfile.json
 
 // 확장자가 있으면 유지
-filename: 'myfile.csv'  // → myfile.csv
+filename: 'myfile.csv'; // → myfile.csv
 
 // 파일명 없음
 // → export-data.json
@@ -379,12 +377,12 @@ filename: 'myfile.csv'  // → myfile.csv
 ```typescript
 interface ExportDataBlock {
   name: 'export-data';
-  data: any;  // 저장할 데이터 (바인딩 가능)
-  format: 'json' | 'csv' | 'xlsx';  // 파일 형식
-  filename?: string;  // 파일명 (선택사항, 기본값: 'export-data')
+  data: any; // 저장할 데이터 (바인딩 가능)
+  format: 'json' | 'csv' | 'xlsx'; // 파일 형식
+  filename?: string; // 파일명 (선택사항, 기본값: 'export-data')
   csvOptions?: {
-    delimiter?: string;  // CSV 구분자 (기본값: ',')
-    includeHeaders?: boolean;  // 헤더 포함 여부 (기본값: true)
+    delimiter?: string; // CSV 구분자 (기본값: ',')
+    includeHeaders?: boolean; // 헤더 포함 여부 (기본값: true)
   };
 }
 ```
@@ -409,11 +407,11 @@ interface ExportDataBlock {
 ```typescript
 const result = await client.collectWorkflow({
   targetUrl: 'https://example.com',
-  workflow
+  workflow,
 });
 
 // 내보내기 결과 확인
-const exportStep = result.steps.find(s => s.id === 'exportData');
+const exportStep = result.steps.find((s) => s.id === 'exportData');
 console.log('Downloaded file:', exportStep.result.data.filename);
 console.log('Download ID:', exportStep.result.data.downloadId);
 ```

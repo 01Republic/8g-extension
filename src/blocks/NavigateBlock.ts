@@ -8,9 +8,9 @@ import { Block, BlockResult } from './types';
  */
 export interface NavigateBlock extends Omit<Block, 'selector' | 'findBy' | 'option'> {
   readonly name: 'navigate';
-  url: string;                    // 이동할 URL
-  waitForLoad?: boolean;          // 페이지 로드 완료 대기 (기본값: true)
-  timeout?: number;               // 로드 대기 timeout (기본값: 30000ms)
+  url: string; // 이동할 URL
+  waitForLoad?: boolean; // 페이지 로드 완료 대기 (기본값: true)
+  timeout?: number; // 로드 대기 timeout (기본값: 30000ms)
 }
 
 export const NavigateBlockSchema = z.object({

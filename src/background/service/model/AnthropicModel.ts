@@ -13,13 +13,13 @@ export interface AnthropicModelConfig {
 
 /**
  * Anthropic (Claude) 기반 AI 모델 구현
- * 
+ *
  * LangChain의 ChatAnthropic을 사용하여 구조화된 데이터 파싱을 수행합니다.
  */
 export class AnthropicModel implements IAiModel {
   private llm: ChatAnthropic;
   public readonly modelName: string;
-  
+
   private static readonly DEFAULT_MODEL = 'claude-haiku-4-5';
 
   constructor(config: AnthropicModelConfig) {
@@ -39,7 +39,7 @@ export class AnthropicModel implements IAiModel {
 
   /**
    * 구조화된 데이터 파싱을 수행합니다.
-   * 
+   *
    * @param prompt - AI에게 전달할 프롬프트
    * @param zodSchema - 출력 스키마 (Zod)
    * @returns 파싱된 결과
@@ -59,4 +59,3 @@ export class AnthropicModel implements IAiModel {
     }
   }
 }
-

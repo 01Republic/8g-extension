@@ -13,59 +13,67 @@ export interface WaitForConditionBlock extends Omit<Block, 'selector' | 'findBy'
   readonly name: 'wait-for-condition';
   conditions: {
     // 자동 감지 조건
-    urlPattern?: string;           // 현재 URL과 매칭할 정규식 패턴
-    elementExists?: {               // 페이지에 요소 존재 여부 확인
+    urlPattern?: string; // 현재 URL과 매칭할 정규식 패턴
+    elementExists?: {
+      // 페이지에 요소 존재 여부 확인
       selector: string;
       findBy: 'cssSelector' | 'xpath';
     };
-    cookieExists?: string;          // 해당 이름의 쿠키 존재 여부
-    storageKey?: {                  // 스토리지 키 존재 여부
+    cookieExists?: string; // 해당 이름의 쿠키 존재 여부
+    storageKey?: {
+      // 스토리지 키 존재 여부
       type: 'localStorage' | 'sessionStorage';
       key: string;
     };
 
     // 수동 확인
-    userConfirmation?: boolean;     // 사용자에게 확인 버튼 표시
-    message?: string;               // 표시할 메시지 (기본값: "작업을 완료하셨나요?")
-    buttonText?: string;            // 버튼 텍스트 (기본값: "완료")
+    userConfirmation?: boolean; // 사용자에게 확인 버튼 표시
+    message?: string; // 표시할 메시지 (기본값: "작업을 완료하셨나요?")
+    buttonText?: string; // 버튼 텍스트 (기본값: "완료")
   };
-  mode?: 'auto' | 'manual' | 'auto-or-manual';  // 기본값: 'auto-or-manual'
-  pollingIntervalMs?: number;      // 자동 조건 체크 주기 (기본값: 1000ms)
-  timeoutMs?: number;              // 최대 대기 시간 (기본값: 300000ms = 5분)
+  mode?: 'auto' | 'manual' | 'auto-or-manual'; // 기본값: 'auto-or-manual'
+  pollingIntervalMs?: number; // 자동 조건 체크 주기 (기본값: 1000ms)
+  timeoutMs?: number; // 최대 대기 시간 (기본값: 300000ms = 5분)
   position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'; // UI 위치 (기본값: 'bottom-right')
 }
 
 export const WaitForConditionBlockSchema = z.object({
   name: z.literal('wait-for-condition'),
-  conditions: z.object({
-    urlPattern: z.string().optional(),
-    elementExists: z.object({
-      selector: z.string(),
-      findBy: z.enum(['cssSelector', 'xpath']),
-    }).optional(),
-    cookieExists: z.string().optional(),
-    storageKey: z.object({
-      type: z.enum(['localStorage', 'sessionStorage']),
-      key: z.string(),
-    }).optional(),
-    userConfirmation: z.boolean().optional(),
-    message: z.string().optional(),
-    buttonText: z.string().optional(),
-  }).refine(
-    (data) => {
-      // At least one condition must be specified
-      return (
-        data.urlPattern !== undefined ||
-        data.elementExists !== undefined ||
-        data.cookieExists !== undefined ||
-        data.storageKey !== undefined ||
-        data.userConfirmation === true
-      );
-    },
-    {
-      message: 'At least one condition must be specified',
-    }
-  ),
+  conditions: z
+    .object({
+      urlPattern: z.string().optional(),
+      elementExists: z
+        .object({
+          selector: z.string(),
+          findBy: z.enum(['cssSelector', 'xpath']),
+        })
+        .optional(),
+      cookieExists: z.string().optional(),
+      storageKey: z
+        .object({
+          type: z.enum(['localStorage', 'sessionStorage']),
+          key: z.string(),
+        })
+        .optional(),
+      userConfirmation: z.boolean().optional(),
+      message: z.string().optional(),
+      buttonText: z.string().optional(),
+    })
+    .refine(
+      (data) => {
+        // At least one condition must be specified
+        return (
+          data.urlPattern !== undefined ||
+          data.elementExists !== undefined ||
+          data.cookieExists !== undefined ||
+          data.storageKey !== undefined ||
+          data.userConfirmation === true
+        );
+      },
+      {
+        message: 'At least one condition must be specified',
+      }
+    ),
   mode: z.enum(['auto', 'manual', 'auto-or-manual']).optional(),
   pollingIntervalMs: z.number().min(100).optional(),
   timeoutMs: z.number().min(1000).optional(),
@@ -78,7 +86,14 @@ export function validateWaitForConditionBlock(data: unknown): WaitForConditionBl
 
 export interface WaitForConditionResult {
   success: boolean;
-  reason?: 'urlPattern' | 'elementExists' | 'cookieExists' | 'storageKey' | 'userConfirmation' | 'timeout' | 'tabClosed';
+  reason?:
+    | 'urlPattern'
+    | 'elementExists'
+    | 'cookieExists'
+    | 'storageKey'
+    | 'userConfirmation'
+    | 'timeout'
+    | 'tabClosed';
   message?: string;
 }
 
@@ -274,7 +289,8 @@ export async function handlerWaitForCondition(
     console.error('[WaitForCondition] Error:', error);
     return {
       hasError: true,
-      message: error instanceof Error ? error.message : 'Unknown error in wait-for-condition handler',
+      message:
+        error instanceof Error ? error.message : 'Unknown error in wait-for-condition handler',
       data: {
         success: false,
         message: error instanceof Error ? error.message : 'Unknown error',

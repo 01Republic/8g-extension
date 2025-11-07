@@ -33,10 +33,12 @@ export const ExportDataBlockSchema = z.object({
   data: z.any(),
   format: z.enum(['json', 'csv', 'xlsx']),
   filename: z.string().optional(),
-  csvOptions: z.object({
-    delimiter: z.string().optional(),
-    includeHeaders: z.boolean().optional(),
-  }).optional(),
+  csvOptions: z
+    .object({
+      delimiter: z.string().optional(),
+      includeHeaders: z.boolean().optional(),
+    })
+    .optional(),
 });
 
 export function validateExportDataBlock(data: unknown): ExportDataBlock {
@@ -48,7 +50,9 @@ export function validateExportDataBlock(data: unknown): ExportDataBlock {
  *
  * Background로 메시지를 보내서 데이터를 파일로 내보냅니다.
  */
-export async function handlerExportData(block: ExportDataBlock): Promise<BlockResult<{ filename: string; downloadId: number }>> {
+export async function handlerExportData(
+  block: ExportDataBlock
+): Promise<BlockResult<{ filename: string; downloadId: number }>> {
   try {
     const { data, format, filename, csvOptions } = block;
 

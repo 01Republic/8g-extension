@@ -32,18 +32,17 @@ export const NetworkCatchBlockSchema = z.object({
   name: z.literal('network-catch'),
   urlPattern: z.string().optional(),
   method: z.enum(['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS']).optional(),
-  status: z.union([
-    z.number(),
-    z.object({
-      min: z.number().optional(),
-      max: z.number().optional(),
-    })
-  ]).optional(),
+  status: z
+    .union([
+      z.number(),
+      z.object({
+        min: z.number().optional(),
+        max: z.number().optional(),
+      }),
+    ])
+    .optional(),
   mimeType: z.string().optional(),
-  requestBodyPattern: z.union([
-    z.string(),
-    z.record(z.any())
-  ]).optional(),
+  requestBodyPattern: z.union([z.string(), z.record(z.any())]).optional(),
   waitForRequest: z.boolean().optional(),
   waitTimeout: z.number().min(0).optional(),
   returnAll: z.boolean().optional(),
@@ -54,7 +53,9 @@ export function validateNetworkCatchBlock(data: unknown): NetworkCatchBlock {
   return NetworkCatchBlockSchema.parse(data) as NetworkCatchBlock;
 }
 
-export async function handlerNetworkCatch(data: NetworkCatchBlock): Promise<BlockResult<NetworkCatchResponse | NetworkCatchResponse[]>> {
+export async function handlerNetworkCatch(
+  data: NetworkCatchBlock
+): Promise<BlockResult<NetworkCatchResponse | NetworkCatchResponse[]>> {
   try {
     console.log('[NetworkCatchBlock] Fetching network requests with pattern:', data.urlPattern);
 
@@ -91,7 +92,7 @@ export async function handlerNetworkCatch(data: NetworkCatchBlock): Promise<Bloc
     console.error('[NetworkCatchBlock] Error:', error);
     return {
       hasError: true,
-      message: error instanceof Error ? error.message : 'Failed to fetch network data'
+      message: error instanceof Error ? error.message : 'Failed to fetch network data',
     };
   }
 }

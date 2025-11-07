@@ -183,31 +183,55 @@ export type CurrencyInfo = {
  * code, symbol, format, amount, text 필드만 포함
  */
 export const CurrencyInfoSchema = {
-    code: {
-      type: 'string' as const,
-      enum: Object.values(CurrencyCode),
-      description: 'Currency code',
-    },
-    symbol: {
-      type: 'string' as const,
-      enum: [
-        '$', '₩', '€', '£', '¥', '₫', '₹', 'NT$', 'Rp', '₣', '฿', 'R$',
-        '₺', '₽', 'kr', '₪', 'R', 'zł', '₱', 'Kč', 'E£', 'RM', 'Ft',
-        'د.إ', '﷼', 'L', 'лв',
-      ] as const,
-      description: 'Currency symbol',
-    },
-    format: {
-      type: 'string' as const,
-      enum: ['%s%u', '%s%n', '%u%s', '%n%s', '%s %u', '%s %n', '%u %s', '%n %s'] as const,
-      description: 'Display format (%s: symbol, %u/%n: amount)',
-    },
-    amount: {
-      type: 'number' as const,
-      description: 'Actual amount value',
-    },
-    text: {
-      type: 'string' as const,
-      description: 'Formatted display text (e.g., US$57.75)',
-    },
-  };
+  code: {
+    type: 'string' as const,
+    enum: Object.values(CurrencyCode),
+    description: 'Currency code',
+  },
+  symbol: {
+    type: 'string' as const,
+    enum: [
+      '$',
+      '₩',
+      '€',
+      '£',
+      '¥',
+      '₫',
+      '₹',
+      'NT$',
+      'Rp',
+      '₣',
+      '฿',
+      'R$',
+      '₺',
+      '₽',
+      'kr',
+      '₪',
+      'R',
+      'zł',
+      '₱',
+      'Kč',
+      'E£',
+      'RM',
+      'Ft',
+      'د.إ',
+      '﷼',
+      'L',
+      'лв',
+    ] as const,
+    description: 'Currency symbol',
+  },
+  format: {
+    type: 'string' as const,
+    enum: ['%s%u', '%s%n', '%u%s', '%n%s', '%s %u', '%s %n', '%u %s', '%n %s'] as const,
+    description: 'Display format (%s: symbol, %u/%n: amount)',
+  },
+  amount: {
+    type: 'number' as const,
+    description: 'Actual amount value',
+  },
+  text: {
+    type: 'string' as const,
+    description: 'Formatted display text (e.g., US$57.75)',
+  },
+};

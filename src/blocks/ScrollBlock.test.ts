@@ -11,7 +11,7 @@ describe('handlerScroll 테스트', () => {
 
     // Mock scrollIntoView
     Element.prototype.scrollIntoView = vi.fn();
-    
+
     // Mock window scroll functions
     window.scrollTo = vi.fn();
     window.scrollBy = vi.fn();
@@ -98,7 +98,7 @@ describe('handlerScroll 테스트', () => {
         ...baseData,
         scrollType: 'toBottom' as const,
       };
-      
+
       // Mock scrollHeight to simulate reaching bottom
       Object.defineProperty(document.body, 'scrollHeight', {
         writable: true,
@@ -131,4 +131,3 @@ describe('handlerScroll 테스트', () => {
     });
   });
 });
-

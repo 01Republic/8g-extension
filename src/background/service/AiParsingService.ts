@@ -20,7 +20,7 @@ export interface AiParsingResult {
 
 /**
  * Background Script에서 실행되는 AI 파싱 서비스
- * 
+ *
  * LangChain과 OpenAI를 사용하여 데이터를 구조화된 형식으로 파싱합니다.
  */
 export class AiParsingService {
@@ -30,7 +30,7 @@ export class AiParsingService {
 
   /**
    * AI 파싱 요청을 처리하고 응답을 전송합니다.
-   * 
+   *
    * @param requestData - AI 파싱 요청 데이터
    * @param sendResponse - 응답 전송 함수
    */
@@ -101,9 +101,10 @@ export class AiParsingService {
       const result = await aiModel.parseStructuredData(systemPrompt, zodSchema);
 
       // 배열 스키마인 경우 wrapper 제거
-      const finalResult = isArraySchema && result && typeof result === 'object' && 'items' in result
-        ? result.items
-        : result;
+      const finalResult =
+        isArraySchema && result && typeof result === 'object' && 'items' in result
+          ? result.items
+          : result;
 
       return {
         success: true,
@@ -130,18 +131,18 @@ export class AiParsingService {
         items: z.array(itemsType),
       });
     }
-    
+
     if (schemaDefinition.type === 'object' && schemaDefinition.shape) {
       // 객체 스키마
       const shape: Record<string, z.ZodType<any>> = {};
-      
+
       for (const [key, fieldDef] of Object.entries(schemaDefinition.shape)) {
         shape[key] = this.buildZodType(fieldDef as any);
       }
-      
+
       return z.object(shape);
     }
-    
+
     return z.any();
   }
 
@@ -164,7 +165,9 @@ export class AiParsingService {
         // enum이 있으면 z.union + z.literal 사용
         if (fieldDef.enum && Array.isArray(fieldDef.enum) && fieldDef.enum.length > 0) {
           const literals = fieldDef.enum.map((v: any) => z.literal(v));
-          zodType = z.union(literals as [z.ZodLiteral<any>, z.ZodLiteral<any>, ...z.ZodLiteral<any>[]]);
+          zodType = z.union(
+            literals as [z.ZodLiteral<any>, z.ZodLiteral<any>, ...z.ZodLiteral<any>[]]
+          );
         } else {
           zodType = z.number();
         }
@@ -212,9 +215,8 @@ export class AiParsingService {
    * AI에게 전달할 프롬프트 구성
    */
   private buildPrompt(sourceData: any, schemaDefinition: any, customPrompt?: string): string {
-    const dataString = typeof sourceData === 'string' 
-      ? sourceData 
-      : JSON.stringify(sourceData, null, 2);
+    const dataString =
+      typeof sourceData === 'string' ? sourceData : JSON.stringify(sourceData, null, 2);
 
     const schemaDescription = this.describeSchema(schemaDefinition);
     const isArraySchema = schemaDefinition.type === 'array';
@@ -241,11 +243,11 @@ Please parse the source data and return it in the exact format specified by the 
    */
   private describeSchema(schemaDefinition: any, indent = 0): string {
     const spaces = '  '.repeat(indent);
-    
+
     if (schemaDefinition.type === 'array' && schemaDefinition.items) {
       return `Array<${this.describeSchema(schemaDefinition.items, 0)}>`;
     }
-    
+
     if (schemaDefinition.type === 'object' && schemaDefinition.shape) {
       let description = `${spaces}{\n`;
       for (const [key, fieldDef] of Object.entries(schemaDefinition.shape)) {
@@ -256,19 +258,18 @@ Please parse the source data and return it in the exact format specified by the 
       description += `${spaces}}`;
       return description;
     }
-    
+
     // currency 타입인 경우
     if (schemaDefinition.type === 'currency') {
       return '{ code: string, symbol: string, format: string, amount: number, text: string }';
     }
-    
+
     // enum이 있는 경우 enum 값들 표시
     if (schemaDefinition.enum && Array.isArray(schemaDefinition.enum)) {
       const valuesStr = schemaDefinition.enum.map((v: any) => JSON.stringify(v)).join(' | ');
       return valuesStr;
     }
-    
+
     return schemaDefinition.type || 'any';
   }
 }
-

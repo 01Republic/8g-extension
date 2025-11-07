@@ -92,8 +92,17 @@ export interface HideExecutionStatusMessage {
 }
 
 // Internal Message Union Types
-export type BackgroundMessage = CollectWorkflowNewTabMessage | CdpClickMessage | CdpKeypressMessage | FetchApiMessage | ExportDataMessage | NetworkCatchMessage;
-export type ContentMessage = ExecuteBlockMessage | ShowExecutionStatusMessage | HideExecutionStatusMessage;
+export type BackgroundMessage =
+  | CollectWorkflowNewTabMessage
+  | CdpClickMessage
+  | CdpKeypressMessage
+  | FetchApiMessage
+  | ExportDataMessage
+  | NetworkCatchMessage;
+export type ContentMessage =
+  | ExecuteBlockMessage
+  | ShowExecutionStatusMessage
+  | HideExecutionStatusMessage;
 
 // Response Types for Internal Communication
 export interface ErrorResponse {

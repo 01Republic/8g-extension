@@ -62,18 +62,12 @@ export const executeStep = async (
       updatedContext = repeatResult.context;
     } else {
       // 단일 실행
-      const stepResult = await executeSingleStep(
-        step.block,
-        context,
-        executeBlock,
-        tabId,
-        {
-          maxAttempts: step.retry?.attempts,
-          baseDelay: step.retry?.delayMs,
-          backoff: step.retry?.backoffFactor,
-          timeoutMs: step.timeoutMs,
-        }
-      );
+      const stepResult = await executeSingleStep(step.block, context, executeBlock, tabId, {
+        maxAttempts: step.retry?.attempts,
+        baseDelay: step.retry?.delayMs,
+        backoff: step.retry?.backoffFactor,
+        timeoutMs: step.timeoutMs,
+      });
       result = stepResult.result;
       success = stepResult.success;
       message = stepResult.message;

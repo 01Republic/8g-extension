@@ -14,7 +14,9 @@ export const getNextStepId = (
 ): string | undefined => {
   // 1. switch 체크 (조건부 라우팅)
   if (step.switch && step.switch.length > 0) {
-    const matched = step.switch.find((c: { when: Condition; next: string }) => evaluateCondition(c.when, context));
+    const matched = step.switch.find((c: { when: Condition; next: string }) =>
+      evaluateCondition(c.when, context)
+    );
     if (matched) {
       return matched.next;
     }

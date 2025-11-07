@@ -7,8 +7,8 @@ import { XPathGenerator } from '@/content/elements/utils/XPathGenerator';
 export interface ElementData {
   text?: string;
   attributes?: Record<string, string | null>;
-  selector?: string;        // 생성된 CSS 셀렉터
-  xpath?: string;           // 생성된 XPath
+  selector?: string; // 생성된 CSS 셀렉터
+  xpath?: string; // 생성된 XPath
   [key: string]: any;
 }
 
@@ -150,11 +150,11 @@ function createElementDataExtractor(
     // Extract attributes if requested (부모 요소에 없으면 자식 요소들에서 찾음)
     if (attributes.length > 0) {
       result.attributes = {};
-      
+
       attributes.forEach((attrName) => {
         // 먼저 부모 요소에서 확인
         let attrValue = element.getAttribute(attrName);
-        
+
         // 부모에 없으면 자식들 중에서 찾기
         if (attrValue === null) {
           const childWithAttr = element.querySelector(`[${attrName}]`);
@@ -162,7 +162,7 @@ function createElementDataExtractor(
             attrValue = childWithAttr.getAttribute(attrName);
           }
         }
-        
+
         result.attributes![attrName] = attrValue;
       });
     }

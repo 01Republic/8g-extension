@@ -31,25 +31,14 @@ export {
 // =========================
 // Path Resolution
 // =========================
-export {
-  getByPath,
-  resolveMultiplePaths,
-} from './resolver';
+export { getByPath, resolveMultiplePaths } from './resolver';
 
 // =========================
 // Binding Resolution
 // =========================
-export {
-  interpolate,
-  resolveBinding,
-  resolveBindings,
-} from './binding';
+export { interpolate, resolveBinding, resolveBindings } from './binding';
 
 // =========================
 // Condition Evaluation
 // =========================
-export {
-  evaluateJsonCondition,
-  evaluateExpression,
-  evaluateCondition,
-} from './condition';
+export { evaluateJsonCondition, evaluateExpression, evaluateCondition } from './condition';

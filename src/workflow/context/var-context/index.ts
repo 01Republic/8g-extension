@@ -5,11 +5,5 @@
  */
 
 export type { VarContext } from './types';
-export {
-  createVarContext,
-  setVar,
-  setVars,
-  getVar,
-  hasVar,
-} from './var-context';
+export { createVarContext, setVar, setVars, getVar, hasVar } from './var-context';
 export { isVarPath, getByVarPath } from './resolver';

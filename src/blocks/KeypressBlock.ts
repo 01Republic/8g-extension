@@ -1,7 +1,7 @@
 import z from 'zod';
 import { Block, BlockResult } from './types';
 
-export interface KeypressBlock  extends Omit<Block, 'selector' | 'findBy' | 'option'> {
+export interface KeypressBlock extends Omit<Block, 'selector' | 'findBy' | 'option'> {
   readonly name: 'keypress';
   key: string; // 'Escape', 'Enter', 'ArrowDown', etc.
   code?: string; // Optional: 'Escape', 'Enter', etc.
@@ -55,7 +55,7 @@ async function simulateKeypress(
         modifiers,
       },
     });
-    
+
     if (response && !response.$isError) {
       console.log('[Keypress] CDP keypress successful:', response);
     } else {
@@ -63,7 +63,7 @@ async function simulateKeypress(
     }
   } catch (error) {
     console.error('[Keypress] CDP keypress failed, falling back to native dispatch:', error);
-    
+
     // Fallback: Use native KeyboardEvent dispatch
     const keydownEvent = new KeyboardEvent('keydown', {
       key,
@@ -73,7 +73,7 @@ async function simulateKeypress(
       cancelable: true,
       ...getModifierStates(modifiers),
     });
-    
+
     const keyupEvent = new KeyboardEvent('keyup', {
       key,
       code: code || key,
@@ -82,32 +82,32 @@ async function simulateKeypress(
       cancelable: true,
       ...getModifierStates(modifiers),
     });
-    
+
     document.dispatchEvent(keydownEvent);
-    await new Promise(resolve => setTimeout(resolve, 10));
+    await new Promise((resolve) => setTimeout(resolve, 10));
     document.dispatchEvent(keyupEvent);
   }
-  
+
   // Small delay to ensure key press is processed
-  await new Promise(resolve => setTimeout(resolve, 50));
+  await new Promise((resolve) => setTimeout(resolve, 50));
 }
 
 // Helper function to get keyCode from key string
 function getKeyCodeFromKey(key: string): number {
   const keyCodeMap: Record<string, number> = {
-    'Escape': 27,
-    'Enter': 13,
-    'Tab': 9,
-    'Backspace': 8,
-    'Delete': 46,
-    'ArrowUp': 38,
-    'ArrowDown': 40,
-    'ArrowLeft': 37,
-    'ArrowRight': 39,
-    'Space': 32,
+    Escape: 27,
+    Enter: 13,
+    Tab: 9,
+    Backspace: 8,
+    Delete: 46,
+    ArrowUp: 38,
+    ArrowDown: 40,
+    ArrowLeft: 37,
+    ArrowRight: 39,
+    Space: 32,
     ' ': 32,
   };
-  
+
   return keyCodeMap[key] || 0;
 }
 
@@ -125,4 +125,3 @@ function getModifierStates(modifiers: string[]): {
     shiftKey: modifiers.includes('Shift'),
   };
 }
-
