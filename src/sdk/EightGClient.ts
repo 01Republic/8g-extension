@@ -212,7 +212,12 @@ export const WorkspaceMemberSchema = z.object({
   // 멤버 결제 여부
   isPaid: z.boolean().nullable().optional(),
   // 멤버 구독 좌석 상태
-  subscriptionSeatStatus: z.enum(['FREE', 'PAID']).nullable().optional(),
+  subscriptionSeatStatus: z.enum([
+    'NONE', // 미정
+    'FREE', // 무료
+    'PAID', // 유료
+    'QUIT', // 해지
+  ]).nullable().optional(),
 });
 
 export type WorkspaceMemberDto = z.infer<typeof WorkspaceMemberSchema>;
