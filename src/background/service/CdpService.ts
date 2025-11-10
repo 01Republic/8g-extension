@@ -297,10 +297,10 @@ export class CdpService {
 
     switch (method) {
       case 'Network.requestWillBeSent':
-        this.handleRequestWillBeSent(tabId, params, requests);
+        this.handleRequestWillBeSent(params, requests);
         break;
       case 'Network.responseReceived':
-        this.handleResponseReceived(tabId, params, requests);
+        this.handleResponseReceived(params, requests);
         break;
       case 'Network.loadingFinished':
         // async 처리를 위해 별도로 실행
@@ -309,7 +309,7 @@ export class CdpService {
         );
         break;
       case 'Network.loadingFailed':
-        this.handleLoadingFailed(tabId, params, requests);
+        this.handleLoadingFailed(params, requests);
         break;
     }
   }
@@ -318,7 +318,6 @@ export class CdpService {
    * 요청 시작 이벤트를 처리합니다.
    */
   private handleRequestWillBeSent(
-    tabId: number,
     params: any,
     requests: Map<string, NetworkRequest>
   ): void {
@@ -341,7 +340,6 @@ export class CdpService {
    * 응답 수신 이벤트를 처리합니다.
    */
   private handleResponseReceived(
-    tabId: number,
     params: any,
     requests: Map<string, NetworkRequest>
   ): void {
@@ -399,7 +397,6 @@ export class CdpService {
    * 로딩 실패 이벤트를 처리합니다.
    */
   private handleLoadingFailed(
-    tabId: number,
     params: any,
     requests: Map<string, NetworkRequest>
   ): void {
