@@ -7,6 +7,8 @@ export interface NetworkRequest {
   type?: string;
   timestamp: number;
   requestHeaders?: Record<string, string>;
+  cookieHeader?: string;
+  parsedCookies?: Record<string, string>;
   requestPostData?: string;
   response?: {
     status: number;
@@ -31,6 +33,11 @@ export interface NetworkRequest {
   };
 }
 
+interface NetworkRequestExtraInfo {
+  headers?: Record<string, string>;
+  headersText?: string;
+}
+
 /**
  * Chrome DevTools Protocol (CDP) Service
  *
@@ -42,6 +49,8 @@ export class CdpService {
 
   // 탭별 네트워크 요청 데이터
   private networkRequests: Map<number, Map<string, NetworkRequest>> = new Map();
+  // 탭별로 아직 요청 객체가 만들어지지 않은 ExtraInfo 이벤트 보관
+  private pendingExtraInfo: Map<number, Map<string, NetworkRequestExtraInfo>> = new Map();
 
   // 네트워크 이벤트 리스너 등록 여부
   private networkListenersAttached: Set<number> = new Set();
@@ -224,6 +233,7 @@ export class CdpService {
 
       // 네트워크 요청 저장소 초기화
       this.networkRequests.set(tabId, new Map());
+      this.pendingExtraInfo.set(tabId, new Map());
 
       // Network 도메인 활성화
       await chrome.debugger.sendCommand({ tabId }, 'Network.enable', {
@@ -258,13 +268,15 @@ export class CdpService {
         this.attachedTabs.delete(tabId);
       }
 
-      // 리스너 등록 상태 제거
+      // 리스너 등록 상태 제거 및 보조 데이터 삭제
       this.networkListenersAttached.delete(tabId);
+      this.pendingExtraInfo.delete(tabId);
     } catch (error) {
       console.error('[CdpService] Failed to stop network tracking:', error);
       // 에러가 발생해도 상태는 정리
       this.attachedTabs.delete(tabId);
       this.networkListenersAttached.delete(tabId);
+      this.pendingExtraInfo.delete(tabId);
     }
   }
 
@@ -297,7 +309,10 @@ export class CdpService {
 
     switch (method) {
       case 'Network.requestWillBeSent':
-        this.handleRequestWillBeSent(params, requests);
+        this.handleRequestWillBeSent(tabId, params, requests);
+        break;
+      case 'Network.requestWillBeSentExtraInfo':
+        this.handleRequestWillBeSentExtraInfo(tabId, params);
         break;
       case 'Network.responseReceived':
         this.handleResponseReceived(params, requests);
@@ -318,6 +333,7 @@ export class CdpService {
    * 요청 시작 이벤트를 처리합니다.
    */
   private handleRequestWillBeSent(
+    tabId: number,
     params: any,
     requests: Map<string, NetworkRequest>
   ): void {
@@ -333,16 +349,34 @@ export class CdpService {
       requestPostData: request.postData,
     };
 
+    this.injectCookieFromHeaders(networkRequest, request.headers);
+    this.applyPendingExtraInfo(tabId, requestId, networkRequest);
+
     requests.set(requestId, networkRequest);
+  }
+
+  /**
+   * 추가 헤더 정보(민감 헤더 포함) 이벤트 처리
+   */
+  private handleRequestWillBeSentExtraInfo(tabId: number, params: any): void {
+    const { requestId } = params;
+    const requests = this.networkRequests.get(tabId);
+    const extraInfo = this.normalizeExtraInfo(params);
+
+    if (requests?.has(requestId)) {
+      const request = requests.get(requestId)!;
+      this.applyExtraInfoToRequest(request, extraInfo);
+    } else {
+      const pendingMap = this.getOrCreatePendingExtraInfoMap(tabId);
+      const existing = pendingMap.get(requestId);
+      pendingMap.set(requestId, this.mergeExtraInfo(existing, extraInfo));
+    }
   }
 
   /**
    * 응답 수신 이벤트를 처리합니다.
    */
-  private handleResponseReceived(
-    params: any,
-    requests: Map<string, NetworkRequest>
-  ): void {
+  private handleResponseReceived(params: any, requests: Map<string, NetworkRequest>): void {
     const { requestId, response } = params;
     const request = requests.get(requestId);
 
@@ -396,10 +430,7 @@ export class CdpService {
   /**
    * 로딩 실패 이벤트를 처리합니다.
    */
-  private handleLoadingFailed(
-    params: any,
-    requests: Map<string, NetworkRequest>
-  ): void {
+  private handleLoadingFailed(params: any, requests: Map<string, NetworkRequest>): void {
     const { requestId, timestamp, errorText, canceled } = params;
     const request = requests.get(requestId);
 
@@ -433,5 +464,156 @@ export class CdpService {
    */
   clearNetworkRequests(tabId: number): void {
     this.networkRequests.delete(tabId);
+    this.pendingExtraInfo.delete(tabId);
+  }
+
+  /**
+   * Pending ExtraInfo 데이터를 현재 요청 객체에 적용합니다.
+   */
+  private applyPendingExtraInfo(tabId: number, requestId: string, request: NetworkRequest): void {
+    const pendingMap = this.pendingExtraInfo.get(tabId);
+    if (!pendingMap) {
+      return;
+    }
+
+    const extraInfo = pendingMap.get(requestId);
+    if (!extraInfo) {
+      return;
+    }
+
+    this.applyExtraInfoToRequest(request, extraInfo);
+    pendingMap.delete(requestId);
+  }
+
+  /**
+   * ExtraInfo 이벤트를 정규화합니다.
+   */
+  private normalizeExtraInfo(params: any): NetworkRequestExtraInfo {
+    return {
+      headers: params.headers,
+      headersText: params.headersText,
+    };
+  }
+
+  /**
+   * 기존 ExtraInfo 데이터와 새 데이터를 병합합니다.
+   */
+  private mergeExtraInfo(
+    existing: NetworkRequestExtraInfo | undefined,
+    next: NetworkRequestExtraInfo
+  ): NetworkRequestExtraInfo {
+    if (!existing) {
+      return {
+        headers: next.headers ? { ...next.headers } : undefined,
+        headersText: next.headersText,
+      };
+    }
+
+    return {
+      headers: {
+        ...(existing.headers || {}),
+        ...(next.headers || {}),
+      },
+      headersText: next.headersText ?? existing.headersText,
+    };
+  }
+
+  /**
+   * ExtraInfo 데이터를 요청 객체에 적용합니다.
+   */
+  private applyExtraInfoToRequest(
+    request: NetworkRequest,
+    extraInfo: NetworkRequestExtraInfo
+  ): void {
+    const combinedHeaders: Record<string, string> = {
+      ...(request.requestHeaders || {}),
+      ...(extraInfo.headers || {}),
+    };
+
+    if (extraInfo.headersText) {
+      Object.assign(combinedHeaders, this.parseHeadersText(extraInfo.headersText));
+    }
+
+    if (Object.keys(combinedHeaders).length > 0) {
+      request.requestHeaders = combinedHeaders;
+    }
+
+    this.injectCookieFromHeaders(request, combinedHeaders);
+  }
+
+  /**
+   * ExtraInfo 보관소를 가져오거나 생성합니다.
+   */
+  private getOrCreatePendingExtraInfoMap(tabId: number): Map<string, NetworkRequestExtraInfo> {
+    if (!this.pendingExtraInfo.has(tabId)) {
+      this.pendingExtraInfo.set(tabId, new Map());
+    }
+    return this.pendingExtraInfo.get(tabId)!;
+  }
+
+  /**
+   * 헤더 텍스트를 파싱하여 객체로 변환합니다.
+   */
+  private parseHeadersText(headersText?: string): Record<string, string> {
+    if (!headersText) {
+      return {};
+    }
+
+    return headersText.split(/\r?\n/).reduce<Record<string, string>>((acc, line) => {
+      const separatorIndex = line.indexOf(':');
+      if (separatorIndex === -1) {
+        return acc;
+      }
+
+      const name = line.slice(0, separatorIndex).trim();
+      const value = line.slice(separatorIndex + 1).trim();
+      if (!name) {
+        return acc;
+      }
+
+      acc[name] = value;
+      return acc;
+    }, {});
+  }
+
+  /**
+   * 헤더에서 Cookie 값을 추출해 요청 객체에 저장합니다.
+   */
+  private injectCookieFromHeaders(
+    networkRequest: NetworkRequest,
+    headers?: Record<string, string>
+  ): void {
+    if (!headers) {
+      return;
+    }
+
+    const cookieHeader = headers.Cookie || headers.cookie;
+    if (!cookieHeader) {
+      return;
+    }
+
+    networkRequest.cookieHeader = cookieHeader;
+    networkRequest.parsedCookies = this.parseCookieHeader(cookieHeader);
+  }
+
+  /**
+   * Parse a Cookie header string into a key-value record.
+   *
+   * @param cookieHeader - Raw Cookie header string
+   */
+  private parseCookieHeader(cookieHeader: string): Record<string, string> {
+    return cookieHeader.split(';').reduce<Record<string, string>>((acc, part) => {
+      const [name, ...rest] = part.split('=');
+      if (!name) {
+        return acc;
+      }
+      const trimmedName = name.trim();
+      const value = rest.join('=').trim();
+      if (!trimmedName) {
+        return acc;
+      }
+      acc[trimmedName] = value;
+      return acc;
+    }, {});
   }
 }

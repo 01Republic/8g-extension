@@ -263,6 +263,10 @@ export class BackgroundManager {
         if (requestData.includeHeaders) {
           response.requestHeaders = req.requestHeaders;
           response.responseHeaders = req.response?.headers;
+          if (req.cookieHeader) {
+            response.cookieHeader = req.cookieHeader;
+            response.cookies = req.parsedCookies;
+          }
         }
 
         // 요청 본문
