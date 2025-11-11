@@ -484,6 +484,27 @@ export class EightGClient {
     return { ...result, data: validatedMembers };
   }
 
+  async addMembers(
+    workspaceKey: string,
+    slug: string,
+    emails: string[],
+    request: CollectWorkflowRequest
+  ): Promise<CollectWorkflowResult> {
+    request.workflow.vars = {
+      ...request.workflow.vars,
+      workspaceKey,
+      slug,
+      emails,
+    };
+
+    const result = await this.collectWorkflow(request);
+    if (!result.success) {
+      throw new EightGError('Failed to add sheets', 'ADD_SHEETS_FAILED');
+    }
+
+    return { ...result };
+  }
+
   static getFromContext(context: ExecutionContext, path: string): any {
     const parts = path.split('.');
     let current: any = context;
