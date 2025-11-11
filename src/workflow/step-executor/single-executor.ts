@@ -50,6 +50,7 @@ export const executeSingleStep = async (
     attempts++;
     try {
       let boundBlock = resolveBindings(block, context);
+      console.log('boundBlock', boundBlock);
 
       if (boundBlock.name === 'transform-data' && boundBlock.sourceData === undefined) {
         boundBlock = {

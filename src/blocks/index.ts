@@ -8,6 +8,7 @@ export type { GetAttributeValueBlock } from './GetAttributeValueBlock';
 export type { GetValueFormsBlock } from './GetValueFormBlock';
 export type { SetValueFormsBlock } from './SetValueFormBlock';
 export type { ClearValueFormsBlock } from './ClearValueFormBlock';
+export type { SetContentEditableBlock } from './SetContentEditableBlock';
 export type { ElementExistsBlock } from './ElementExistsBlock';
 export type { EventClickBlock } from './EventClickBlock';
 export type { KeypressBlock } from './KeypressBlock';
@@ -36,6 +37,7 @@ export { GetAttributeValueBlockSchema } from './GetAttributeValueBlock';
 export { GetValueFormsBlockSchema } from './GetValueFormBlock';
 export { SetValueFormsBlockSchema } from './SetValueFormBlock';
 export { ClearValueFormsBlockSchema } from './ClearValueFormBlock';
+export { SetContentEditableBlockSchema } from './SetContentEditableBlock';
 export { ElementExistsBlockSchema } from './ElementExistsBlock';
 export { EventClickBlockSchema } from './EventClickBlock';
 export { KeypressBlockSchema } from './KeypressBlock';
@@ -73,6 +75,11 @@ import {
   ClearValueFormsBlock,
   validateClearValueFormsBlock,
 } from './ClearValueFormBlock';
+import {
+  handlerSetContentEditable,
+  SetContentEditableBlock,
+  validateSetContentEditableBlock,
+} from './SetContentEditableBlock';
 import {
   handlerElementExists,
   ElementExistsBlock,
@@ -115,6 +122,7 @@ import { GetAttributeValueBlockSchema } from './GetAttributeValueBlock';
 import { GetValueFormsBlockSchema } from './GetValueFormBlock';
 import { SetValueFormsBlockSchema } from './SetValueFormBlock';
 import { ClearValueFormsBlockSchema } from './ClearValueFormBlock';
+import { SetContentEditableBlockSchema } from './SetContentEditableBlock';
 import { ElementExistsBlockSchema } from './ElementExistsBlock';
 import { EventClickBlockSchema } from './EventClickBlock';
 import { KeypressBlockSchema } from './KeypressBlock';
@@ -136,6 +144,7 @@ export const AllBlockSchemas = {
   'attribute-value': GetAttributeValueBlockSchema,
   'get-value-form': GetValueFormsBlockSchema,
   'set-value-form': SetValueFormsBlockSchema,
+  'set-contenteditable': SetContentEditableBlockSchema,
   'clear-value-form': ClearValueFormsBlockSchema,
   'element-exists': ElementExistsBlockSchema,
   'event-click': EventClickBlockSchema,
@@ -161,6 +170,7 @@ export class BlockHandler {
   ): Promise<BlockResult<string | string[] | null>>;
   static executeBlock(block: GetValueFormsBlock): Promise<BlockResult<string | boolean | null>>;
   static executeBlock(block: SetValueFormsBlock): Promise<BlockResult<string | null>>;
+  static executeBlock(block: SetContentEditableBlock): Promise<BlockResult<string | null>>;
   static executeBlock(block: ClearValueFormsBlock): Promise<BlockResult<string | null>>;
   static executeBlock(block: ElementExistsBlock): Promise<BlockResult<boolean | null>>;
   static executeBlock(block: EventClickBlock): Promise<BlockResult<boolean>>;
@@ -216,6 +226,11 @@ export class BlockHandler {
         case 'set-value-form': {
           const validatedBlock = validateSetValueFormsBlock(block);
           return await handlerSetValueForm(validatedBlock);
+        }
+
+        case 'set-contenteditable': {
+          const validatedBlock = validateSetContentEditableBlock(block);
+          return await handlerSetContentEditable(validatedBlock);
         }
 
         case 'clear-value-form': {
