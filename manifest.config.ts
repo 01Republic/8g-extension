@@ -14,11 +14,7 @@ export default defineManifest({
     },
     default_popup: 'src/popup/index.html',
   },
-  permissions: [
-    'tabs',
-    'debugger',
-    'downloads',
-  ],
+  permissions: ['tabs', 'debugger', 'downloads'],
   host_permissions: ['<all_urls>'],
   content_scripts: [
     {

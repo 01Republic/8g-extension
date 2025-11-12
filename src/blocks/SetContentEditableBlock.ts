@@ -71,4 +71,3 @@ function setContentEditableValue(element: HTMLElement, value: string): void {
 
   element.dispatchEvent(new Event('change', { bubbles: true }));
 }
-
