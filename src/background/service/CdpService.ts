@@ -120,7 +120,7 @@ export class CdpService {
    */
   async click(tabId: number, x: number, y: number): Promise<void> {
     // Debugger 연결
-    await chrome.debugger.attach({ tabId }, '1.3');
+    await this.ensureAttached(tabId);
 
     try {
       // 1. Mouse move to position
@@ -172,7 +172,7 @@ export class CdpService {
     modifiers: string[] = []
   ): Promise<void> {
     // Debugger 연결
-    await chrome.debugger.attach({ tabId }, '1.3');
+    await this.ensureAttached(tabId);
 
     try {
       // Convert modifiers to CDP format
@@ -615,5 +615,15 @@ export class CdpService {
       acc[trimmedName] = value;
       return acc;
     }, {});
+  }
+
+  private async ensureAttached(tabId: number): Promise<void> {
+    const targets = await chrome.debugger.getTargets();
+    const alreadyAttached = targets.some((t) => t.attached && t.tabId === tabId);
+
+    if (!alreadyAttached) {
+      console.log('[CdpService] Re-attaching debugger for tab', tabId);
+      await chrome.debugger.attach({ tabId }, '1.3');
+    }
   }
 }
