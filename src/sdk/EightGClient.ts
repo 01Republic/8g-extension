@@ -505,6 +505,27 @@ export class EightGClient {
     return { ...result };
   }
 
+  async deleteMembers(
+    workspaceKey: string,
+    slug: string,
+    emails: string[],
+    request: CollectWorkflowRequest
+  ): Promise<CollectWorkflowResult> {
+    request.workflow.vars = {
+      ...request.workflow.vars,
+      workspaceKey,
+      slug,
+      emails,
+    };
+
+    const result = await this.collectWorkflow(request);
+    if (!result.success) {
+      throw new EightGError('Failed to delete members', 'DELETE_MEMBERS_FAILED');
+    }
+
+    return { ...result };
+  }
+
   static getFromContext(context: ExecutionContext, path: string): any {
     const parts = path.split('.');
     let current: any = context;
