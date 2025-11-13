@@ -129,7 +129,7 @@ export class TabManager {
     this.activeTabs.delete(tabId);
   }
 
-  async waitForTabLoad(tabId: number, timeout: number = 30000): Promise<void> {
+  async waitForTabLoad(tabId: number, timeout: number = 100000): Promise<void> {
     return new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => {
         chrome.tabs.onUpdated.removeListener(listener);
