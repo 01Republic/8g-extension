@@ -6,9 +6,10 @@ export interface MarkBorderBlock extends Block {
   readonly name: 'mark-border';
   // 테두리 스타일 옵션
   borderStyle?: {
-    color?: string; // 테두리 색상 (기본값: 'red')
+    color?: string; // 테두리 색상 (기본값: '#9b59b6' - 보라색)
     width?: number; // 테두리 두께 (기본값: 3)
     style?: 'solid' | 'dashed' | 'dotted' | 'double'; // 테두리 스타일 (기본값: 'solid')
+    animated?: boolean; // 깜박임 애니메이션 활성화 (기본값: true)
   };
   // 텍스트 기반 요소 선택 옵션
   textFilter?: {
@@ -24,6 +25,7 @@ export const MarkBorderBlockSchema = BaseBlockSchema.extend({
       color: z.string().optional(),
       width: z.number().optional(),
       style: z.enum(['solid', 'dashed', 'dotted', 'double']).optional(),
+      animated: z.boolean().optional(),
     })
     .optional(),
   textFilter: z
@@ -82,13 +84,14 @@ export async function handlerMarkBorder(data: MarkBorderBlock): Promise<BlockRes
     }
 
     // 테두리 스타일 설정
-    const color = borderStyle?.color || 'red';
+    const color = borderStyle?.color || '#9b59b6'; // 보라색 계열
     const width = borderStyle?.width || 3;
     const style = borderStyle?.style || 'solid';
+    const animated = borderStyle?.animated !== false; // 기본값: true
 
     // 각 요소에 테두리 추가
     for (const element of targetElements) {
-      applyBorderToElement(element, color, width, style);
+      applyBorderToElement(element, color, width, style, animated);
     }
 
     return { data: true };
@@ -188,12 +191,14 @@ function getElementText(element: HTMLElement): string {
 /**
  * 요소에 테두리를 추가합니다.
  * 기존 스타일을 보존하면서 테두리만 추가합니다.
+ * 깜박임 애니메이션을 지원합니다.
  */
 function applyBorderToElement(
   element: HTMLElement,
   color: string,
   width: number,
-  style: 'solid' | 'dashed' | 'dotted' | 'double'
+  style: 'solid' | 'dashed' | 'dotted' | 'double',
+  animated: boolean = true
 ): void {
   // 요소를 뷰포트에 보이도록 스크롤
   element.scrollIntoView({
@@ -207,6 +212,29 @@ function applyBorderToElement(
   const originalOutline = element.style.outline;
   const originalZIndex = element.style.zIndex;
   const originalPosition = element.style.position;
+  const originalAnimation = element.style.animation;
+
+  // 깜박임 애니메이션 스타일 추가 (한 번만)
+  if (animated && !document.getElementById('mark-border-animation-style')) {
+    const styleElement = document.createElement('style');
+    styleElement.id = 'mark-border-animation-style';
+    styleElement.textContent = `
+      @keyframes mark-border-blink {
+        0%, 100% {
+          opacity: 1;
+          border-color: ${color};
+        }
+        50% {
+          opacity: 0.3;
+          border-color: ${color}80;
+        }
+      }
+      [data-mark-border-animated="true"] {
+        animation: mark-border-blink 0.8s ease-in-out infinite;
+      }
+    `;
+    document.head.appendChild(styleElement);
+  }
 
   // 테두리 스타일 적용
   element.style.border = `${width}px ${style} ${color}`;
@@ -218,11 +246,17 @@ function applyBorderToElement(
     element.style.position = 'relative';
   }
 
+  // 애니메이션 적용
+  if (animated) {
+    element.setAttribute('data-mark-border-animated', 'true');
+  }
+
   // 데이터 속성으로 원본 스타일 저장 (나중에 제거할 수 있도록)
   element.setAttribute('data-mark-border-original-border', originalBorder);
   element.setAttribute('data-mark-border-original-outline', originalOutline);
   element.setAttribute('data-mark-border-original-z-index', originalZIndex);
   element.setAttribute('data-mark-border-original-position', originalPosition);
+  element.setAttribute('data-mark-border-original-animation', originalAnimation);
   element.setAttribute('data-mark-border-applied', 'true');
 }
 
