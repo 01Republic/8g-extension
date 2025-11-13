@@ -221,16 +221,14 @@ function applyBorderToElement(
     styleElement.textContent = `
       @keyframes mark-border-blink {
         0%, 100% {
-          opacity: 1;
           border-color: ${color};
         }
         50% {
-          opacity: 0.3;
-          border-color: ${color}80;
+          border-color: transparent;
         }
       }
       [data-mark-border-animated="true"] {
-        animation: mark-border-blink 0.8s ease-in-out infinite;
+        animation: mark-border-blink 1s ease-in-out infinite;
       }
     `;
     document.head.appendChild(styleElement);
