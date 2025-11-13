@@ -2,8 +2,14 @@ import z from 'zod';
 import { Block, BlockResult, BaseBlockSchema } from './types';
 import { findElement } from '@/content/elements';
 
-export interface EventClickBlock extends Block {
-  readonly name: 'event-click';
+export interface MarkBorderBlock extends Block {
+  readonly name: 'mark-border';
+  // 테두리 스타일 옵션
+  borderStyle?: {
+    color?: string; // 테두리 색상 (기본값: 'red')
+    width?: number; // 테두리 두께 (기본값: 3)
+    style?: 'solid' | 'dashed' | 'dotted' | 'double'; // 테두리 스타일 (기본값: 'solid')
+  };
   // 텍스트 기반 요소 선택 옵션
   textFilter?: {
     text: string | string[];
@@ -11,8 +17,15 @@ export interface EventClickBlock extends Block {
   };
 }
 
-export const EventClickBlockSchema = BaseBlockSchema.extend({
-  name: z.literal('event-click'),
+export const MarkBorderBlockSchema = BaseBlockSchema.extend({
+  name: z.literal('mark-border'),
+  borderStyle: z
+    .object({
+      color: z.string().optional(),
+      width: z.number().optional(),
+      style: z.enum(['solid', 'dashed', 'dotted', 'double']).optional(),
+    })
+    .optional(),
   textFilter: z
     .object({
       text: z.union([z.string(), z.array(z.string())]),
@@ -21,25 +34,25 @@ export const EventClickBlockSchema = BaseBlockSchema.extend({
     .optional(),
 });
 
-export function validateEventClickBlock(data: unknown): EventClickBlock {
-  return EventClickBlockSchema.parse(data);
+export function validateMarkBorderBlock(data: unknown): MarkBorderBlock {
+  return MarkBorderBlockSchema.parse(data);
 }
 
-export async function handlerEventClick(data: EventClickBlock): Promise<BlockResult<boolean>> {
+export async function handlerMarkBorder(data: MarkBorderBlock): Promise<BlockResult<boolean>> {
   try {
-    const { selector = '', findBy = 'cssSelector', option, textFilter } = data;
+    const { selector = '', findBy = 'cssSelector', option, borderStyle, textFilter } = data;
 
     if (!selector) {
-      throw new Error('Selector is required for event-click block');
+      throw new Error('Selector is required for mark-border block');
     }
 
     const elements = await findElement({ selector, findBy, option });
 
     if (!elements) {
-      throw new Error('Element not found for clicking');
+      throw new Error('Element not found for marking border');
     }
 
-    let targetElement: HTMLElement;
+    let targetElements: HTMLElement[];
 
     if (Array.isArray(elements)) {
       // 여러 요소가 찾아진 경우
@@ -58,24 +71,32 @@ export async function handlerEventClick(data: EventClickBlock): Promise<BlockRes
             `No element found with text filter: "${textDisplay}" (mode: ${textFilter.mode})`
           );
         }
-        targetElement = filteredElement;
+        targetElements = [filteredElement];
       } else {
-        // 첫 번째 요소 선택
-        targetElement = elements[0] as HTMLElement;
+        // 모든 요소에 테두리 추가
+        targetElements = elements as HTMLElement[];
       }
     } else {
       // 단일 요소
-      targetElement = elements as HTMLElement;
+      targetElements = [elements as HTMLElement];
     }
 
-    await simulateClickElement(targetElement);
+    // 테두리 스타일 설정
+    const color = borderStyle?.color || 'red';
+    const width = borderStyle?.width || 3;
+    const style = borderStyle?.style || 'solid';
+
+    // 각 요소에 테두리 추가
+    for (const element of targetElements) {
+      applyBorderToElement(element, color, width, style);
+    }
 
     return { data: true };
   } catch (error) {
     console.log(error);
     return {
       hasError: true,
-      message: error instanceof Error ? error.message : 'Unknown error in event-click handler',
+      message: error instanceof Error ? error.message : 'Unknown error in mark-border handler',
       data: false,
     };
   }
@@ -165,86 +186,43 @@ function getElementText(element: HTMLElement): string {
 }
 
 /**
- * 요소에 click 이벤트를 발생시킵니다.
- * CDP 클릭은 좌표 기반이므로 특정 요소의 이벤트 리스너를 트리거하기 위해 필요합니다.
+ * 요소에 테두리를 추가합니다.
+ * 기존 스타일을 보존하면서 테두리만 추가합니다.
  */
-function dispatchClickEvent(element: HTMLElement): void {
-  // MouseEvent를 사용하여 실제 클릭과 유사한 이벤트 발생
-  const mouseDownEvent = new MouseEvent('mousedown', {
-    bubbles: true,
-    cancelable: true,
-    view: window,
-    button: 0, // left button
-  });
-
-  const mouseUpEvent = new MouseEvent('mouseup', {
-    bubbles: true,
-    cancelable: true,
-    view: window,
-    button: 0, // left button
-  });
-
-  const clickEvent = new MouseEvent('click', {
-    bubbles: true,
-    cancelable: true,
-    view: window,
-    button: 0, // left button
-  });
-
-  // 이벤트 발생 순서: mousedown -> mouseup -> click
-  element.dispatchEvent(mouseDownEvent);
-  element.dispatchEvent(mouseUpEvent);
-  element.dispatchEvent(clickEvent);
-}
-
-async function simulateClickElement(element: HTMLElement): Promise<void> {
-  // 1. Scroll element into view
+function applyBorderToElement(
+  element: HTMLElement,
+  color: string,
+  width: number,
+  style: 'solid' | 'dashed' | 'dotted' | 'double'
+): void {
+  // 요소를 뷰포트에 보이도록 스크롤
   element.scrollIntoView({
-    behavior: 'instant',
+    behavior: 'smooth',
     block: 'center',
     inline: 'center',
   });
 
-  // Small delay to ensure scroll completes
-  await new Promise((resolve) => setTimeout(resolve, 50));
+  // 기존 스타일 보존
+  const originalBorder = element.style.border;
+  const originalOutline = element.style.outline;
+  const originalZIndex = element.style.zIndex;
+  const originalPosition = element.style.position;
 
-  // 2. Focus the element (handles window focus issues)
-  if (element.focus) {
-    element.focus();
+  // 테두리 스타일 적용
+  element.style.border = `${width}px ${style} ${color}`;
+  element.style.outline = 'none'; // outline 제거하여 border만 표시
+  element.style.zIndex = originalZIndex || '999999';
+  
+  // position이 static인 경우 relative로 변경하여 z-index가 적용되도록 함
+  if (!originalPosition || originalPosition === 'static') {
+    element.style.position = 'relative';
   }
 
-  // 3. Get element position for realistic coordinates
-  const rect = element.getBoundingClientRect();
-  const centerX = rect.left + rect.width / 2;
-  const centerY = rect.top + rect.height / 2;
-  console.log(element);
-
-  // 4. Use CDP to click via background service (isTrusted: true)
-  // Note: tabId will be automatically detected by background service from sender.tab.id
-  try {
-    const response = await chrome.runtime.sendMessage({
-      type: 'CDP_CLICK',
-      data: {
-        x: centerX,
-        y: centerY,
-      },
-    });
-
-    if (response && !response.$isError) {
-      console.log('[EventClick] CDP click successful:', response);
-      // CDP 클릭 후 요소에 대한 click 이벤트를 수동으로 발생시켜야 함
-      // CDP는 좌표 기반이므로 특정 요소의 이벤트 리스너가 트리거되지 않을 수 있음
-      dispatchClickEvent(element);
-    } else {
-      throw new Error(response?.message || 'CDP click failed');
-    }
-  } catch (error) {
-    console.error('[EventClick] CDP click failed, falling back to native MouseEvent dispatch:', error);
-
-    // Fallback: Use native MouseEvent dispatch (isTrusted: false but works)
-    dispatchClickEvent(element);
-  }
-
-  // 5. Small delay to ensure click is processed
-  await new Promise((resolve) => setTimeout(resolve, 50));
+  // 데이터 속성으로 원본 스타일 저장 (나중에 제거할 수 있도록)
+  element.setAttribute('data-mark-border-original-border', originalBorder);
+  element.setAttribute('data-mark-border-original-outline', originalOutline);
+  element.setAttribute('data-mark-border-original-z-index', originalZIndex);
+  element.setAttribute('data-mark-border-original-position', originalPosition);
+  element.setAttribute('data-mark-border-applied', 'true');
 }
+

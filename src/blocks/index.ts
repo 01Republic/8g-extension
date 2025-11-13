@@ -30,6 +30,7 @@ export type { FetchApiBlock, FetchApiResponse } from './FetchApiBlock';
 export type { TransformDataBlock } from './TransformDataBlock';
 export type { ExportDataBlock } from './ExportDataBlock';
 export type { NetworkCatchBlock, NetworkCatchResponse } from './NetworkCatchBlock';
+export type { MarkBorderBlock } from './MarkBorderBlock';
 
 // Export all block schemas
 export { GetTextBlockSchema } from './GetTextBlock';
@@ -52,6 +53,7 @@ export { FetchApiBlockSchema } from './FetchApiBlock';
 export { TransformDataBlockSchema } from './TransformDataBlock';
 export { ExportDataBlockSchema } from './ExportDataBlock';
 export { NetworkCatchBlockSchema } from './NetworkCatchBlock';
+export { MarkBorderBlockSchema } from './MarkBorderBlock';
 
 // Import block handlers and types
 import { handlerGetText, GetTextBlock, validateGetTextBlock } from './GetTextBlock';
@@ -116,6 +118,7 @@ import {
   NetworkCatchBlock,
   validateNetworkCatchBlock,
 } from './NetworkCatchBlock';
+import { handlerMarkBorder, MarkBorderBlock, validateMarkBorderBlock } from './MarkBorderBlock';
 import { Block, BlockResult } from './types';
 import { GetTextBlockSchema } from './GetTextBlock';
 import { GetAttributeValueBlockSchema } from './GetAttributeValueBlock';
@@ -137,6 +140,7 @@ import { FetchApiBlockSchema } from './FetchApiBlock';
 import { TransformDataBlockSchema } from './TransformDataBlock';
 import { ExportDataBlockSchema } from './ExportDataBlock';
 import { NetworkCatchBlockSchema } from './NetworkCatchBlock';
+import { MarkBorderBlockSchema } from './MarkBorderBlock';
 
 // All block schemas mapped by block name
 export const AllBlockSchemas = {
@@ -160,6 +164,7 @@ export const AllBlockSchemas = {
   'transform-data': TransformDataBlockSchema,
   'export-data': ExportDataBlockSchema,
   'network-catch': NetworkCatchBlockSchema,
+  'mark-border': MarkBorderBlockSchema,
 } as const;
 
 export class BlockHandler {
@@ -190,6 +195,7 @@ export class BlockHandler {
     block: ExportDataBlock
   ): Promise<BlockResult<{ filename: string; downloadId?: number }>>;
   static executeBlock(block: NetworkCatchBlock): Promise<BlockResult<any>>;
+  static executeBlock(block: MarkBorderBlock): Promise<BlockResult<boolean>>;
   static executeBlock(block: Block): Promise<BlockResult>;
 
   // Implementation
@@ -201,6 +207,7 @@ export class BlockHandler {
       | TransformDataBlock
       | ExportDataBlock
       | NetworkCatchBlock
+      | MarkBorderBlock
       | KeypressBlock
       | WaitBlock
       | WaitForConditionBlock
@@ -306,6 +313,11 @@ export class BlockHandler {
         case 'network-catch': {
           const validatedBlock = validateNetworkCatchBlock(block as NetworkCatchBlock);
           return await handlerNetworkCatch(validatedBlock);
+        }
+
+        case 'mark-border': {
+          const validatedBlock = validateMarkBorderBlock(block);
+          return await handlerMarkBorder(validatedBlock);
         }
 
         default:
