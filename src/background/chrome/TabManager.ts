@@ -13,6 +13,7 @@ export class TabManager {
   private closedTabs: Set<number> = new Set();
   private executingWorkflowTabs: Map<number, { message: string }> = new Map();
   private cdpService: CdpService;
+  private tabOrigins: Map<number, number> = new Map();
 
   constructor(cdpService: CdpService) {
     this.cdpService = cdpService;
@@ -55,6 +56,8 @@ export class TabManager {
           this.closedTabs.delete(tabId);
         }, 60000);
       }
+
+      await this.focusParentTab(tabId);
     });
   }
 
@@ -84,7 +87,8 @@ export class TabManager {
     url: string,
     activate: boolean = false,
     contentScriptDelay: number = 2000,
-    enableNetworkTracking: boolean = true
+    enableNetworkTracking: boolean = true,
+    originTabId?: number
   ): Promise<chrome.tabs.Tab> {
     const tab = await chrome.tabs.create({
       url,
@@ -107,6 +111,10 @@ export class TabManager {
       url,
       createdAt: Date.now(),
     });
+
+    if (originTabId !== undefined && originTabId !== tab.id) {
+      this.tabOrigins.set(tab.id, originTabId);
+    }
 
     // 네트워크 추적 시작 (옵션)
     if (enableNetworkTracking) {
@@ -148,6 +156,7 @@ export class TabManager {
     this.cdpService.clearNetworkRequests(tabId);
 
     await chrome.tabs.remove(tabId);
+    await this.focusParentTab(tabId);
     this.activeTabs.delete(tabId);
   }
 
@@ -290,6 +299,41 @@ export class TabManager {
         }
       });
     });
+  }
+
+  private async focusParentTab(tabId: number): Promise<void> {
+    const parentTabId = this.tabOrigins.get(tabId);
+    if (!parentTabId) {
+      return;
+    }
+
+    this.tabOrigins.delete(tabId);
+
+    try {
+      const parentTab = await chrome.tabs.get(parentTabId);
+      if (!parentTab) {
+        return;
+      }
+
+      await chrome.tabs.update(parentTabId, { active: true });
+
+      if (typeof parentTab.windowId === 'number') {
+        try {
+          await chrome.windows.update(parentTab.windowId, { focused: true });
+        } catch (windowError) {
+          console.warn('[TabManager] Failed to focus parent window:', windowError);
+        }
+      }
+
+      console.log(
+        `[TabManager] Focused parent tab ${parentTabId} after closing child tab ${tabId}`
+      );
+    } catch (error) {
+      console.warn(
+        `[TabManager] Failed to focus parent tab ${parentTabId} after closing child tab ${tabId}:`,
+        error
+      );
+    }
   }
 
   /**

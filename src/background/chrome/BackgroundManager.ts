@@ -43,10 +43,12 @@ export class BackgroundManager {
     // Chrome runtime message handler (internal communication)
     chrome.runtime.onMessage.addListener((message: BackgroundMessage, sender, sendResponse) => {
       if ((message as any).type === 'COLLECT_WORKFLOW_NEW_TAB') {
-        this.handleAsyncCollectWorkflow(
-          (message as CollectWorkflowNewTabMessage).data,
-          sendResponse
-        );
+        const workflowMessage = message as CollectWorkflowNewTabMessage;
+        const requestData = {
+          ...workflowMessage.data,
+          originTabId: workflowMessage.data.originTabId ?? sender.tab?.id,
+        };
+        this.handleAsyncCollectWorkflow(requestData, sendResponse);
         return true;
       }
 

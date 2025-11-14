@@ -15,8 +15,18 @@ export class WorkflowService {
     // TabManager의 executeBlock 메서드를 executor 함수로 주입
     const executeBlock = (block: Block, tabId: number) =>
       this.tabManager.executeBlock(block, tabId);
-    const createTab = async (targetUrl: string, activateTab: boolean) => {
-      const tab = await this.tabManager.createTab(targetUrl, activateTab);
+    const createTab = async (
+      targetUrl: string,
+      activateTab: boolean,
+      originTabId?: number
+    ) => {
+      const tab = await this.tabManager.createTab(
+        targetUrl,
+        activateTab,
+        undefined,
+        undefined,
+        originTabId
+      );
       if (tab.id === undefined) {
         throw new Error('Failed to create tab or tab ID is missing');
       }
@@ -62,7 +72,8 @@ export class WorkflowService {
       const result = await this.workflowRunner.run(
         requestData.workflow,
         requestData.targetUrl,
-        requestData.activateTab === true
+        requestData.activateTab === true,
+        requestData.originTabId
       );
 
       tabId = result.tabId;

@@ -2,7 +2,11 @@ import type { Workflow, WorkflowStepRunResult } from '@/sdk/types';
 import { createExecutionContext, setVarsInContext, resolveBindings } from './context';
 import { executeStep, getNextStepId, waitAfterStep, type BlockExecutor } from './step-executor';
 
-export type TabCreator = (targetUrl: string, activateTab: boolean) => Promise<number>;
+export type TabCreator = (
+  targetUrl: string,
+  activateTab: boolean,
+  originTabId?: number
+) => Promise<number>;
 export type ExecutionStatusController = {
   show: (tabId: number, message?: string) => Promise<void>;
   hide: (tabId: number) => Promise<void>;
@@ -15,7 +19,12 @@ export class WorkflowRunner {
     private statusController?: ExecutionStatusController
   ) {}
 
-  async run(workflow: Workflow, targetUrl: string, activateTab: boolean = false) {
+  async run(
+    workflow: Workflow,
+    targetUrl: string,
+    activateTab: boolean = false,
+    originTabId?: number
+  ) {
     let context = createExecutionContext();
 
     // workflow.vars가 있으면 초기 변수 설정
@@ -32,7 +41,7 @@ export class WorkflowRunner {
     console.log('resolvedTargetUrl', resolvedTargetUrl);
 
     // 탭 생성
-    const tabId = await this.createTab(resolvedTargetUrl, activateTab);
+    const tabId = await this.createTab(resolvedTargetUrl, activateTab, originTabId);
 
     try {
       // 실행 상태 UI 표시

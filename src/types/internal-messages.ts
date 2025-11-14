@@ -16,6 +16,7 @@ export interface CollectWorkflowNewTabMessage {
     workflow: Workflow;
     closeTabAfterCollection?: boolean;
     activateTab?: boolean;
+    originTabId?: number;
   };
 }
 
