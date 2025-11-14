@@ -238,7 +238,10 @@ async function simulateClickElement(element: HTMLElement): Promise<void> {
       throw new Error(response?.message || 'CDP click failed');
     }
   } catch (error) {
-    console.error('[EventClick] CDP click failed, falling back to native MouseEvent dispatch:', error);
+    console.error(
+      '[EventClick] CDP click failed, falling back to native MouseEvent dispatch:',
+      error
+    );
 
     // Fallback: Use native MouseEvent dispatch (isTrusted: false but works)
     dispatchClickEvent(element);

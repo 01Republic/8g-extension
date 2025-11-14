@@ -5,10 +5,10 @@ import { translateObject } from '@/utils/translation-resolver';
 
 /**
  * ApplyLocale Block
- * 
+ *
  * 데이터의 특정 키 값들을 locale에 맞게 번역합니다.
  * sourceData가 배열인 경우 각 요소를 순회하며 번역합니다.
- * 
+ *
  * 사용 예 (객체):
  * {
  *   name: 'apply-locale',
@@ -18,7 +18,7 @@ import { translateObject } from '@/utils/translation-resolver';
  *     role: 'slack.roles' // 또는 { translationKey: 'slack.roles' }
  *   }
  * }
- * 
+ *
  * 사용 예 (배열):
  * {
  *   name: 'apply-locale',
@@ -63,12 +63,10 @@ export function validateApplyLocaleBlock(data: unknown): ApplyLocaleBlock {
 
 /**
  * ApplyLocale 블록 핸들러
- * 
+ *
  * sourceData의 특정 키 값들을 locale에 맞게 번역합니다.
  */
-export async function handlerApplyLocale(
-  data: ApplyLocaleBlock
-): Promise<BlockResult<any>> {
+export async function handlerApplyLocale(data: ApplyLocaleBlock): Promise<BlockResult<any>> {
   try {
     const { sourceData, locale, mappings } = data;
 
@@ -129,4 +127,3 @@ export async function handlerApplyLocale(
     };
   }
 }
-

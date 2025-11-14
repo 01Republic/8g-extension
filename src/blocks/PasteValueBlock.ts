@@ -16,9 +16,7 @@ export function validatePasteValueBlock(data: unknown): PasteValueBlock {
   return PasteValueBlockSchema.parse(data);
 }
 
-export async function handlerPasteValue(
-  data: PasteValueBlock
-): Promise<BlockResult<boolean>> {
+export async function handlerPasteValue(data: PasteValueBlock): Promise<BlockResult<boolean>> {
   try {
     const { selector = '', value, findBy = 'cssSelector' } = data;
 
@@ -85,7 +83,7 @@ async function pasteValueToElement(element: HTMLElement, value: string): Promise
     // 4. 선택된 텍스트를 새 값으로 교체 (먼저 값을 설정)
     const currentValue = element.value;
     const newValue = currentValue.substring(0, start) + value + currentValue.substring(end);
-    
+
     element.value = newValue;
     // 커서 위치 조정
     const newCursorPosition = start + value.length;
@@ -129,4 +127,3 @@ async function pasteValueToElement(element: HTMLElement, value: string): Promise
 
   await new Promise((resolve) => setTimeout(resolve, 50));
 }
-

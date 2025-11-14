@@ -123,16 +123,8 @@ import {
   validateNetworkCatchBlock,
 } from './NetworkCatchBlock';
 import { handlerMarkBorder, MarkBorderBlock, validateMarkBorderBlock } from './MarkBorderBlock';
-import {
-  handlerApplyLocale,
-  ApplyLocaleBlock,
-  validateApplyLocaleBlock,
-} from './ApplyLocaleBlock';
-import {
-  handlerPasteValue,
-  PasteValueBlock,
-  validatePasteValueBlock,
-} from './PasteValueBlock';
+import { handlerApplyLocale, ApplyLocaleBlock, validateApplyLocaleBlock } from './ApplyLocaleBlock';
+import { handlerPasteValue, PasteValueBlock, validatePasteValueBlock } from './PasteValueBlock';
 import { Block, BlockResult } from './types';
 import { GetTextBlockSchema } from './GetTextBlock';
 import { GetAttributeValueBlockSchema } from './GetAttributeValueBlock';

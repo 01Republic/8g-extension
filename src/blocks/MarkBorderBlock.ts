@@ -238,7 +238,7 @@ function applyBorderToElement(
   element.style.border = `${width}px ${style} ${color}`;
   element.style.outline = 'none'; // outline 제거하여 border만 표시
   element.style.zIndex = originalZIndex || '999999';
-  
+
   // position이 static인 경우 relative로 변경하여 z-index가 적용되도록 함
   if (!originalPosition || originalPosition === 'static') {
     element.style.position = 'relative';
@@ -257,4 +257,3 @@ function applyBorderToElement(
   element.setAttribute('data-mark-border-original-animation', originalAnimation);
   element.setAttribute('data-mark-border-applied', 'true');
 }
-

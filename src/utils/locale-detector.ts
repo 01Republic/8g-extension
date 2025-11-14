@@ -5,13 +5,13 @@
 
 /**
  * 웹페이지에서 locale을 감지합니다.
- * 
+ *
  * 감지 순서:
  * 1. document.documentElement.lang 속성
  * 2. <html lang=""> 속성
  * 3. navigator.language
  * 4. 기본값: 'en'
- * 
+ *
  * @returns locale 코드 ('ko', 'en' 등)
  */
 export function detectLocale(): string {
@@ -35,7 +35,7 @@ export function detectLocale(): string {
 /**
  * Locale 코드를 정규화합니다.
  * 'ko-KR' -> 'ko', 'en-US' -> 'en' 등
- * 
+ *
  * @param locale - 원본 locale 코드
  * @returns 정규화된 locale 코드
  */
@@ -57,4 +57,3 @@ function normalizeLocale(locale: string): string {
   // 지원하지 않는 locale은 기본값 반환
   return 'en';
 }
-
