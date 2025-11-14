@@ -38,22 +38,26 @@ interface NetworkRequestExtraInfo {
   headersText?: string;
 }
 
+interface DebuggerSessionState {
+  networkEnabled: boolean;
+}
+
 /**
  * Chrome DevTools Protocol (CDP) Service
  *
  * CDP를 사용한 마우스 클릭, 키보드 입력 처리 및 네트워크 추적을 담당합니다.
  */
 export class CdpService {
-  // 탭별 디버거 연결 상태 관리
-  private attachedTabs: Set<number> = new Set();
+  // 탭별 디버거 세션 상태 관리
+  private debuggerSessions: Map<number, DebuggerSessionState> = new Map();
 
   // 탭별 네트워크 요청 데이터
   private networkRequests: Map<number, Map<string, NetworkRequest>> = new Map();
   // 탭별로 아직 요청 객체가 만들어지지 않은 ExtraInfo 이벤트 보관
   private pendingExtraInfo: Map<number, Map<string, NetworkRequestExtraInfo>> = new Map();
 
-  // 네트워크 이벤트 리스너 등록 여부
-  private networkListenersAttached: Set<number> = new Set();
+  // 디버거 이벤트 리스너 등록 여부
+  private debuggerListenerRegistered = false;
   /**
    * CDP 클릭 요청을 처리하고 응답을 전송합니다.
    *
@@ -122,37 +126,32 @@ export class CdpService {
     // Debugger 연결
     await this.ensureAttached(tabId);
 
-    try {
-      // 1. Mouse move to position
-      await chrome.debugger.sendCommand({ tabId }, 'Input.dispatchMouseEvent', {
-        type: 'mouseMoved',
-        x,
-        y,
-        button: 'none',
-        clickCount: 0,
-      });
+    // 1. Mouse move to position
+    await chrome.debugger.sendCommand({ tabId }, 'Input.dispatchMouseEvent', {
+      type: 'mouseMoved',
+      x,
+      y,
+      button: 'none',
+      clickCount: 0,
+    });
 
-      // 2. Mouse down
-      await chrome.debugger.sendCommand({ tabId }, 'Input.dispatchMouseEvent', {
-        type: 'mousePressed',
-        x,
-        y,
-        button: 'left',
-        clickCount: 1,
-      });
+    // 2. Mouse down
+    await chrome.debugger.sendCommand({ tabId }, 'Input.dispatchMouseEvent', {
+      type: 'mousePressed',
+      x,
+      y,
+      button: 'left',
+      clickCount: 1,
+    });
 
-      // 3. Mouse up
-      await chrome.debugger.sendCommand({ tabId }, 'Input.dispatchMouseEvent', {
-        type: 'mouseReleased',
-        x,
-        y,
-        button: 'left',
-        clickCount: 1,
-      });
-    } finally {
-      // Debugger 연결 해제
-      await chrome.debugger.detach({ tabId });
-    }
+    // 3. Mouse up
+    await chrome.debugger.sendCommand({ tabId }, 'Input.dispatchMouseEvent', {
+      type: 'mouseReleased',
+      x,
+      y,
+      button: 'left',
+      clickCount: 1,
+    });
   }
 
   /**
@@ -174,32 +173,62 @@ export class CdpService {
     // Debugger 연결
     await this.ensureAttached(tabId);
 
+    // Convert modifiers to CDP format
+    const cdpModifiers = this.convertModifiersToCdp(modifiers);
+
+    // 1. Key down
+    await chrome.debugger.sendCommand({ tabId }, 'Input.dispatchKeyEvent', {
+      type: 'keyDown',
+      key,
+      code,
+      windowsVirtualKeyCode: keyCode,
+      nativeVirtualKeyCode: keyCode,
+      modifiers: cdpModifiers,
+    });
+
+    // 2. Key up
+    await chrome.debugger.sendCommand({ tabId }, 'Input.dispatchKeyEvent', {
+      type: 'keyUp',
+      key,
+      code,
+      windowsVirtualKeyCode: keyCode,
+      nativeVirtualKeyCode: keyCode,
+      modifiers: cdpModifiers,
+    });
+  }
+
+  /**
+   * 특정 탭에 디버거를 연결합니다.
+   */
+  async attachDebugger(tabId: number): Promise<void> {
+    await this.ensureAttached(tabId);
+  }
+
+  /**
+   * 특정 탭에서 디버거를 분리합니다.
+   */
+  async detachDebugger(tabId: number): Promise<void> {
+    const session = this.debuggerSessions.get(tabId);
+    if (!session) {
+      return;
+    }
+
+    if (session.networkEnabled) {
+      try {
+        await chrome.debugger.sendCommand({ tabId }, 'Network.disable', {});
+      } catch (error) {
+        console.warn(`[CdpService] Failed to disable network for tab ${tabId}:`, error);
+      }
+    }
+
     try {
-      // Convert modifiers to CDP format
-      const cdpModifiers = this.convertModifiersToCdp(modifiers);
-
-      // 1. Key down
-      await chrome.debugger.sendCommand({ tabId }, 'Input.dispatchKeyEvent', {
-        type: 'keyDown',
-        key,
-        code,
-        windowsVirtualKeyCode: keyCode,
-        nativeVirtualKeyCode: keyCode,
-        modifiers: cdpModifiers,
-      });
-
-      // 2. Key up
-      await chrome.debugger.sendCommand({ tabId }, 'Input.dispatchKeyEvent', {
-        type: 'keyUp',
-        key,
-        code,
-        windowsVirtualKeyCode: keyCode,
-        nativeVirtualKeyCode: keyCode,
-        modifiers: cdpModifiers,
-      });
-    } finally {
-      // Debugger 연결 해제
       await chrome.debugger.detach({ tabId });
+    } catch (error) {
+      console.warn(`[CdpService] Failed to detach debugger for tab ${tabId}:`, error);
+    } finally {
+      this.debuggerSessions.delete(tabId);
+      this.pendingExtraInfo.delete(tabId);
+      this.detachNetworkListenersIfIdle();
     }
   }
 
@@ -225,27 +254,23 @@ export class CdpService {
    */
   async startNetworkTracking(tabId: number): Promise<void> {
     try {
-      // 이미 연결되어 있지 않으면 디버거 연결
-      if (!this.attachedTabs.has(tabId)) {
-        await chrome.debugger.attach({ tabId }, '1.3');
-        this.attachedTabs.add(tabId);
-      }
+      await this.ensureAttached(tabId);
+      const session = this.debuggerSessions.get(tabId)!;
 
       // 네트워크 요청 저장소 초기화
       this.networkRequests.set(tabId, new Map());
       this.pendingExtraInfo.set(tabId, new Map());
 
-      // Network 도메인 활성화
-      await chrome.debugger.sendCommand({ tabId }, 'Network.enable', {
-        maxTotalBufferSize: 10000000,
-        maxResourceBufferSize: 5000000,
-      });
-
-      // 이벤트 리스너가 등록되지 않았으면 등록
-      if (!this.networkListenersAttached.has(tabId)) {
-        this.attachNetworkListeners();
-        this.networkListenersAttached.add(tabId);
+      if (!session.networkEnabled) {
+        // Network 도메인 활성화
+        await chrome.debugger.sendCommand({ tabId }, 'Network.enable', {
+          maxTotalBufferSize: 10000000,
+          maxResourceBufferSize: 5000000,
+        });
+        session.networkEnabled = true;
       }
+
+      this.attachNetworkListeners();
     } catch (error) {
       console.error('[CdpService] Failed to start network tracking:', error);
       throw error;
@@ -259,23 +284,21 @@ export class CdpService {
    */
   async stopNetworkTracking(tabId: number): Promise<void> {
     try {
-      if (this.attachedTabs.has(tabId)) {
-        // Network 도메인 비활성화
+      const session = this.debuggerSessions.get(tabId);
+      if (session?.networkEnabled) {
         await chrome.debugger.sendCommand({ tabId }, 'Network.disable', {});
-
-        // 디버거 연결 해제
-        await chrome.debugger.detach({ tabId });
-        this.attachedTabs.delete(tabId);
+        session.networkEnabled = false;
       }
 
-      // 리스너 등록 상태 제거 및 보조 데이터 삭제
-      this.networkListenersAttached.delete(tabId);
+      // 보조 데이터 삭제
       this.pendingExtraInfo.delete(tabId);
     } catch (error) {
       console.error('[CdpService] Failed to stop network tracking:', error);
       // 에러가 발생해도 상태는 정리
-      this.attachedTabs.delete(tabId);
-      this.networkListenersAttached.delete(tabId);
+      const session = this.debuggerSessions.get(tabId);
+      if (session) {
+        session.networkEnabled = false;
+      }
       this.pendingExtraInfo.delete(tabId);
     }
   }
@@ -284,22 +307,38 @@ export class CdpService {
    * 네트워크 이벤트 리스너를 등록합니다.
    */
   private attachNetworkListeners(): void {
-    // 이미 리스너가 등록되어 있으면 스킵
-    if (chrome.debugger.onEvent.hasListener(this.handleDebuggerEvent)) {
+    if (this.debuggerListenerRegistered) {
       return;
     }
 
-    chrome.debugger.onEvent.addListener(this.handleDebuggerEvent.bind(this));
+    chrome.debugger.onEvent.addListener(this.handleDebuggerEvent);
+    this.debuggerListenerRegistered = true;
+  }
+
+  /**
+   * 활성 세션이 없으면 네트워크 이벤트 리스너를 제거합니다.
+   */
+  private detachNetworkListenersIfIdle(): void {
+    if (!this.debuggerListenerRegistered) {
+      return;
+    }
+
+    if (this.debuggerSessions.size > 0) {
+      return;
+    }
+
+    chrome.debugger.onEvent.removeListener(this.handleDebuggerEvent);
+    this.debuggerListenerRegistered = false;
   }
 
   /**
    * 디버거 이벤트를 처리합니다.
    */
-  private handleDebuggerEvent(
+  private handleDebuggerEvent = (
     source: chrome.debugger.Debuggee,
     method: string,
     params?: any
-  ): void {
+  ): void => {
     const tabId = source.tabId;
     if (!tabId || !this.networkRequests.has(tabId)) {
       return;
@@ -327,7 +366,7 @@ export class CdpService {
         this.handleLoadingFailed(params, requests);
         break;
     }
-  }
+  };
 
   /**
    * 요청 시작 이벤트를 처리합니다.
@@ -618,12 +657,13 @@ export class CdpService {
   }
 
   private async ensureAttached(tabId: number): Promise<void> {
-    const targets = await chrome.debugger.getTargets();
-    const alreadyAttached = targets.some((t) => t.attached && t.tabId === tabId);
-
-    if (!alreadyAttached) {
-      console.log('[CdpService] Re-attaching debugger for tab', tabId);
-      await chrome.debugger.attach({ tabId }, '1.3');
+    if (this.debuggerSessions.has(tabId)) {
+      return;
     }
+
+    console.log('[CdpService] Attaching debugger for tab', tabId);
+    await chrome.debugger.attach({ tabId }, '1.3');
+    this.debuggerSessions.set(tabId, { networkEnabled: false });
+    this.attachNetworkListeners();
   }
 }

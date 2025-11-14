@@ -36,6 +36,13 @@ export class TabManager {
           console.warn('[TabManager] Failed to stop network tracking:', error);
         }
 
+        try {
+          await this.cdpService.detachDebugger(tabId);
+          console.log('[TabManager] Debugger detached for closed tab:', tabId);
+        } catch (error) {
+          console.warn('[TabManager] Failed to detach debugger:', error);
+        }
+
         // 네트워크 데이터 정리
         this.cdpService.clearNetworkRequests(tabId);
 
@@ -88,6 +95,14 @@ export class TabManager {
       throw new Error('Failed to create new tab');
     }
 
+    try {
+      await this.cdpService.attachDebugger(tab.id);
+      console.log('[TabManager] Debugger attached for tab:', tab.id);
+    } catch (error) {
+      await chrome.tabs.remove(tab.id);
+      throw error;
+    }
+
     this.activeTabs.set(tab.id, {
       url,
       createdAt: Date.now(),
@@ -120,6 +135,13 @@ export class TabManager {
       console.log('[TabManager] Network tracking stopped before closing tab:', tabId);
     } catch (error) {
       console.warn('[TabManager] Failed to stop network tracking:', error);
+    }
+
+    try {
+      await this.cdpService.detachDebugger(tabId);
+      console.log('[TabManager] Debugger detached before closing tab:', tabId);
+    } catch (error) {
+      console.warn('[TabManager] Failed to detach debugger before closing tab:', error);
     }
 
     // 네트워크 데이터 정리

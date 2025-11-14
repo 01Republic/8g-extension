@@ -19,6 +19,10 @@ import { CdpService } from '../service/CdpService';
 import { WorkflowService } from '../service/WorkflowService';
 import { ApiService } from '../service/ApiService';
 import { ExportDataService } from '../service/ExportDataService';
+import {
+  matchesObjectPattern,
+  parseRequestBodyToObject,
+} from '@/background/utils/request-body-parser';
 
 export class BackgroundManager {
   private aiParsingService: AiParsingService;
@@ -171,8 +175,6 @@ export class BackgroundManager {
     sendResponse: (response: any) => void
   ) {
     try {
-      console.log('[BackgroundManager] Handle network catch request:', requestData);
-
       // TabManager에서 네트워크 요청 데이터 가져오기
       const allRequests = this.tabManager.getNetworkRequests(requestData.tabId);
 
@@ -214,40 +216,36 @@ export class BackgroundManager {
           req.response?.mimeType?.includes(requestData.mimeType!)
         );
       }
+      console.log('[BackgroundManager] Handle network catch request:', filteredRequests);
 
       // Request Body 필터
       if (requestData.requestBodyPattern) {
         filteredRequests = filteredRequests.filter((req) => {
           if (!req.requestPostData) return false;
 
-          // 문자열 패턴인 경우 - 부분 일치 검사
           if (typeof requestData.requestBodyPattern === 'string') {
+            console.log('[BackgroundManager] Handle network catch request:', req.requestPostData, requestData.requestBodyPattern);
             return req.requestPostData.includes(requestData.requestBodyPattern);
           }
 
-          // 객체 패턴인 경우 - JSON 파싱 후 속성 매칭
-          if (typeof requestData.requestBodyPattern === 'object') {
-            try {
-              const bodyJson = JSON.parse(req.requestPostData);
-              const pattern = requestData.requestBodyPattern as Record<string, any>;
-
-              // 패턴의 모든 키-값이 요청 body에 포함되어 있는지 확인
-              return Object.entries(pattern).every(([key, value]) => {
-                if (typeof value === 'object' && value !== null) {
-                  return JSON.stringify(bodyJson[key]) === JSON.stringify(value);
-                }
-                return bodyJson[key] === value;
-              });
-            } catch {
-              // JSON 파싱 실패시 false 반환
-              return false;
-            }
+          const parsedBody = parseRequestBodyToObject(req.requestPostData, req.requestHeaders);
+          console.log('[BackgroundManager] Handle network catch request:', parsedBody);
+          console.log('[BackgroundManager] Handle network catch request:', requestData.requestBodyPattern);
+          if (!parsedBody) {
+            return false;
           }
 
-          return false;
+          console.log('[BackgroundManager] Handle network catch request:', matchesObjectPattern(
+            parsedBody,
+            requestData.requestBodyPattern as Record<string, any>
+          ));
+          return matchesObjectPattern(
+            parsedBody,
+            requestData.requestBodyPattern as Record<string, any>
+          );
         });
       }
-
+      console.log('[BackgroundManager] Handle network catch request:', filteredRequests);
       // 응답 데이터 구성
       const responses = filteredRequests.map((req) => {
         const response: any = {
