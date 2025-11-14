@@ -59,8 +59,10 @@ export type ConnectWorkspaceResponseDto = {
 };
 
 export enum BillingCycleTerm {
-  monthly = 'MONTHLY',
-  yearly = 'YEARLY',
+  None = 'None',
+  Monthly = 'Monthly',
+  Yearly = 'Yearly',
+  Onetime = 'Onetime',
 }
 
 /**
