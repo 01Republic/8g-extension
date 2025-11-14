@@ -136,15 +136,15 @@ async function pasteValueToElement(element: HTMLElement, value: string): Promise
     console.log('[PasteValue] 3-7. paste 이벤트 발생 후 - element.value:', element.value);
     console.log('[PasteValue] 3-7. paste 이벤트 발생 후 - element.value 길이:', element.value.length);
 
-    // 6. input과 change 이벤트 발생
-    console.log('[PasteValue] 3-8. input 이벤트 발생 전 - element.value:', element.value);
-    element.dispatchEvent(new Event('input', { bubbles: true }));
-    console.log('[PasteValue] 3-8. input 이벤트 발생 후 - element.value:', element.value);
+    // // 6. input과 change 이벤트 발생
+    // console.log('[PasteValue] 3-8. input 이벤트 발생 전 - element.value:', element.value);
+    // element.dispatchEvent(new Event('input', { bubbles: true }));
+    // console.log('[PasteValue] 3-8. input 이벤트 발생 후 - element.value:', element.value);
     
-    console.log('[PasteValue] 3-9. change 이벤트 발생 전 - element.value:', element.value);
-    element.dispatchEvent(new Event('change', { bubbles: true }));
-    console.log('[PasteValue] 3-9. change 이벤트 발생 후 - element.value:', element.value);
-    console.log('[PasteValue] 3-9. change 이벤트 발생 후 - element.value 길이:', element.value.length);
+    // console.log('[PasteValue] 3-9. change 이벤트 발생 전 - element.value:', element.value);
+    // element.dispatchEvent(new Event('change', { bubbles: true }));
+    // console.log('[PasteValue] 3-9. change 이벤트 발생 후 - element.value:', element.value);
+    // console.log('[PasteValue] 3-9. change 이벤트 발생 후 - element.value 길이:', element.value.length);
   } else if (element.isContentEditable) {
     console.log('[PasteValue] 3. ContentEditable 요소 처리 시작');
     const beforeContent = element.textContent || element.innerText;
@@ -182,9 +182,9 @@ async function pasteValueToElement(element: HTMLElement, value: string): Promise
     element.dispatchEvent(pasteEvent);
     console.log('[PasteValue] 3-4. paste 이벤트 발생 후 내용:', element.textContent || element.innerText);
     
-    console.log('[PasteValue] 3-5. input 이벤트 발생');
-    element.dispatchEvent(new Event('input', { bubbles: true }));
-    console.log('[PasteValue] 3-5. input 이벤트 발생 후 내용:', element.textContent || element.innerText);
+    // console.log('[PasteValue] 3-5. input 이벤트 발생');
+    // element.dispatchEvent(new Event('input', { bubbles: true }));
+    // console.log('[PasteValue] 3-5. input 이벤트 발생 후 내용:', element.textContent || element.innerText);
   } else {
     console.log('[PasteValue] 3. 일반 요소 처리 시작');
     console.log('[PasteValue] 3-1. 요소:', element);
@@ -196,18 +196,18 @@ async function pasteValueToElement(element: HTMLElement, value: string): Promise
       (element as any).value = value;
       console.log('[PasteValue] 3-2. 값 설정 후:', (element as any).value);
       
-      console.log('[PasteValue] 3-3. input 이벤트 발생');
-      element.dispatchEvent(new Event('input', { bubbles: true }));
-      console.log('[PasteValue] 3-4. change 이벤트 발생');
-      element.dispatchEvent(new Event('change', { bubbles: true }));
+      // console.log('[PasteValue] 3-3. input 이벤트 발생');
+      // element.dispatchEvent(new Event('input', { bubbles: true }));
+      // console.log('[PasteValue] 3-4. change 이벤트 발생');
+      // element.dispatchEvent(new Event('change', { bubbles: true }));
     } else {
       const beforeText = element.textContent;
       console.log('[PasteValue] 3-2. textContent 사용, 기존 내용:', beforeText);
       element.textContent = value;
       console.log('[PasteValue] 3-2. 값 설정 후:', element.textContent);
       
-      console.log('[PasteValue] 3-3. input 이벤트 발생');
-      element.dispatchEvent(new Event('input', { bubbles: true }));
+      // console.log('[PasteValue] 3-3. input 이벤트 발생');
+      // element.dispatchEvent(new Event('input', { bubbles: true }));
     }
   }
 
