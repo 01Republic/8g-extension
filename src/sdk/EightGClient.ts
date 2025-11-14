@@ -203,6 +203,7 @@ export type WorkspaceBillingHistoryDto = z.infer<typeof WorkspaceBillingHistoryS
 ]
 */
 export const WorkspaceMemberSchema = z.object({
+  uid: z.string().nullable(),
   // 멤버 이름
   name: z.string(),
   // 멤버 이메일
