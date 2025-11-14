@@ -364,6 +364,8 @@ const result = await client.collectWorkflow({
 
 모든 블록은 워크플로우 내에서 실행됩니다. 자세한 내용은 [WORKFLOW_EXECUTION_ARCHITECTURE.md](WORKFLOW_EXECUTION_ARCHITECTURE.md)를 참고하세요.
 
+워크플로우 실행 시 `WorkflowRunner`는 `src/workflow/step-executor/` 하위 모듈을 통해 스텝을 순차/재귀적으로 실행합니다. 기본적인 block 반복(`scope: 'block'`)은 `repeat-executor`가 처리하고, 복수 스텝으로 구성된 서브트리를 반복하는 경우(`scope: 'subtree'`) 새 `subtree-executor`가 동일한 세그먼트 실행 로직을 재귀 호출하여 하위 노드 전체를 반복 실행합니다. 이 구조 덕분에 Runner는 탭 생성·상태 관리에 집중하고, 실행 로직은 step-executor 계층에서 일관되게 관리됩니다.
+
 ### 블록 간 데이터 전달
 
 ```typescript

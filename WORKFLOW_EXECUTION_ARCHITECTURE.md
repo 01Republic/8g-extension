@@ -390,7 +390,8 @@ const workflow = {
       repeat: {
         forEach: 'steps.getProductIds.result.data',  // 배열 경로
         continueOnError: true,    // 에러 발생해도 계속
-        delayBetween: 200         // 각 반복 사이 200ms 대기
+        delayBetween: 200,        // 각 반복 사이 200ms 대기
+        scope: 'block'            // block 반복 (기본값이므로 생략 가능)
       },
       block: {
         name: 'fetch-api',
@@ -424,7 +425,8 @@ steps.fetchEachProduct.result.data = [result1, result2, result3, ...]
   id: 'scrollMultipleTimes',
   repeat: {
     count: 10,           // 10번 반복
-    delayBetween: 500    // 각 반복 사이 500ms 대기
+    delayBetween: 500,   // 각 반복 사이 500ms 대기
+    scope: 'block'
   },
   block: {
     name: 'scroll',
@@ -459,10 +461,64 @@ steps.fetchEachProduct.result.data = [result1, result2, result3, ...]
   count?: number | string;   // 반복 횟수 (count 모드)
   continueOnError?: boolean; // true: 에러 발생해도 계속 (기본값: false)
   delayBetween?: number;     // 반복 사이 대기 시간 (ms)
+  scope?: 'block' | 'subtree'; // 반복 대상 (기본값: 'block')
+  subtreeEnd?: string;       // scope='subtree'일 때 반복을 끝내고 이어갈 step ID
 }
 ```
 
 **주의:** `forEach`와 `count`는 동시에 사용할 수 없습니다.
+
+#### Subtree repeat (확장)
+
+`scope: 'subtree'`를 사용하면 단일 블록이 아니라 특정 스텝에서 시작해 `subtreeEnd` 앞까지의 서브 그래프 전체를 반복할 수 있습니다. 각 iteration은 독립적인 서브워크플로우 실행으로 취급되며, iteration별 세부 결과와 에러 정보가 반복 스텝의 결과에 요약되어 저장됩니다.
+
+```typescript
+{
+  id: 'fillForm',
+  repeat: {
+    forEach: 'steps.listForms.result.data',
+    scope: 'subtree',
+    subtreeEnd: 'afterForm',
+    continueOnError: false,
+  },
+  block: {
+    name: 'set-value-form',
+    selector: '.form input',
+    findBy: 'cssSelector',
+    option: {},
+    value: { template: '${forEach.item.value}' },
+  },
+  next: 'submitForm'
+},
+{
+  id: 'submitForm',
+  block: {
+    name: 'event-click',
+    selector: '.submit',
+    findBy: 'cssSelector',
+    option: {},
+  },
+  next: 'verifyForm'
+},
+{
+  id: 'verifyForm',
+  block: {
+    name: 'element-exists',
+    selector: '.success',
+    findBy: 'cssSelector',
+    option: {},
+  },
+  next: 'afterForm'
+},
+{
+  id: 'afterForm',
+  // subtreeEnd로 지정된 스텝. 반복이 끝나면 여기서 계속 진행.
+  block: null,
+  next: 'finishAll'
+}
+```
+
+반복이 끝나면 워크플로우는 자동으로 `subtreeEnd`에서 이어서 실행됩니다. `continueOnError`, `delayBetween`, `retry`, `timeoutMs` 등의 옵션은 기존 block repeat과 동일하게 적용되며, 내부적으로 `executeWorkflowSegment`가 재귀적으로 서브트리를 실행합니다.
 
 ## 에러 처리 및 재시도
 

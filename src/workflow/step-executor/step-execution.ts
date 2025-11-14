@@ -41,8 +41,8 @@ export const executeStep = async (
   if (!shouldRun) {
     skipped = true;
   } else if (step.block) {
-    // repeat 설정이 있으면 반복 실행
-    if (step.repeat) {
+    // repeat 설정이 있으면 반복 실행 (subtree는 별도 처리)
+    if (step.repeat && step.repeat.scope !== 'subtree') {
       const repeatResult = await executeWithRepeat(
         step.block,
         step.repeat,
