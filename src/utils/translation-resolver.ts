@@ -8,10 +8,13 @@ import { getTranslation } from '@/locales';
 /**
  * 값과 번역 키 경로를 조합하여 번역된 값을 반환합니다.
  * 
+ * 값이 이미 전체 번역 키 경로인 경우와 부분 값인 경우를 모두 처리합니다.
+ * 
  * 예시:
- * - value: "workspace_primary_owner"
- * - translationKeyPrefix: "slack.roles"
- * - 결과 키: "slack.roles.workspace_primary_owner"
+ * - value: "workspace_primary_owner", translationKeyPrefix: "slack.roles"
+ *   → 결과 키: "slack.roles.workspace_primary_owner"
+ * - value: "slack.roles.single_channel_guests", translationKeyPrefix: "slack.roles"
+ *   → 결과 키: "slack.roles.single_channel_guests" (이미 전체 경로이므로 그대로 사용)
  * 
  * @param value - 변환할 원본 값
  * @param translationKeyPrefix - 번역 키 경로 접두사 (예: 'slack.roles')
@@ -27,8 +30,18 @@ export function resolveTranslation(
     return value;
   }
 
-  // 번역 키 생성: "slack.roles" + "." + "workspace_primary_owner" = "slack.roles.workspace_primary_owner"
-  const translationKey = `${translationKeyPrefix}.${value}`;
+  // 값이 이미 translationKeyPrefix로 시작하는지 확인
+  // 예: "slack.roles.single_channel_guests"는 이미 전체 경로
+  const prefixWithDot = `${translationKeyPrefix}.`;
+  let translationKey: string;
+
+  if (value.startsWith(prefixWithDot)) {
+    // 이미 전체 경로인 경우 그대로 사용
+    translationKey = value;
+  } else {
+    // 부분 값인 경우 접두사를 붙여서 전체 경로 생성
+    translationKey = `${translationKeyPrefix}.${value}`;
+  }
 
   // 번역된 값 가져오기
   const translated = getTranslation(translationKey, locale);
