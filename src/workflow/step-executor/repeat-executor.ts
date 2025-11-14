@@ -1,4 +1,5 @@
 import type { Block } from '@/blocks';
+import type { RepeatConfig } from '@/sdk/types';
 import type { ExecutionContext } from '../context';
 import {
   getByPath,
@@ -10,19 +11,9 @@ import { executeSingleStep } from './single-executor';
 import type { BlockExecutor, RepeatExecutionResult } from './types';
 
 /**
- * Repeat 설정
- */
-interface RepeatConfig {
-  forEach?: string;
-  count?: number | string;
-  continueOnError?: boolean;
-  delayBetween?: number;
-}
-
-/**
  * Repeat items 해석
  */
-const resolveRepeatItems = (
+export const resolveRepeatItems = (
   repeatConfig: RepeatConfig,
   context: ExecutionContext
 ): { items: any[]; isForEach: boolean } => {

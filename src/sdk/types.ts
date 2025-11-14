@@ -56,16 +56,23 @@ export class Binding {
   default?: BindingValue;
 }
 
-export type ForEachConfig = {
-  forEach: string; // 배열 경로 (예: '$.steps.getIds.result.data')
+export type RepeatScope = 'block' | 'subtree';
+
+type RepeatBase = {
   continueOnError?: boolean; // 에러 발생해도 계속 진행
   delayBetween?: number; // 반복 사이 대기 시간 (ms)
+  scope?: RepeatScope; // 반복 대상: 기본 block, subtree 지원
+  subtreeEnd?: string; // scope=subtree일 때 반복 범위 종료 지점
 };
 
-export type LoopConfig = {
+export type ForEachConfig = RepeatBase & {
+  forEach: string; // 배열 경로 (예: '$.steps.getIds.result.data')
+  count?: never;
+};
+
+export type LoopConfig = RepeatBase & {
   count: number | string; // 반복 횟수 (숫자 또는 바인딩 경로)
-  continueOnError?: boolean; // 에러 발생해도 계속 진행
-  delayBetween?: number; // 반복 사이 대기 시간 (ms)
+  forEach?: never;
 };
 
 export type RepeatConfig = ForEachConfig | LoopConfig;

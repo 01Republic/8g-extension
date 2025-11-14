@@ -1,6 +1,7 @@
-import type { Workflow, WorkflowStepRunResult } from '@/sdk/types';
+import type { Workflow } from '@/sdk/types';
 import { createExecutionContext, setVarsInContext, resolveBindings } from './context';
-import { executeStep, getNextStepId, waitAfterStep, type BlockExecutor } from './step-executor';
+import type { BlockExecutor } from './step-executor';
+import { executeWorkflowSegment } from './step-executor/subtree-executor';
 
 export type TabCreator = (
   targetUrl: string,
@@ -48,34 +49,15 @@ export class WorkflowRunner {
       await this.statusController?.show(tabId, '워크플로우 실행 중');
 
       const stepsById = new Map(workflow.steps.map((s) => [s.id, s]));
-      let currentId: string | undefined = workflow.start;
-      const results: WorkflowStepRunResult<any>[] = [];
+      const { results, context: finalContext } = await executeWorkflowSegment({
+        currentId: workflow.start,
+        context,
+        stepsById,
+        tabId,
+        executeBlock: this.executeBlock,
+      });
 
-      while (currentId) {
-        const step = stepsById.get(currentId);
-        if (!step) break;
-        console.log('step', step);
-
-        // 1. Step 실행
-        const stepResult = await executeStep(step, context, this.executeBlock, tabId);
-        console.log('stepResult', stepResult);
-
-        // 2. 결과 기록
-        results.push(stepResult);
-        context = stepResult.context;
-
-        // 3. 다음 step 결정
-        const nextId = getNextStepId(step, stepResult.success, context);
-
-        // 4. Step 후 대기 (다음 step이 있는 경우에만)
-        if (nextId && !stepResult.skipped) {
-          await waitAfterStep(step);
-        }
-
-        currentId = nextId;
-      }
-
-      return { steps: results, tabId, context };
+      return { steps: results, tabId, context: finalContext };
     } finally {
       // 실행 상태 UI 숨김
       await this.statusController?.hide(tabId);
