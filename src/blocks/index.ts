@@ -32,6 +32,7 @@ export type { ExportDataBlock } from './ExportDataBlock';
 export type { NetworkCatchBlock, NetworkCatchResponse } from './NetworkCatchBlock';
 export type { MarkBorderBlock } from './MarkBorderBlock';
 export type { ApplyLocaleBlock } from './ApplyLocaleBlock';
+export type { PasteValueBlock } from './PasteValueBlock';
 
 // Export all block schemas
 export { GetTextBlockSchema } from './GetTextBlock';
@@ -56,6 +57,7 @@ export { ExportDataBlockSchema } from './ExportDataBlock';
 export { NetworkCatchBlockSchema } from './NetworkCatchBlock';
 export { MarkBorderBlockSchema } from './MarkBorderBlock';
 export { ApplyLocaleBlockSchema } from './ApplyLocaleBlock';
+export { PasteValueBlockSchema } from './PasteValueBlock';
 
 // Import block handlers and types
 import { handlerGetText, GetTextBlock, validateGetTextBlock } from './GetTextBlock';
@@ -126,6 +128,11 @@ import {
   ApplyLocaleBlock,
   validateApplyLocaleBlock,
 } from './ApplyLocaleBlock';
+import {
+  handlerPasteValue,
+  PasteValueBlock,
+  validatePasteValueBlock,
+} from './PasteValueBlock';
 import { Block, BlockResult } from './types';
 import { GetTextBlockSchema } from './GetTextBlock';
 import { GetAttributeValueBlockSchema } from './GetAttributeValueBlock';
@@ -149,6 +156,7 @@ import { ExportDataBlockSchema } from './ExportDataBlock';
 import { NetworkCatchBlockSchema } from './NetworkCatchBlock';
 import { MarkBorderBlockSchema } from './MarkBorderBlock';
 import { ApplyLocaleBlockSchema } from './ApplyLocaleBlock';
+import { PasteValueBlockSchema } from './PasteValueBlock';
 
 // All block schemas mapped by block name
 export const AllBlockSchemas = {
@@ -174,6 +182,7 @@ export const AllBlockSchemas = {
   'network-catch': NetworkCatchBlockSchema,
   'mark-border': MarkBorderBlockSchema,
   'apply-locale': ApplyLocaleBlockSchema,
+  'paste-value': PasteValueBlockSchema,
 } as const;
 
 export class BlockHandler {
@@ -206,6 +215,7 @@ export class BlockHandler {
   static executeBlock(block: NetworkCatchBlock): Promise<BlockResult<any>>;
   static executeBlock(block: MarkBorderBlock): Promise<BlockResult<boolean>>;
   static executeBlock(block: ApplyLocaleBlock): Promise<BlockResult<any>>;
+  static executeBlock(block: PasteValueBlock): Promise<BlockResult<boolean>>;
   static executeBlock(block: Block): Promise<BlockResult>;
 
   // Implementation
@@ -219,6 +229,7 @@ export class BlockHandler {
       | NetworkCatchBlock
       | MarkBorderBlock
       | ApplyLocaleBlock
+      | PasteValueBlock
       | KeypressBlock
       | WaitBlock
       | WaitForConditionBlock
@@ -334,6 +345,11 @@ export class BlockHandler {
         case 'apply-locale': {
           const validatedBlock = validateApplyLocaleBlock(block);
           return await handlerApplyLocale(validatedBlock);
+        }
+
+        case 'paste-value': {
+          const validatedBlock = validatePasteValueBlock(block);
+          return await handlerPasteValue(validatedBlock);
         }
 
         default:
