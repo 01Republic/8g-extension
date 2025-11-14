@@ -80,7 +80,18 @@ async function pasteValueToElement(element: HTMLElement, value: string): Promise
     // 기존 값 선택 (전체 선택)
     element.select();
 
-    // 4. ClipboardEvent를 사용하여 paste 이벤트 발생
+    // 4. 선택된 텍스트를 새 값으로 교체 (먼저 값을 설정)
+    const start = element.selectionStart || 0;
+    const end = element.selectionEnd || 0;
+    const currentValue = element.value;
+    const newValue = currentValue.substring(0, start) + value + currentValue.substring(end);
+    element.value = newValue;
+
+    // 커서 위치 조정
+    const newCursorPosition = start + value.length;
+    element.setSelectionRange(newCursorPosition, newCursorPosition);
+
+    // 5. ClipboardEvent를 사용하여 paste 이벤트 발생 (값 설정 후 알림용)
     const pasteEvent = new ClipboardEvent('paste', {
       bubbles: true,
       cancelable: true,
@@ -92,24 +103,10 @@ async function pasteValueToElement(element: HTMLElement, value: string): Promise
       pasteEvent.clipboardData.setData('text/plain', value);
     }
 
-    // paste 이벤트 발생
-    const pasteDispatched = element.dispatchEvent(pasteEvent);
+    // paste 이벤트 발생 (값은 이미 설정했으므로 알림용)
+    element.dispatchEvent(pasteEvent);
 
-    // paste 이벤트가 취소되지 않았다면 값을 설정
-    if (pasteDispatched) {
-      // 선택된 텍스트를 새 값으로 교체
-      const start = element.selectionStart || 0;
-      const end = element.selectionEnd || 0;
-      const currentValue = element.value;
-      const newValue = currentValue.substring(0, start) + value + currentValue.substring(end);
-      element.value = newValue;
-
-      // 커서 위치 조정
-      const newCursorPosition = start + value.length;
-      element.setSelectionRange(newCursorPosition, newCursorPosition);
-    }
-
-    // 5. input과 change 이벤트 발생
+    // 6. input과 change 이벤트 발생
     element.dispatchEvent(new Event('input', { bubbles: true }));
     element.dispatchEvent(new Event('change', { bubbles: true }));
   } else if (element.isContentEditable) {
@@ -127,7 +124,7 @@ async function pasteValueToElement(element: HTMLElement, value: string): Promise
       element.textContent = value;
     }
 
-    // paste 이벤트 발생
+    // paste 이벤트 발생 (값 설정 후 알림용)
     const pasteEvent = new ClipboardEvent('paste', {
       bubbles: true,
       cancelable: true,
@@ -141,6 +138,7 @@ async function pasteValueToElement(element: HTMLElement, value: string): Promise
     element.dispatchEvent(pasteEvent);
     element.dispatchEvent(new Event('input', { bubbles: true }));
   } else {
+    console.log('element is other', element);
     // 일반 요소인 경우 value 속성이나 textContent 사용
     if ('value' in element && typeof (element as any).value === 'string') {
       (element as any).value = value;
