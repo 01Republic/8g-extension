@@ -217,7 +217,6 @@ async function simulateClickElement(element: HTMLElement): Promise<void> {
   const rect = element.getBoundingClientRect();
   const centerX = rect.left + rect.width / 2;
   const centerY = rect.top + rect.height / 2;
-  console.log(element);
 
   // 4. Use CDP to click via background service (isTrusted: true)
   // Note: tabId will be automatically detected by background service from sender.tab.id
