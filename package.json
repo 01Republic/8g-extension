@@ -1,7 +1,7 @@
 {
   "name": "scordi-extension",
   "type": "module",
-  "version": "1.17.21",
+  "version": "1.17.22",
   "private": false,
   "main": "./dist/sdk/index.cjs",
   "module": "./dist/sdk/index.js",

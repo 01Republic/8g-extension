@@ -93,7 +93,7 @@ export class WorkflowStep {
 }
 
 export class Workflow {
-  version!: '1.0';
+  version!: string;
   id?: string;
   title?: string;
   description?: string;
