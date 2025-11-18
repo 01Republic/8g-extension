@@ -1,3 +1,9 @@
+# [1.18.0](https://github.com/01Republic/8g-extension/compare/v1.17.23...v1.18.0) (2025-11-19)
+
+### Features
+
+- Add roles field to WorkspaceDetailItemDto ([ae85a1e](https://github.com/01Republic/8g-extension/commit/ae85a1e))
+
 # [1.8.0](https://github.com/01Republic/8g-extension/compare/v1.7.4...v1.8.0) (2025-10-02)
 
 ### Features
