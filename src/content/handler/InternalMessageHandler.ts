@@ -3,6 +3,9 @@ import {
   isExecuteBlockMessage,
   isShowExecutionStatusMessage,
   isHideExecutionStatusMessage,
+  isShowConfirmationMessage,
+  isCloseTabMessage,
+  isTriggerConfirmationMessage,
 } from '@/types/internal-messages';
 import { MessageKernel } from '../kernel/MessageKernel';
 
@@ -42,6 +45,59 @@ export class InternalMessageHandler {
       if (isHideExecutionStatusMessage(message)) {
         console.log('[InternalMessageHandler] Hide execution status');
         window.dispatchEvent(new CustomEvent('8g-hide-execution-status'));
+        sendResponse({ success: true });
+        return false;
+      }
+
+      if (isShowConfirmationMessage(message)) {
+        console.log('[InternalMessageHandler] Show confirmation:', message.data);
+        const { message: msg, buttonText, position, parentTabId } = message.data;
+
+        // 확인 버튼 클릭 시 탭을 닫고 원래 탭으로 포커스하는 콜백 생성
+        const onConfirm = () => {
+          console.log('[InternalMessageHandler] User confirmed, closing tab and focusing parent:', parentTabId);
+          
+          // Background에 탭 닫기 요청
+          chrome.runtime.sendMessage({
+            type: 'CLOSE_TAB_AND_FOCUS_PARENT',
+            data: { parentTabId },
+          });
+
+          // UI 숨김
+          window.dispatchEvent(new CustomEvent('8g-hide-confirmation-ui'));
+        };
+
+        window.dispatchEvent(
+          new CustomEvent('8g-show-confirmation-ui', {
+            detail: {
+              message: msg,
+              buttonText,
+              position: position || 'bottom-right',
+              onConfirm,
+            },
+          })
+        );
+        sendResponse({ success: true });
+        return false;
+      }
+
+      if (isCloseTabMessage(message)) {
+        console.log('[InternalMessageHandler] Close tab message received');
+        // Content script에서는 직접 탭을 닫을 수 없으므로 background로 요청
+        const { parentTabId } = message.data;
+        chrome.runtime.sendMessage({
+          type: 'CLOSE_TAB_AND_FOCUS_PARENT',
+          data: { parentTabId },
+        });
+        sendResponse({ success: true });
+        return false;
+      }
+
+      if (isTriggerConfirmationMessage(message)) {
+        console.log('[InternalMessageHandler] Trigger confirmation message received');
+        // wait-for-condition 블록의 확인 이벤트 트리거
+        // 이 이벤트는 wait-for-condition 블록에서 대기 중인 onConfirm 콜백을 호출합니다
+        window.dispatchEvent(new CustomEvent('8g-trigger-confirmation'));
         sendResponse({ success: true });
         return false;
       }

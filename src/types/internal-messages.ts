@@ -92,6 +92,28 @@ export interface HideExecutionStatusMessage {
   type: 'HIDE_EXECUTION_STATUS';
 }
 
+export interface ShowConfirmationMessage {
+  type: 'SHOW_CONFIRMATION';
+  data: {
+    message: string;
+    buttonText: string;
+    position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+    parentTabId: number; // 원래 탭으로 돌아가기 위한 부모 탭 ID
+  };
+}
+
+export interface CloseTabMessage {
+  type: 'CLOSE_TAB';
+  data: {
+    parentTabId?: number; // 닫은 후 포커스할 부모 탭 ID
+  };
+}
+
+export interface TriggerConfirmationMessage {
+  type: 'TRIGGER_CONFIRMATION';
+  data: {};
+}
+
 // Internal Message Union Types
 export type BackgroundMessage =
   | CollectWorkflowNewTabMessage
@@ -103,7 +125,10 @@ export type BackgroundMessage =
 export type ContentMessage =
   | ExecuteBlockMessage
   | ShowExecutionStatusMessage
-  | HideExecutionStatusMessage;
+  | HideExecutionStatusMessage
+  | ShowConfirmationMessage
+  | CloseTabMessage
+  | TriggerConfirmationMessage;
 
 // Response Types for Internal Communication
 export interface ErrorResponse {
@@ -146,6 +171,18 @@ export function isShowExecutionStatusMessage(message: any): message is ShowExecu
 
 export function isHideExecutionStatusMessage(message: any): message is HideExecutionStatusMessage {
   return message && message.type === 'HIDE_EXECUTION_STATUS';
+}
+
+export function isShowConfirmationMessage(message: any): message is ShowConfirmationMessage {
+  return message && message.type === 'SHOW_CONFIRMATION';
+}
+
+export function isCloseTabMessage(message: any): message is CloseTabMessage {
+  return message && message.type === 'CLOSE_TAB';
+}
+
+export function isTriggerConfirmationMessage(message: any): message is TriggerConfirmationMessage {
+  return message && message.type === 'TRIGGER_CONFIRMATION';
 }
 
 export function isErrorResponse(response: any): response is ErrorResponse {

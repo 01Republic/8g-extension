@@ -111,6 +111,23 @@ export class BackgroundManager {
         return true;
       }
 
+      if ((message as any).type === 'CLOSE_TAB_AND_FOCUS_PARENT') {
+        const tabId = sender.tab?.id;
+        const parentTabId = (message as any).data?.parentTabId;
+        
+        if (!tabId) {
+          sendResponse({
+            $isError: true,
+            message: 'Tab ID not found in sender',
+            data: null,
+          } as ErrorResponse);
+          return false;
+        }
+
+        this.handleAsyncCloseTabAndFocusParent(tabId, parentTabId, sendResponse);
+        return true;
+      }
+
       sendResponse({ $isError: true, message: 'Invalid message type', data: {} } as ErrorResponse);
       return false;
     });
@@ -166,6 +183,103 @@ export class BackgroundManager {
       sendResponse({
         $isError: true,
         message: error instanceof Error ? error.message : 'Unknown error in export data',
+        data: null,
+      } as ErrorResponse);
+    }
+  }
+
+  // 탭 닫기 및 부모 탭 포커스 처리 (단계적으로 올라가면서 정리)
+  private async handleAsyncCloseTabAndFocusParent(
+    tabId: number,
+    parentTabId: number | undefined,
+    sendResponse: (response: any) => void
+  ) {
+    try {
+      console.log('[BackgroundManager] Closing tab and focusing parent:', { tabId, parentTabId });
+      
+      // 실제 워크플로우가 실행 중인 탭 찾기 (wait-for-condition 블록이 대기 중인 탭)
+      const executingWorkflowTabId = this.tabManager.findExecutingWorkflowTab(tabId);
+      
+      // 탭 체인을 따라 올라가면서 단계적으로 정리
+      // 예: 자식2 -> 자식 -> 부모
+      let currentTabId: number | undefined = tabId;
+      const tabsToClose: number[] = [];
+      const visited = new Set<number>();
+      
+      // 워크플로우 실행 중인 탭까지 올라가면서 닫을 탭들 수집
+      while (currentTabId) {
+        if (visited.has(currentTabId)) break;
+        visited.add(currentTabId);
+        
+        // 워크플로우 실행 중인 탭은 닫지 않음
+        // 단, 추적 중인 자식 탭이면서 동시에 executingWorkflowTabs에 있는 경우는 제외
+        // (자식 탭은 Execution Status만 표시하고 실제로는 워크플로우를 실행하지 않음)
+        const isExecutingWorkflow = this.tabManager.isExecutingWorkflow(currentTabId);
+        const isTrackedChild = this.tabManager.isTrackedChildTab(currentTabId);
+        
+        if (isExecutingWorkflow && !isTrackedChild) {
+          console.log(
+            `[BackgroundManager] Reached executing workflow tab ${currentTabId}, stopping collection`
+          );
+          break;
+        }
+        
+        // 추적 중인 자식 탭이거나 워크플로우 실행 중이 아닌 탭은 닫을 목록에 추가
+        tabsToClose.push(currentTabId);
+        currentTabId = this.tabManager.getDirectParentTabId(currentTabId);
+      }
+      
+      console.log('[BackgroundManager] Tabs to close in order:', tabsToClose);
+      
+      // 역순으로 닫기 (가장 깊은 탭부터)
+      // 각 탭을 닫을 때마다 직접 부모로 포커스 이동
+      for (let i = tabsToClose.length - 1; i >= 0; i--) {
+        const tabToClose = tabsToClose[i];
+        try {
+          console.log(
+            `[BackgroundManager] Closing tab ${tabToClose} (${tabsToClose.length - i}/${tabsToClose.length})`
+          );
+          // 각 탭을 닫으면 직접 부모로 포커스 이동
+          await this.tabManager.closeTab(tabToClose);
+          
+          // 짧은 딜레이로 사용자가 단계적으로 올라가는 것을 볼 수 있도록
+          if (i > 0) {
+            await new Promise((resolve) => setTimeout(resolve, 300));
+          }
+        } catch (error) {
+          console.warn(`[BackgroundManager] Failed to close tab ${tabToClose}:`, error);
+        }
+      }
+      
+      // 실제 워크플로우 실행 중인 탭에 확인 이벤트 전달
+      if (executingWorkflowTabId && executingWorkflowTabId !== tabId) {
+        console.log(
+          `[BackgroundManager] Sending confirmation event to executing workflow tab: ${executingWorkflowTabId}`
+        );
+        try {
+          // wait-for-condition 블록에서 대기 중인 확인 이벤트 트리거
+          await chrome.tabs.sendMessage(executingWorkflowTabId, {
+            type: 'TRIGGER_CONFIRMATION',
+            data: {},
+          });
+        } catch (error) {
+          console.warn(
+            `[BackgroundManager] Failed to send confirmation to workflow tab ${executingWorkflowTabId}:`,
+            error
+          );
+        }
+      } else {
+        console.log(
+          `[BackgroundManager] Skipping confirmation event: executingWorkflowTabId=${executingWorkflowTabId}, tabId=${tabId}`
+        );
+      }
+      
+      sendResponse({ success: true });
+    } catch (error) {
+      console.error('[BackgroundManager] Error closing tab:', error);
+      sendResponse({
+        $isError: true,
+        message: error instanceof Error ? error.message : 'Failed to close tab',
         data: null,
       } as ErrorResponse);
     }

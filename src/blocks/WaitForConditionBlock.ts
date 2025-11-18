@@ -231,7 +231,7 @@ export async function handlerWaitForCondition(
       let intervalId: NodeJS.Timeout | null = null;
       let resolved = false;
 
-      const cleanup = () => {
+      let cleanup = () => {
         if (intervalId) {
           clearInterval(intervalId);
           intervalId = null;
@@ -278,6 +278,38 @@ export async function handlerWaitForCondition(
             message: 'User confirmed completion',
           });
         });
+      }
+
+      // 외부에서 확인 이벤트를 트리거할 수 있도록 이벤트 리스너 추가
+      // (예: 새 탭에서 확인 버튼을 누른 경우)
+      if ((mode === 'manual' || mode === 'auto-or-manual') && hasManualConfirmation && confirmResolve) {
+        const handleTriggerConfirmation = (event: Event) => {
+          console.log('[WaitForCondition] External confirmation triggered via event', {
+            eventType: event.type,
+            target: event.target,
+            currentTarget: event.currentTarget,
+            windowLocation: window.location.href,
+          });
+          
+          // 이미 resolve되었으면 무시
+          if (resolved) {
+            console.log('[WaitForCondition] Already resolved, ignoring trigger');
+            return;
+          }
+          
+          if (confirmResolve) {
+            confirmResolve();
+          }
+        };
+
+        window.addEventListener('8g-trigger-confirmation', handleTriggerConfirmation);
+
+        // cleanup 시 리스너 제거
+        const originalCleanup = cleanup;
+        cleanup = () => {
+          window.removeEventListener('8g-trigger-confirmation', handleTriggerConfirmation);
+          originalCleanup();
+        };
       }
 
       // manual 전용 모드일 경우 확인 또는 타임아웃 대기
