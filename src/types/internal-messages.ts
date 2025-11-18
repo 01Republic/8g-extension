@@ -85,6 +85,9 @@ export interface ShowExecutionStatusMessage {
   type: 'SHOW_EXECUTION_STATUS';
   data: {
     message?: string;
+    statusType?: 'loading' | 'success' | 'error';
+    icon?: 'login' | 'download' | 'mail' | 'default';
+    position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
   };
 }
 
@@ -97,7 +100,10 @@ export interface ShowConfirmationMessage {
   data: {
     message: string;
     buttonText: string;
-    position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+    position?: 'top' | 'bottom';
+    variant?: 'default' | 'warning' | 'info';
+    icon?: 'shield' | 'click' | 'alert';
+    showClose?: boolean;
     parentTabId: number; // 원래 탭으로 돌아가기 위한 부모 탭 ID
   };
 }

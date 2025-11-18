@@ -108,8 +108,8 @@ export class TabManager {
             // Execution Status 표시 (부모와 동일한 메시지, 하지만 executingWorkflowTabs에는 등록하지 않음)
             await this.showExecutionStatus(tabId, executionMessage, false);
             
-            // ConfirmationUI 표시
-            await this.showConfirmation(tabId, parentTabId);
+            // ConfirmationUI 표시 (상단에 표시)
+            await this.showConfirmation(tabId, parentTabId, undefined, undefined, 'top');
           }, 1000);
         }
       }
@@ -283,7 +283,10 @@ export class TabManager {
   async showExecutionStatus(
     tabId: number,
     message?: string,
-    registerAsExecuting: boolean = true
+    registerAsExecuting: boolean = true,
+    statusType?: 'loading' | 'success' | 'error',
+    icon?: 'login' | 'download' | 'mail' | 'default',
+    position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left'
   ): Promise<void> {
     if (this.isTabClosed(tabId)) {
       console.log('[TabManager] Cannot show execution status - tab was closed:', tabId);
@@ -299,12 +302,23 @@ export class TabManager {
 
     const statusMessage: ShowExecutionStatusMessage = {
       type: 'SHOW_EXECUTION_STATUS',
-      data: { message: displayMessage },
+      data: {
+        message: displayMessage,
+        statusType: statusType || 'loading',
+        icon: icon || 'default',
+        position: position || 'bottom-right',
+      },
     };
 
     try {
       await chrome.tabs.sendMessage(tabId, statusMessage);
-      console.log('[TabManager] Execution status shown', { tabId, registerAsExecuting });
+      console.log('[TabManager] Execution status shown', {
+        tabId,
+        registerAsExecuting,
+        statusType,
+        icon,
+        position,
+      });
     } catch (error) {
       console.warn('[TabManager] Failed to show execution status:', error);
     }
@@ -336,7 +350,10 @@ export class TabManager {
     parentTabId: number,
     message?: string,
     buttonText?: string,
-    position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
+    position?: 'top' | 'bottom',
+    variant?: 'default' | 'warning' | 'info',
+    icon?: 'shield' | 'click' | 'alert',
+    showClose?: boolean
   ): Promise<void> {
     if (this.isTabClosed(tabId)) {
       console.log('[TabManager] Cannot show confirmation - tab was closed:', tabId);
@@ -348,14 +365,23 @@ export class TabManager {
       data: {
         message: message || '로그인 완료 후 확인 버튼을 클릭해주세요.',
         buttonText: buttonText || '완료',
-        position: position || 'bottom-right',
+        position: position || 'top',
+        variant: variant || 'default',
+        icon: icon || 'alert',
+        showClose: showClose !== undefined ? showClose : true,
         parentTabId,
       },
     };
 
     try {
       await chrome.tabs.sendMessage(tabId, confirmationMessage);
-      console.log('[TabManager] Confirmation UI shown on child tab:', tabId);
+      console.log('[TabManager] Confirmation UI shown on child tab:', {
+        tabId,
+        position,
+        variant,
+        icon,
+        showClose,
+      });
     } catch (error) {
       console.warn('[TabManager] Failed to show confirmation UI:', error);
     }

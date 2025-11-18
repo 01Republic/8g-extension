@@ -35,6 +35,9 @@ export class InternalMessageHandler {
           new CustomEvent('8g-show-execution-status', {
             detail: {
               message: message.data.message || '워크플로우 실행 중',
+              statusType: message.data.statusType || 'loading',
+              icon: message.data.icon || 'default',
+              position: message.data.position || 'bottom-right',
             },
           })
         );
@@ -51,7 +54,15 @@ export class InternalMessageHandler {
 
       if (isShowConfirmationMessage(message)) {
         console.log('[InternalMessageHandler] Show confirmation:', message.data);
-        const { message: msg, buttonText, position, parentTabId } = message.data;
+        const {
+          message: msg,
+          buttonText,
+          position = 'top',
+          variant = 'default',
+          icon = 'alert',
+          showClose = true,
+          parentTabId,
+        } = message.data;
 
         // 확인 버튼 클릭 시 탭을 닫고 원래 탭으로 포커스하는 콜백 생성
         const onConfirm = () => {
@@ -67,13 +78,23 @@ export class InternalMessageHandler {
           window.dispatchEvent(new CustomEvent('8g-hide-confirmation-ui'));
         };
 
+        // 닫기 버튼 클릭 시 콜백
+        const onClose = () => {
+          console.log('[InternalMessageHandler] User closed confirmation UI');
+          window.dispatchEvent(new CustomEvent('8g-hide-confirmation-ui'));
+        };
+
         window.dispatchEvent(
           new CustomEvent('8g-show-confirmation-ui', {
             detail: {
               message: msg,
               buttonText,
-              position: position || 'bottom-right',
+              position,
+              variant,
+              icon,
+              showClose,
               onConfirm,
+              onClose,
             },
           })
         );
