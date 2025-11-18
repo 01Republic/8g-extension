@@ -49,6 +49,8 @@ export const WorkspaceDetailItemSchema = z.object({
   billingEmail: z.string(),
   // 조직 메인 페이지 URL
   orgPageUrl: z.string(),
+  // 워크스페이스 역할 목록
+  roles: z.array(z.string()),
 });
 
 export type WorkspaceDetailItemDto = z.infer<typeof WorkspaceDetailItemSchema>;
