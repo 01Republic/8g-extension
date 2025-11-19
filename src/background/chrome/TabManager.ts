@@ -312,6 +312,21 @@ export class TabManager {
 
     try {
       await chrome.tabs.sendMessage(tabId, statusMessage);
+      
+      // 워크플로우 실행 시작 시 초록색 ConfirmationUI도 함께 표시
+      if (registerAsExecuting) {
+        await this.showConfirmation(
+          tabId,
+          undefined, // parentTabId 없음 (워크플로우 실행 중인 메인 탭)
+          '데이터를 수집하고 있습니다. 잠시만 기다려 주세요.',
+          undefined, // buttonText 없음 (단순 정보 표시)
+          'top',
+          'success',
+          'shield',
+          false // showClose false (워크플로우 실행 중에는 닫을 수 없음)
+        );
+      }
+      
       console.log('[TabManager] Execution status shown', {
         tabId,
         registerAsExecuting,
@@ -347,11 +362,11 @@ export class TabManager {
 
   async showConfirmation(
     tabId: number,
-    parentTabId: number,
+    parentTabId: number | undefined,
     message?: string,
     buttonText?: string,
     position?: 'top' | 'bottom',
-    variant?: 'default' | 'warning' | 'info',
+    variant?: 'default' | 'warning' | 'info' | 'success',
     icon?: 'shield' | 'click' | 'alert',
     showClose?: boolean
   ): Promise<void> {
@@ -364,7 +379,7 @@ export class TabManager {
       type: 'SHOW_CONFIRMATION',
       data: {
         message: message || '로그인 완료 후 확인 버튼을 클릭해주세요.',
-        buttonText: buttonText || '완료',
+        buttonText: buttonText, // undefined일 수 있음 (워크플로우 실행 중)
         position: position || 'top',
         variant: variant || 'default',
         icon: icon || 'alert',

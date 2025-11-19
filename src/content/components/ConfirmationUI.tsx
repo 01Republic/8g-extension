@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-export type ConfirmationUIVariant = 'default' | 'warning' | 'info';
+export type ConfirmationUIVariant = 'default' | 'warning' | 'info' | 'success';
 export type ConfirmationUIIcon = 'shield' | 'click' | 'alert';
 
 interface ConfirmationUIProps {
   message: string;
-  buttonText: string;
+  buttonText?: string; // 워크플로우 실행 중에는 버튼 없이 정보만 표시
   position: 'top' | 'bottom';
   variant?: ConfirmationUIVariant;
   icon?: ConfirmationUIIcon;
   showClose?: boolean;
-  onConfirm: () => void;
+  onConfirm?: () => void; // buttonText가 없으면 onConfirm도 없을 수 있음
   onClose?: () => void;
   visible: boolean;
 }
@@ -58,7 +58,9 @@ export function ConfirmationUI({
   const handleConfirm = () => {
     setIsAnimating(false);
     setTimeout(() => {
-      onConfirm();
+      if (onConfirm) {
+        onConfirm();
+      }
     }, 200);
   };
 
@@ -142,6 +144,12 @@ export function ConfirmationUI({
         iconColor: '#ffffff',
         textColor: '#ffffff',
         descColor: '#f3e8ff', // purple-50
+      },
+      success: {
+        bg: '#10b981', // green-500
+        iconColor: '#ffffff',
+        textColor: '#ffffff',
+        descColor: '#d1fae5', // green-50
       },
     };
     return variants[variant];
@@ -314,7 +322,7 @@ export function ConfirmationUIContainer() {
   const [uiState, setUiState] = useState<{
     visible: boolean;
     message: string;
-    buttonText: string;
+    buttonText?: string;
     position: 'top' | 'bottom';
     variant: ConfirmationUIVariant;
     icon: ConfirmationUIIcon;
@@ -324,7 +332,7 @@ export function ConfirmationUIContainer() {
   }>({
     visible: false,
     message: '',
-    buttonText: '',
+    buttonText: undefined,
     position: 'top',
     variant: 'default',
     icon: 'alert',

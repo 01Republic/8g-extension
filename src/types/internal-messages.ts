@@ -99,12 +99,12 @@ export interface ShowConfirmationMessage {
   type: 'SHOW_CONFIRMATION';
   data: {
     message: string;
-    buttonText: string;
+    buttonText?: string; // 워크플로우 실행 중에는 버튼 없이 정보만 표시
     position?: 'top' | 'bottom';
-    variant?: 'default' | 'warning' | 'info';
+    variant?: 'default' | 'warning' | 'info' | 'success';
     icon?: 'shield' | 'click' | 'alert';
     showClose?: boolean;
-    parentTabId: number; // 원래 탭으로 돌아가기 위한 부모 탭 ID
+    parentTabId?: number; // 원래 탭으로 돌아가기 위한 부모 탭 ID (워크플로우 실행 시에는 없을 수 있음)
   };
 }
 

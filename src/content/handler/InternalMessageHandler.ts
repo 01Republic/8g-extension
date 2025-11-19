@@ -48,6 +48,8 @@ export class InternalMessageHandler {
       if (isHideExecutionStatusMessage(message)) {
         console.log('[InternalMessageHandler] Hide execution status');
         window.dispatchEvent(new CustomEvent('8g-hide-execution-status'));
+        // 워크플로우 실행 종료 시 초록색 ConfirmationUI도 함께 숨김
+        window.dispatchEvent(new CustomEvent('8g-hide-confirmation-ui'));
         sendResponse({ success: true });
         return false;
       }
@@ -65,18 +67,21 @@ export class InternalMessageHandler {
         } = message.data;
 
         // 확인 버튼 클릭 시 탭을 닫고 원래 탭으로 포커스하는 콜백 생성
-        const onConfirm = () => {
-          console.log('[InternalMessageHandler] User confirmed, closing tab and focusing parent:', parentTabId);
-          
-          // Background에 탭 닫기 요청
-          chrome.runtime.sendMessage({
-            type: 'CLOSE_TAB_AND_FOCUS_PARENT',
-            data: { parentTabId },
-          });
+        // buttonText가 있을 때만 onConfirm 제공 (워크플로우 실행 중에는 버튼이 없음)
+        const onConfirm = buttonText && parentTabId
+          ? () => {
+              console.log('[InternalMessageHandler] User confirmed, closing tab and focusing parent:', parentTabId);
+              
+              // Background에 탭 닫기 요청
+              chrome.runtime.sendMessage({
+                type: 'CLOSE_TAB_AND_FOCUS_PARENT',
+                data: { parentTabId },
+              });
 
-          // UI 숨김
-          window.dispatchEvent(new CustomEvent('8g-hide-confirmation-ui'));
-        };
+              // UI 숨김
+              window.dispatchEvent(new CustomEvent('8g-hide-confirmation-ui'));
+            }
+          : undefined;
 
         // 닫기 버튼 클릭 시 콜백
         const onClose = () => {
