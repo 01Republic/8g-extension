@@ -231,9 +231,6 @@ async function simulateClickElement(element: HTMLElement): Promise<void> {
 
     if (response && !response.$isError) {
       console.log('[EventClick] CDP click successful:', response);
-      // CDP 클릭 후 요소에 대한 click 이벤트를 수동으로 발생시켜야 함
-      // CDP는 좌표 기반이므로 특정 요소의 이벤트 리스너가 트리거되지 않을 수 있음
-      dispatchClickEvent(element);
     } else {
       throw new Error(response?.message || 'CDP click failed');
     }
