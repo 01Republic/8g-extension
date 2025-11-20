@@ -8,6 +8,7 @@ import {
   isTriggerConfirmationMessage,
 } from '@/types/internal-messages';
 import { MessageKernel } from '../kernel/MessageKernel';
+import { performStatusCheck } from '@/blocks/CheckStatusBlock';
 
 /**
  * Chrome Extension 내부 메시지 핸들러
@@ -128,7 +129,41 @@ export class InternalMessageHandler {
         return false;
       }
 
+      // Check status message handler
+      if ((message as any).type === 'CHECK_STATUS') {
+        console.log('[InternalMessageHandler] Check status message received:', (message as any).checkType);
+        const result = performStatusCheck((message as any).checkType);
+        sendResponse(result);
+        return false;
+      }
+
+      // Get account info message handler
+      if ((message as any).type === 'GET_ACCOUNT_INFO') {
+        console.log('[InternalMessageHandler] Get account info message received');
+        const accountInfo = this.extractAccountInfo();
+        sendResponse(accountInfo);
+        return false;
+      }
+
       return false;
     });
+  }
+
+  /**
+   * 현재 페이지에서 계정 정보 추출
+   */
+  private extractAccountInfo(): any {
+    const emailElement = document.querySelector('[data-email]') || 
+                         document.querySelector('.user-email') ||
+                         document.querySelector('input[type="email"][disabled]');
+    
+    const nameElement = document.querySelector('[data-name]') || 
+                        document.querySelector('.user-name') ||
+                        document.querySelector('.profile-name');
+
+    return {
+      email: emailElement?.textContent || (emailElement as HTMLInputElement)?.value || null,
+      name: nameElement?.textContent || null,
+    };
   }
 }
