@@ -39,6 +39,9 @@ export interface CheckStatusBlock extends Omit<Block, 'selector' | 'findBy' | 'o
     retryable?: boolean;
     autoOpen?: boolean; // 향후 Chrome API 개선 시 자동 열기 옵션
     customValidator?: string;
+    autoClick?: boolean; // CDP 자동 클릭 활성화
+    clickDelay?: number; // 클릭 전 대기 시간 (ms)
+    fallbackToManual?: boolean; // 자동 클릭 실패 시 수동 모드
   };
 }
 
@@ -60,6 +63,9 @@ export const CheckStatusBlockSchema = z.object({
       retryable: z.boolean().optional(),
       autoOpen: z.boolean().optional(),
       customValidator: z.string().optional(),
+      autoClick: z.boolean().optional(),
+      clickDelay: z.number().optional(),
+      fallbackToManual: z.boolean().optional(),
     })
     .optional(),
 });
@@ -97,8 +103,56 @@ export async function handlerCheckStatus(
         title: block.title,
         description: block.description,
         options: block.options,
+        autoClick: block.options?.autoClick,
       },
     }));
+
+    // Auto-click 처리
+    if (block.options?.autoClick) {
+      const clickDelay = block.options.clickDelay || 500;
+      console.log(`[CheckStatusBlock] Auto-click enabled, waiting ${clickDelay}ms before clicking`);
+      
+      // 버튼 렌더링 대기
+      await new Promise(resolve => setTimeout(resolve, clickDelay));
+      
+      // CDP 클릭 좌표 계산
+      const viewport = {
+        width: window.innerWidth,
+        height: window.innerHeight
+      };
+      
+      // 고정 위치에서 버튼 중심점 계산 (버튼 크기: 60x60px)
+      const buttonSize = 60;
+      const position = { right: 60, bottom: 200 }; // FIXED_POSITION과 동일
+      const clickCoords = {
+        x: viewport.width - position.right - (buttonSize / 2),
+        y: viewport.height - position.bottom - (buttonSize / 2)
+      };
+      
+      console.log(`[CheckStatusBlock] Sending CDP click to (${clickCoords.x}, ${clickCoords.y})`);
+      
+      try {
+        // CDP 클릭 요청
+        await chrome.runtime.sendMessage({
+          type: 'CDP_CLICK',
+          data: {
+            x: clickCoords.x,
+            y: clickCoords.y,
+            button: 'left',
+          }
+        });
+        
+        console.log('[CheckStatusBlock] CDP click sent successfully');
+      } catch (error) {
+        console.error('[CheckStatusBlock] CDP click failed:', error);
+        
+        // 폴백 처리
+        if (!block.options.fallbackToManual) {
+          throw new Error('Auto-click failed and no fallback enabled');
+        }
+        console.log('[CheckStatusBlock] Falling back to manual mode');
+      }
+    }
 
     // Background와 통신하여 Side Panel이 열리고 결과가 올 때까지 대기
     const result = await new Promise<any>((resolve, reject) => {

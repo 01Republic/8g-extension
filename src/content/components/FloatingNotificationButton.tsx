@@ -9,6 +9,9 @@ export interface FloatingNotificationButtonProps {
   urgency?: NotificationUrgency;
   onClick: () => void;
   onDismiss?: () => void;
+  fixedPosition?: boolean;
+  disableDrag?: boolean;
+  autoClickTarget?: boolean;
 }
 
 const FloatingNotificationButton: React.FC<FloatingNotificationButtonProps> = ({
@@ -18,16 +21,24 @@ const FloatingNotificationButton: React.FC<FloatingNotificationButtonProps> = ({
   urgency = 'medium',
   onClick,
   onDismiss,
+  fixedPosition = false,
+  disableDrag = false,
+  autoClickTarget = false,
 }) => {
   const [isVisible, setIsVisible] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const [position, setPosition] = useState({ x: 30, y: 150 }); // StatusUI 아래 기본 위치
+  
+  // Fixed position for CDP auto-click
+  const FIXED_POSITION = { x: 60, y: 200 };
+  const [position, setPosition] = useState(fixedPosition ? FIXED_POSITION : { x: 30, y: 150 });
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const buttonRef = useRef<HTMLDivElement>(null);
 
-  // 자동 위치 조정 (다른 UI와 충돌 방지)
+  // 자동 위치 조정 (다른 UI와 충돌 방지) - fixed position이 아닐 때만
   useEffect(() => {
+    if (fixedPosition) return;
+    
     const checkCollision = () => {
       // StatusUI 또는 다른 플로팅 요소와 충돌 체크
       const existingElements = document.querySelectorAll('[data-floating-element]');
@@ -44,10 +55,12 @@ const FloatingNotificationButton: React.FC<FloatingNotificationButtonProps> = ({
     };
 
     checkCollision();
-  }, []);
+  }, [fixedPosition]);
 
   // 드래그 핸들러
   const handleMouseDown = (e: React.MouseEvent) => {
+    if (disableDrag || fixedPosition) return;
+    
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
@@ -135,8 +148,8 @@ const FloatingNotificationButton: React.FC<FloatingNotificationButtonProps> = ({
     position: 'fixed',
     right: `${position.x}px`,
     bottom: `${position.y}px`,
-    zIndex: 2147483645, // StatusUI보다 낮게
-    cursor: isDragging ? 'grabbing' : 'grab',
+    zIndex: 2147483647, // 최상위 z-index for CDP auto-click
+    cursor: (disableDrag || fixedPosition) ? 'pointer' : (isDragging ? 'grabbing' : 'grab'),
     userSelect: 'none',
     transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
   };
@@ -286,6 +299,9 @@ const FloatingNotificationButton: React.FC<FloatingNotificationButtonProps> = ({
         ref={buttonRef}
         data-floating-element="notification"
         data-notification-id={id}
+        data-auto-click-target={autoClickTarget ? "true" : "false"}
+        data-position-x={position.x}
+        data-position-y={position.y}
         style={containerStyle}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}

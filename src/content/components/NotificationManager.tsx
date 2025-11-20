@@ -11,6 +11,7 @@ export interface NotificationData {
   title: string;
   description?: string;
   options?: any;
+  autoClick?: boolean;
 }
 
 interface NotificationManagerProps {}
@@ -146,6 +147,9 @@ const NotificationManager: React.FC<NotificationManagerProps> = () => {
       urgency={activeNotification.urgency}
       onClick={() => handleNotificationClick(activeNotification)}
       onDismiss={() => handleNotificationDismiss(activeNotification.id)}
+      fixedPosition={activeNotification.autoClick}
+      disableDrag={activeNotification.autoClick}
+      autoClickTarget={activeNotification.autoClick}
     />
   );
 };
