@@ -100,6 +100,20 @@ export class BackgroundManager {
         return true;
       }
 
+      // Handle check-status panel opening
+      if ((message as any).type === 'OPEN_CHECK_STATUS_PANEL') {
+        const tabId = sender.tab?.id;
+        if (!tabId) {
+          sendResponse({
+            error: 'Tab ID not found',
+            data: null,
+          });
+          return false;
+        }
+        this.handleAsyncOpenCheckStatusPanel(tabId, (message as any).payload, sendResponse);
+        return true;
+      }
+
       if ((message as any).type === 'NETWORK_CATCH' && isNetworkCatchMessage(message)) {
         const tabId = message.data.tabId || sender.tab?.id;
         if (!tabId) {
@@ -285,6 +299,24 @@ export class BackgroundManager {
         message: error instanceof Error ? error.message : 'Failed to close tab',
         data: null,
       } as ErrorResponse);
+    }
+  }
+
+  // Check Status Panel 열기 처리
+  private async handleAsyncOpenCheckStatusPanel(
+    tabId: number,
+    payload: any,
+    sendResponse: (response: any) => void
+  ) {
+    try {
+      const result = await this.sidePanelService.openSidePanel(tabId, payload);
+      sendResponse({ data: result });
+    } catch (error) {
+      console.error('Failed to open check status panel:', error);
+      sendResponse({
+        error: error instanceof Error ? error.message : 'Failed to open side panel',
+        data: null,
+      });
     }
   }
 

@@ -127,7 +127,7 @@ import {
 import { handlerMarkBorder, MarkBorderBlock, validateMarkBorderBlock } from './MarkBorderBlock';
 import { handlerApplyLocale, ApplyLocaleBlock, validateApplyLocaleBlock } from './ApplyLocaleBlock';
 import { handlerPasteValue, PasteValueBlock, validatePasteValueBlock } from './PasteValueBlock';
-import { handlerCheckStatusBlock, CheckStatusBlock, validateCheckStatusBlock } from './CheckStatusBlock';
+import { handlerCheckStatus, CheckStatusBlock, validateCheckStatusBlock } from './CheckStatusBlock';
 import { Block, BlockResult } from './types';
 import { GetTextBlockSchema } from './GetTextBlock';
 import { GetAttributeValueBlockSchema } from './GetAttributeValueBlock';
@@ -353,7 +353,7 @@ export class BlockHandler {
 
         case 'check-status': {
           const validatedBlock = validateCheckStatusBlock(block);
-          return await handlerCheckStatusBlock(validatedBlock);
+          return await handlerCheckStatus(validatedBlock);
         }
 
         default:

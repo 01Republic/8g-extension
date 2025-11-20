@@ -1,6 +1,36 @@
 import { z } from 'zod';
-import { BlockResult } from './types';
+import { Block, BlockResult } from './types';
 import { CheckType, CheckStatusPayload } from '@/sidepanel/types';
+
+/**
+ * CheckStatus Block
+ * 
+ * 워크플로우 실행 중 사용자의 상태 확인이 필요한 시점에 사이드패널을 열어
+ * 상호작용을 수행합니다.
+ * 
+ * 사용 예:
+ * {
+ *   name: 'check-status',
+ *   checkType: 'login',
+ *   title: '로그인 상태 확인',
+ *   description: '로그인이 완료되었는지 확인해주세요',
+ *   options: {
+ *     timeoutMs: 60000,
+ *     retryable: true
+ *   }
+ * }
+ */
+export interface CheckStatusBlock extends Omit<Block, 'selector' | 'findBy' | 'option'> {
+  readonly name: 'check-status';
+  checkType: CheckType;
+  title: string;
+  description?: string;
+  options?: {
+    timeoutMs?: number;
+    retryable?: boolean;
+    customValidator?: string;
+  };
+}
 
 // Zod Schema
 export const CheckStatusBlockSchema = z.object({
@@ -17,22 +47,17 @@ export const CheckStatusBlockSchema = z.object({
     .optional(),
 });
 
-export type CheckStatusBlock = z.infer<typeof CheckStatusBlockSchema>;
-
 // Validation function
-export function validateCheckStatusBlock(block: any): CheckStatusBlock {
-  try {
-    return CheckStatusBlockSchema.parse(block);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      throw new Error(`Check-status block validation failed: ${error.errors.map(e => e.message).join(', ')}`);
-    }
-    throw error;
-  }
+export function validateCheckStatusBlock(data: unknown): CheckStatusBlock {
+  return CheckStatusBlockSchema.parse(data) as CheckStatusBlock;
 }
 
-// Handler function - Content Script에서 실행
-export async function handlerCheckStatusBlock(
+/**
+ * CheckStatus 블록 핸들러
+ * 
+ * 사이드패널을 열어 사용자의 상태 확인을 요청합니다.
+ */
+export async function handlerCheckStatus(
   block: CheckStatusBlock
 ): Promise<BlockResult<any>> {
   try {
