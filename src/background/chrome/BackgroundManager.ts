@@ -19,7 +19,6 @@ import { CdpService } from '../service/CdpService';
 import { WorkflowService } from '../service/WorkflowService';
 import { ApiService } from '../service/ApiService';
 import { ExportDataService } from '../service/ExportDataService';
-import { SidePanelService } from '../service/SidePanelService';
 import {
   matchesObjectPattern,
   parseRequestBodyToObject,
@@ -30,7 +29,6 @@ export class BackgroundManager {
   private cdpService: CdpService;
   private workflowService: WorkflowService;
   private apiService: ApiService;
-  private sidePanelService: SidePanelService;
   private tabManager: TabManager;
 
   constructor() {
@@ -39,7 +37,6 @@ export class BackgroundManager {
     this.tabManager = new TabManager(this.cdpService);
     this.workflowService = new WorkflowService(this.tabManager);
     this.apiService = new ApiService();
-    this.sidePanelService = new SidePanelService();
   }
 
   initHandler() {
@@ -100,19 +97,6 @@ export class BackgroundManager {
         return true;
       }
 
-      // Handle check-status panel opening
-      if ((message as any).type === 'OPEN_CHECK_STATUS_PANEL') {
-        const tabId = sender.tab?.id;
-        if (!tabId) {
-          sendResponse({
-            error: 'Tab ID not found',
-            data: null,
-          });
-          return false;
-        }
-        this.handleAsyncOpenCheckStatusPanel(tabId, (message as any).payload, sendResponse);
-        return true;
-      }
 
       if ((message as any).type === 'NETWORK_CATCH' && isNetworkCatchMessage(message)) {
         const tabId = message.data.tabId || sender.tab?.id;
@@ -302,23 +286,6 @@ export class BackgroundManager {
     }
   }
 
-  // Check Status Panel 열기 처리
-  private async handleAsyncOpenCheckStatusPanel(
-    tabId: number,
-    payload: any,
-    sendResponse: (response: any) => void
-  ) {
-    try {
-      const result = await this.sidePanelService.openSidePanel(tabId, payload);
-      sendResponse({ data: result });
-    } catch (error) {
-      console.error('Failed to open check status panel:', error);
-      sendResponse({
-        error: error instanceof Error ? error.message : 'Failed to open side panel',
-        data: null,
-      });
-    }
-  }
 
   // Network Catch 요청 처리
   private async handleAsyncNetworkCatch(

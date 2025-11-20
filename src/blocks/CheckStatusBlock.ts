@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { Block, BlockResult } from './types';
-import { CheckType, CheckStatusPayload } from '@/sidepanel/types';
+import { CheckType } from '@/sidepanel/types';
 
 /**
  * CheckStatus Block
@@ -55,33 +55,53 @@ export function validateCheckStatusBlock(data: unknown): CheckStatusBlock {
 /**
  * CheckStatus 블록 핸들러
  * 
- * 사이드패널을 열어 사용자의 상태 확인을 요청합니다.
+ * Content Script에서 직접 UI를 표시하여 사용자의 상태 확인을 요청합니다.
  */
 export async function handlerCheckStatus(
   block: CheckStatusBlock
 ): Promise<BlockResult<any>> {
   try {
-    // Content Script에서는 Background로 메시지를 보내 사이드패널 오픈을 요청
+    // Content Script에서 직접 UI를 표시
     const result = await new Promise<any>((resolve, reject) => {
-      chrome.runtime.sendMessage(
-        {
-          type: 'OPEN_CHECK_STATUS_PANEL',
-          payload: {
-            checkType: block.checkType as CheckType,
-            title: block.title,
-            description: block.description,
-            options: block.options,
-          } as CheckStatusPayload,
+      // Custom event를 통해 UI 표시 요청
+      const eventDetail = {
+        checkType: block.checkType,
+        title: block.title,
+        description: block.description,
+        onConfirm: (result: any) => {
+          resolve(result);
         },
-        (response) => {
-          if (chrome.runtime.lastError) {
-            reject(new Error(chrome.runtime.lastError.message));
-          } else if (response?.error) {
-            reject(new Error(response.error));
-          } else {
-            resolve(response);
-          }
-        }
+        onCancel: () => {
+          reject(new Error('User cancelled the check'));
+        },
+      };
+
+      // 타임아웃 설정
+      let timeoutId: NodeJS.Timeout | null = null;
+      if (block.options?.timeoutMs) {
+        timeoutId = setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('8g-hide-check-status'));
+          reject(new Error('Check status timeout'));
+        }, block.options.timeoutMs);
+      }
+
+      // UI 표시 이벤트 발생
+      window.dispatchEvent(
+        new CustomEvent('8g-show-check-status', {
+          detail: {
+            ...eventDetail,
+            onConfirm: (result: any) => {
+              if (timeoutId) clearTimeout(timeoutId);
+              window.dispatchEvent(new CustomEvent('8g-hide-check-status'));
+              eventDetail.onConfirm(result);
+            },
+            onCancel: () => {
+              if (timeoutId) clearTimeout(timeoutId);
+              window.dispatchEvent(new CustomEvent('8g-hide-check-status'));
+              eventDetail.onCancel();
+            },
+          },
+        })
       );
     });
 

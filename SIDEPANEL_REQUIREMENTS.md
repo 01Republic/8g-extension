@@ -1,27 +1,33 @@
-# 워크플로우 진행상황 체크 사이드패널 - 요구사항 명세서
+# 워크플로우 진행상황 체크 UI - 요구사항 명세서
 
 ## 📋 프로젝트 개요
 
-워크플로우 실행 중 사용자와의 상호작용을 위한 Chrome 사이드패널 기능 구현
+워크플로우 실행 중 사용자와의 상호작용을 위한 플로팅 UI 기능 구현
 
 ### 목적
 - 워크플로우 실행 중 특정 상태를 사용자가 확인하고 검증할 수 있도록 함
 - 로그인 상태, 페이지 로딩 상태 등을 사용자가 직접 확인하고 피드백 제공
 - 자동화와 수동 확인의 하이브리드 접근 방식 제공
 
+### ⚠️ 중요 변경사항
+Chrome Side Panel API의 제약사항(`sidePanel.open()`은 사용자 제스처 필요)으로 인해 Content Script 기반 플로팅 UI로 구현 방향 변경
+
 ## 🎯 핵심 기능 요구사항
 
-### 1. 사이드패널 시스템
+### 1. 플로팅 UI 시스템
 
 #### 1.1 기본 기능
-- [x] Chrome Side Panel API를 활용한 패널 구현
-- [x] 워크플로우 실행 중 자동 오픈
+- [x] Content Script 기반 플로팅 UI 구현
+- [x] 워크플로우 실행 중 자동 표시
 - [x] 실시간 상태 업데이트
 - [x] 사용자 액션 버튼 제공
+- [x] 최소화/복원 기능
 
 #### 1.2 UI 요구사항
-- [x] 너비: Chrome 기본 사이드패널 너비 (약 400px)
+- [x] 너비: 380px 고정
+- [x] 위치: 화면 우측 상단 고정
 - [x] 반응형 레이아웃
+- [x] 그라디언트 배경
 - [ ] 접근성 준수 (ARIA labels, keyboard navigation)
 
 ### 2. 상태 확인 플로우
@@ -29,13 +35,14 @@
 #### 2.1 로그인 상태 확인 예시
 ```
 1. 워크플로우에서 "check-status" 블록 실행
-2. 사이드패널 자동 오픈
+2. 플로팅 UI 자동 표시 (화면 우측 상단)
 3. "로그인 상태 확인 중..." 메시지 표시
-4. [확인] 버튼 활성화
-5. 사용자 액션 처리:
-   - 성공 시: 계정 정보 표시 + 워크플로우 계속
-   - 실패 시: 재시도 안내 + 대기
-6. [닫기] 버튼으로 최소화
+4. [확인] 버튼 클릭 시:
+   - 상태 체크 실행
+   - 성공: ✅ 표시 후 자동 진행
+   - 실패: ❌ 표시 및 재시도 버튼
+5. [닫기(✕)] 버튼으로 최소화
+6. 최소화 시 플로팅 버튼 표시
 ```
 
 #### 2.2 지원할 상태 확인 유형
@@ -47,14 +54,15 @@
 ### 3. 플로팅 버튼
 
 #### 3.1 기본 기능
-- [ ] 사이드패널 최소화 시 표시
-- [ ] 오른쪽 하단 고정 위치
-- [ ] 클릭 시 사이드패널 재오픈
+- [x] UI 최소화 시 표시
+- [x] 오른쪽 하단 고정 위치
+- [x] 클릭 시 UI 복원
 
 #### 3.2 UI 요구사항
-- [ ] 크기: 50x50px 원형 버튼
-- [ ] 상태 표시 아이콘
-- [ ] 호버 효과 및 툴팁
+- [x] 크기: 60x60px 원형 버튼
+- [x] 그라디언트 배경
+- [x] 상태 표시 아이콘 (📋)
+- [x] 호버 효과 (scale 애니메이션)
 - [ ] 드래그 가능 (옵션)
 
 ## 🏗️ 기술 구현 사항
@@ -76,24 +84,11 @@ interface CheckStatusBlock {
 }
 ```
 
-#### 1.2 SidePanel 컴포넌트 (`src/sidepanel/`)
-```
-src/sidepanel/
-├── index.html          # 사이드패널 엔트리
-├── main.tsx           # React 앱 초기화
-├── App.tsx            # 메인 컴포넌트
-├── components/
-│   ├── StatusChecker.tsx
-│   ├── LoginStatus.tsx
-│   └── ActionButtons.tsx
-└── styles/
-    └── sidepanel.css
-```
-
-#### 1.3 FloatingButton 컴포넌트 (`src/content/components/FloatingButton.tsx`)
-- Content Script에 주입
-- Shadow DOM 사용으로 스타일 격리
-- 위치 충돌 방지 로직
+#### 1.2 CheckStatusUI 컴포넌트 (`src/content/components/CheckStatusUI.tsx`)
+- Content Script에 직접 렌더링
+- 플로팅 UI와 플로팅 버튼 통합 컴포넌트
+- 상태별 UI 변경 (idle, checking, success, error)
+- 최소화/복원 기능 포함
 
 ### 2. 메시지 통신 아키텍처
 
@@ -163,22 +158,22 @@ Workflow Runner (계속/중단)
 ## 📝 구현 태스크
 
 ### Phase 1: 기본 인프라 (2-3일)
-- [x] Manifest.json에 sidePanel 권한 추가
-- [x] 사이드패널 HTML/React 기본 구조 생성
-- [x] Vite 빌드 설정 업데이트 (사이드패널 엔트리 추가)
+- [x] ~~Manifest.json에 sidePanel 권한 추가~~ (플로팅 UI로 대체)
+- [x] CheckStatusUI 컴포넌트 구현
+- [x] Content Script 통합
 - [x] 기본 메시지 통신 구현
 
 ### Phase 2: 핵심 기능 (3-4일)
 - [x] CheckStatusBlock 구현
-- [x] SidePanelService 구현
-- [x] 사이드패널 UI 컴포넌트 개발
-- [ ] 워크플로우 런너 연동
+- [x] ~~SidePanelService 구현~~ (Content Script로 대체)
+- [x] CheckStatusUI 컴포넌트 개발
+- [x] 워크플로우 런너 연동
 
 ### Phase 3: 사용자 경험 개선 (2-3일)
-- [ ] FloatingButton 구현
-- [ ] 애니메이션 및 전환 효과
-- [ ] 에러 처리 및 재시도 로직
-- [ ] 상태별 UI 피드백
+- [x] FloatingButton 구현 (CheckStatusUI에 통합)
+- [x] 애니메이션 및 전환 효과
+- [x] 에러 처리 및 재시도 로직
+- [x] 상태별 UI 피드백
 
 ### Phase 4: 통합 및 최적화 (1-2일)
 - [ ] StatusUI와 위치 충돌 해결
@@ -265,29 +260,17 @@ Workflow Runner (계속/중단)
 
 ## 📁 현재까지 구현된 주요 파일
 
-### 사이드패널 컴포넌트
-- `src/sidepanel/index.html` - 사이드패널 엔트리 포인트
-- `src/sidepanel/main.tsx` - React 앱 초기화
-- `src/sidepanel/App.tsx` - 메인 앱 컴포넌트
-- `src/sidepanel/types.ts` - TypeScript 타입 정의
-- `src/sidepanel/components/StatusChecker.tsx` - 상태 체크 UI
-- `src/sidepanel/components/LoginStatus.tsx` - 로그인 상태 UI
-- `src/sidepanel/components/ActionButtons.tsx` - 액션 버튼 UI
-- `src/sidepanel/styles/sidepanel.css` - 스타일시트
-
-### 백그라운드 서비스
-- `src/background/service/SidePanelService.ts` - 사이드패널 관리 서비스
-- `src/background/chrome/BackgroundManager.ts` - SidePanelService 통합
+### UI 컴포넌트
+- `src/content/components/CheckStatusUI.tsx` - 통합 플로팅 UI 컴포넌트
+- `src/content/main.tsx` - CheckStatusUI 마운트 로직 추가
 
 ### 블록 구현
 - `src/blocks/CheckStatusBlock.ts` - check-status 블록 구현
 - `src/blocks/index.ts` - CheckStatusBlock 통합
 
 ### 컨텐트 스크립트
-- `src/content/handler/InternalMessageHandler.ts` - CHECK_STATUS 메시지 핸들러 추가
-
-### 설정 파일
-- `manifest.config.ts` - sidePanel 권한 및 설정 추가
+- `src/content/handler/InternalMessageHandler.ts` - 상태 체크 관련 핸들러
+- `src/blocks/CheckStatusBlock.ts` - 플로팅 UI 트리거 로직
 
 ## 📅 예상 일정
 

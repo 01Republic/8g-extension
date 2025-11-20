@@ -4,6 +4,7 @@ import { InternalMessageHandler } from './handler/InternalMessageHandler';
 import { ExternalMessageHandler } from './handler/ExternalMessageHandler';
 import { ConfirmationUIContainer } from './components/ConfirmationUI';
 import { ExecutionStatusUIContainer } from './components/ExecutionStatusUI';
+import CheckStatusUI from './components/CheckStatusUI';
 
 // Prevent multiple injections
 (() => {
@@ -47,6 +48,41 @@ import { ExecutionStatusUIContainer } from './components/ExecutionStatusUI';
 
       const executionStatusReactRoot = createRoot(executionStatusRoot);
       executionStatusReactRoot.render(<ExecutionStatusUIContainer />);
+
+      // Check Status UI 마운트
+      const checkStatusRoot = document.createElement('div');
+      checkStatusRoot.id = '8g-check-status-ui-root';
+      checkStatusRoot.style.cssText = 'all: initial; position: fixed; z-index: 2147483647;';
+      document.body.appendChild(checkStatusRoot);
+
+      let checkStatusReactRoot: any = null;
+      let checkStatusUIProps: any = null;
+
+      // Check Status UI 이벤트 리스너
+      window.addEventListener('8g-show-check-status', ((event: CustomEvent) => {
+        const detail = event.detail;
+        checkStatusUIProps = detail;
+        
+        if (!checkStatusReactRoot) {
+          checkStatusReactRoot = createRoot(checkStatusRoot);
+        }
+        
+        checkStatusReactRoot.render(
+          <CheckStatusUI
+            checkType={detail.checkType}
+            title={detail.title}
+            description={detail.description}
+            onConfirm={detail.onConfirm}
+            onCancel={detail.onCancel}
+          />
+        );
+      }) as EventListener);
+
+      window.addEventListener('8g-hide-check-status', () => {
+        if (checkStatusReactRoot) {
+          checkStatusReactRoot.render(<></>);
+        }
+      });
 
       console.log('[8G Extension] UI Components mounted (top frame only)');
     };
