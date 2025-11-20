@@ -5,8 +5,8 @@ import { CheckType } from '@/sidepanel/types';
 /**
  * CheckStatus Block
  * 
- * 워크플로우 실행 중 사용자의 상태 확인이 필요한 시점에 사이드패널을 열어
- * 상호작용을 수행합니다.
+ * 워크플로우 실행 중 사용자의 상태 확인이 필요한 시점에 플로팅 알림 버튼을 표시하고,
+ * 사용자 클릭 시 사이드패널을 열어 상호작용을 수행합니다.
  * 
  * 사용 예:
  * {
@@ -14,9 +14,14 @@ import { CheckType } from '@/sidepanel/types';
  *   checkType: 'login',
  *   title: '로그인 상태 확인',
  *   description: '로그인이 완료되었는지 확인해주세요',
+ *   notification: {
+ *     message: '로그인 확인 필요',
+ *     urgency: 'high'
+ *   },
  *   options: {
  *     timeoutMs: 60000,
- *     retryable: true
+ *     retryable: true,
+ *     autoOpen: false
  *   }
  * }
  */
@@ -25,9 +30,14 @@ export interface CheckStatusBlock extends Omit<Block, 'selector' | 'findBy' | 'o
   checkType: CheckType;
   title: string;
   description?: string;
+  notification?: {
+    message: string;
+    urgency?: 'low' | 'medium' | 'high';
+  };
   options?: {
     timeoutMs?: number;
     retryable?: boolean;
+    autoOpen?: boolean; // 향후 Chrome API 개선 시 자동 열기 옵션
     customValidator?: string;
   };
 }
@@ -38,10 +48,17 @@ export const CheckStatusBlockSchema = z.object({
   checkType: z.enum(['login', 'pageLoad', 'element', 'custom']),
   title: z.string(),
   description: z.string().optional(),
+  notification: z
+    .object({
+      message: z.string(),
+      urgency: z.enum(['low', 'medium', 'high']).optional(),
+    })
+    .optional(),
   options: z
     .object({
       timeoutMs: z.number().optional(),
       retryable: z.boolean().optional(),
+      autoOpen: z.boolean().optional(),
       customValidator: z.string().optional(),
     })
     .optional(),
@@ -55,58 +72,116 @@ export function validateCheckStatusBlock(data: unknown): CheckStatusBlock {
 /**
  * CheckStatus 블록 핸들러
  * 
- * Content Script에서 직접 UI를 표시하여 사용자의 상태 확인을 요청합니다.
+ * 플로팅 알림 버튼을 표시하고, 사용자 클릭 시 Side Panel을 열어 상태를 확인합니다.
  */
 export async function handlerCheckStatus(
   block: CheckStatusBlock
 ): Promise<BlockResult<any>> {
   try {
-    // Content Script에서 직접 UI를 표시
-    const result = await new Promise<any>((resolve, reject) => {
-      // Custom event를 통해 UI 표시 요청
-      const eventDetail = {
+    // 고유 ID 생성
+    const notificationId = `check-status-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+    
+    // 알림 메시지 준비
+    const notificationMessage = block.notification?.message || 
+      `${block.title} 확인이 필요합니다`;
+    
+    const urgency = block.notification?.urgency || 'medium';
+
+    // 플로팅 알림 버튼 표시
+    window.dispatchEvent(new CustomEvent('8g-show-notification', {
+      detail: {
+        id: notificationId,
+        message: notificationMessage,
+        urgency: urgency,
         checkType: block.checkType,
         title: block.title,
         description: block.description,
-        onConfirm: (result: any) => {
-          resolve(result);
-        },
-        onCancel: () => {
-          reject(new Error('User cancelled the check'));
-        },
-      };
+        options: block.options,
+      },
+    }));
 
-      // 타임아웃 설정
+    // Background와 통신하여 Side Panel이 열리고 결과가 올 때까지 대기
+    const result = await new Promise<any>((resolve, reject) => {
       let timeoutId: NodeJS.Timeout | null = null;
+      
+      // 타임아웃 설정
       if (block.options?.timeoutMs) {
         timeoutId = setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('8g-hide-check-status'));
+          window.dispatchEvent(new CustomEvent('8g-hide-notification', {
+            detail: { id: notificationId },
+          }));
           reject(new Error('Check status timeout'));
         }, block.options.timeoutMs);
       }
 
-      // UI 표시 이벤트 발생
-      window.dispatchEvent(
-        new CustomEvent('8g-show-check-status', {
-          detail: {
-            ...eventDetail,
-            onConfirm: (result: any) => {
-              if (timeoutId) clearTimeout(timeoutId);
-              window.dispatchEvent(new CustomEvent('8g-hide-check-status'));
-              eventDetail.onConfirm(result);
+      // 결과 리스너 등록
+      const handleResult = (event: CustomEvent) => {
+        if (event.detail.notificationId === notificationId) {
+          if (timeoutId) clearTimeout(timeoutId);
+          window.removeEventListener('8g-check-status-result', handleResult as EventListener);
+          
+          // 알림 제거
+          window.dispatchEvent(new CustomEvent('8g-hide-notification', {
+            detail: { id: notificationId },
+          }));
+          
+          if (event.detail.success) {
+            resolve(event.detail.data);
+          } else {
+            reject(new Error(event.detail.message || 'Check status failed'));
+          }
+        }
+      };
+
+      // 사용자가 알림을 무시한 경우 처리
+      const handleDismiss = (event: CustomEvent) => {
+        if (event.detail.notificationId === notificationId) {
+          if (timeoutId) clearTimeout(timeoutId);
+          window.removeEventListener('8g-notification-dismissed', handleDismiss as EventListener);
+          window.removeEventListener('8g-check-status-result', handleResult as EventListener);
+          reject(new Error('User dismissed the notification'));
+        }
+      };
+
+      window.addEventListener('8g-check-status-result', handleResult as EventListener);
+      window.addEventListener('8g-notification-dismissed', handleDismiss as EventListener);
+
+      // 폴백: Side Panel이 열리지 않는 경우 기존 인라인 UI 사용
+      const handleFallback = (event: CustomEvent) => {
+        if (event.detail.id === notificationId) {
+          if (timeoutId) clearTimeout(timeoutId);
+          window.removeEventListener('8g-show-check-status-fallback', handleFallback as EventListener);
+          
+          // 기존 CheckStatusUI 표시
+          window.dispatchEvent(new CustomEvent('8g-show-check-status', {
+            detail: {
+              checkType: block.checkType,
+              title: block.title,
+              description: block.description,
+              onConfirm: (result: any) => {
+                window.dispatchEvent(new CustomEvent('8g-hide-check-status'));
+                window.dispatchEvent(new CustomEvent('8g-hide-notification', {
+                  detail: { id: notificationId },
+                }));
+                resolve(result);
+              },
+              onCancel: () => {
+                window.dispatchEvent(new CustomEvent('8g-hide-check-status'));
+                window.dispatchEvent(new CustomEvent('8g-hide-notification', {
+                  detail: { id: notificationId },
+                }));
+                reject(new Error('User cancelled'));
+              },
             },
-            onCancel: () => {
-              if (timeoutId) clearTimeout(timeoutId);
-              window.dispatchEvent(new CustomEvent('8g-hide-check-status'));
-              eventDetail.onCancel();
-            },
-          },
-        })
-      );
+          }));
+        }
+      };
+
+      window.addEventListener('8g-show-check-status-fallback', handleFallback as EventListener);
     });
 
     return {
-      data: result.data || { confirmed: true },
+      data: result || { confirmed: true },
       hasError: false,
     };
   } catch (error) {

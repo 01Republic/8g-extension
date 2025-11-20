@@ -1,81 +1,101 @@
 import React, { useState, useEffect } from 'react';
+import { CheckStatusRequest, CheckStatusResult } from './types';
 import StatusChecker from './components/StatusChecker';
-import { SidePanelStatus, CheckStatusPayload } from './types';
 
 const App: React.FC = () => {
-  const [status, setStatus] = useState<SidePanelStatus>('idle');
-  const [currentCheck, setCurrentCheck] = useState<CheckStatusPayload | null>(null);
-  const [message, setMessage] = useState<string>('준비 중...');
+  const [currentCheck, setCurrentCheck] = useState<CheckStatusRequest | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Background script로부터 메시지 수신
-    const handleMessage = (message: any) => {
-      console.log('SidePanel received message:', message);
-      
-      if (message.type === 'OPEN_SIDE_PANEL') {
+    chrome.runtime.sendMessage({ type: 'SIDE_PANEL_READY' }, (response) => {
+      if (response?.hasPendingCheck) {
+        setCurrentCheck(response.check);
+      }
+      setIsLoading(false);
+    });
+
+    const messageListener = (message: any) => {
+      if (message.type === 'SHOW_CHECK_STATUS') {
         setCurrentCheck(message.payload);
-        setStatus('checking');
-        setMessage(message.payload.title || '상태 확인 중...');
-      } else if (message.type === 'UPDATE_SIDE_PANEL') {
-        setStatus(message.payload.status);
-        setMessage(message.payload.message);
       }
     };
 
-    chrome.runtime.onMessage.addListener(handleMessage);
-
-    // 초기 상태 요청
-    chrome.runtime.sendMessage({ type: 'SIDE_PANEL_READY' });
-
+    chrome.runtime.onMessage.addListener(messageListener);
     return () => {
-      chrome.runtime.onMessage.removeListener(handleMessage);
+      chrome.runtime.onMessage.removeListener(messageListener);
     };
   }, []);
 
-  const handleAction = (action: 'confirm' | 'cancel' | 'retry') => {
+  const handleCheckComplete = (result: Omit<CheckStatusResult, 'notificationId'>) => {
+    if (!currentCheck) return;
+
+    const fullResult: CheckStatusResult = {
+      ...result,
+      notificationId: currentCheck.notificationId,
+    };
+
     chrome.runtime.sendMessage({
-      type: 'SIDE_PANEL_ACTION',
-      payload: {
-        action,
-        checkType: currentCheck?.checkType,
-      },
+      type: 'CHECK_STATUS_RESULT',
+      payload: fullResult,
     });
 
-    if (action === 'cancel') {
-      // 최소화 처리
-      window.close();
-    }
+    setCurrentCheck(null);
+    
+    setTimeout(() => {
+      chrome.runtime.sendMessage({ type: 'SIDE_PANEL_READY' }, (response) => {
+        if (response?.hasPendingCheck) {
+          setCurrentCheck(response.check);
+        }
+      });
+    }, 100);
   };
 
-  return (
-    <div className="sidepanel-container">
-      <header className="sidepanel-header">
-        <h1>8G Extension</h1>
-        <span className="status-badge" data-status={status}>
-          {status === 'checking' && '확인 중'}
-          {status === 'success' && '완료'}
-          {status === 'error' && '오류'}
-          {status === 'waiting' && '대기 중'}
-          {status === 'idle' && '준비'}
-        </span>
-      </header>
+  const handleCancel = () => {
+    if (!currentCheck) return;
 
-      <main className="sidepanel-content">
-        {currentCheck ? (
-          <StatusChecker
-            checkType={currentCheck.checkType}
-            title={currentCheck.title}
-            description={currentCheck.description}
-            status={status}
-            message={message}
-            onAction={handleAction}
-          />
-        ) : (
-          <div className="empty-state">
-            <p>워크플로우 실행을 기다리는 중입니다...</p>
-          </div>
-        )}
-      </main>
+    handleCheckComplete({
+      success: false,
+      message: 'User cancelled the check',
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="app-container loading">
+        <div className="loading-spinner"></div>
+        <p>로딩 중...</p>
+      </div>
+    );
+  }
+
+  if (!currentCheck) {
+    return (
+      <div className="app-container idle">
+        <div className="brand-header">
+          <img src="/public/logo.png" alt="8G Extension" className="logo" />
+          <h1>8G Extension</h1>
+        </div>
+        <div className="idle-content">
+          <p className="idle-message">대기 중인 작업이 없습니다</p>
+          <p className="idle-description">
+            워크플로우 실행 중 확인이 필요한 상태가 발생하면 여기에 표시됩니다.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="app-container">
+      <div className="brand-header">
+        <img src="/public/logo.png" alt="8G Extension" className="logo" />
+        <h1>8G Extension</h1>
+      </div>
+      <StatusChecker
+        request={currentCheck}
+        onComplete={handleCheckComplete}
+        onCancel={handleCancel}
+      />
     </div>
   );
 };

@@ -137,6 +137,24 @@ export class InternalMessageHandler {
         return false;
       }
 
+      // Perform status check from Side Panel
+      if ((message as any).type === 'PERFORM_STATUS_CHECK') {
+        console.log('[InternalMessageHandler] Perform status check from Side Panel:', (message as any).payload?.checkType);
+        const result = performStatusCheck((message as any).payload?.checkType);
+        sendResponse(result);
+        return false;
+      }
+
+      // Check status dismissed handler
+      if ((message as any).type === 'CHECK_STATUS_DISMISSED') {
+        const { notificationId, message: msg } = (message as any).payload || {};
+        window.dispatchEvent(new CustomEvent('8g-notification-dismissed', {
+          detail: { notificationId, message: msg },
+        }));
+        sendResponse({ success: true });
+        return false;
+      }
+
       // Get account info message handler
       if ((message as any).type === 'GET_ACCOUNT_INFO') {
         console.log('[InternalMessageHandler] Get account info message received');

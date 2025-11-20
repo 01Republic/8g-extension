@@ -200,12 +200,6 @@ export function ConfirmationUI({
     minWidth: 0,
   };
 
-  const descriptionStyle: React.CSSProperties = {
-    margin: '4px 0 0 0',
-    fontSize: '12px',
-    lineHeight: '1.5',
-    color: styles.descColor,
-  };
 
   const buttonStyle: React.CSSProperties = {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',

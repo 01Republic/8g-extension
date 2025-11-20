@@ -1,25 +1,22 @@
-export type SidePanelStatus = 'idle' | 'checking' | 'success' | 'error' | 'waiting';
-
 export type CheckType = 'login' | 'pageLoad' | 'element' | 'custom';
 
-export interface CheckStatusPayload {
+export interface CheckStatusRequest {
+  notificationId: string;
   checkType: CheckType;
   title: string;
   description?: string;
   options?: {
     timeoutMs?: number;
     retryable?: boolean;
+    autoOpen?: boolean;
     customValidator?: string;
   };
+  tabId?: number;
 }
 
-export interface SidePanelActionPayload {
-  action: 'confirm' | 'cancel' | 'retry';
+export interface CheckStatusResult {
+  notificationId: string;
+  success: boolean;
   data?: any;
-}
-
-export interface UpdateSidePanelPayload {
-  status: SidePanelStatus;
-  message: string;
-  data?: any;
+  message?: string;
 }

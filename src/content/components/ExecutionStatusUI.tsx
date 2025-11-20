@@ -194,10 +194,6 @@ export function ExecutionStatusUI({
     minWidth: 0,
   };
 
-  const dotsStyle: React.CSSProperties = {
-    display: 'inline-block',
-    width: '20px',
-  };
 
   return createPortal(
     <>

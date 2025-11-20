@@ -5,6 +5,7 @@ import { ExternalMessageHandler } from './handler/ExternalMessageHandler';
 import { ConfirmationUIContainer } from './components/ConfirmationUI';
 import { ExecutionStatusUIContainer } from './components/ExecutionStatusUI';
 import CheckStatusUI from './components/CheckStatusUI';
+import NotificationManager from './components/NotificationManager';
 
 // Prevent multiple injections
 (() => {
@@ -56,12 +57,10 @@ import CheckStatusUI from './components/CheckStatusUI';
       document.body.appendChild(checkStatusRoot);
 
       let checkStatusReactRoot: any = null;
-      let checkStatusUIProps: any = null;
 
       // Check Status UI 이벤트 리스너
       window.addEventListener('8g-show-check-status', ((event: CustomEvent) => {
         const detail = event.detail;
-        checkStatusUIProps = detail;
         
         if (!checkStatusReactRoot) {
           checkStatusReactRoot = createRoot(checkStatusRoot);
@@ -83,6 +82,15 @@ import CheckStatusUI from './components/CheckStatusUI';
           checkStatusReactRoot.render(<></>);
         }
       });
+
+      // Notification Manager 마운트
+      const notificationRoot = document.createElement('div');
+      notificationRoot.id = '8g-notification-manager-root';
+      notificationRoot.style.cssText = 'all: initial; position: fixed; z-index: 2147483645;';
+      document.body.appendChild(notificationRoot);
+
+      const notificationReactRoot = createRoot(notificationRoot);
+      notificationReactRoot.render(<NotificationManager />);
 
       console.log('[8G Extension] UI Components mounted (top frame only)');
     };
