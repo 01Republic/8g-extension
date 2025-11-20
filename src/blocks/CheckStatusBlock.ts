@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { BlockResult } from '@/types/blocks';
+import { BlockResult } from './types';
 import { CheckType, CheckStatusPayload } from '@/sidepanel/types';
 
 // Zod Schema
