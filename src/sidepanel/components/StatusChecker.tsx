@@ -9,7 +9,9 @@ interface StatusCheckerProps {
 
 const StatusChecker: React.FC<StatusCheckerProps> = ({ request, onComplete, onCancel }) => {
   const [isChecking, setIsChecking] = useState(false);
-  const [checkResult, setCheckResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [checkResult, setCheckResult] = useState<{ success: boolean; message: string } | null>(
+    null
+  );
 
   const performCheck = async () => {
     setIsChecking(true);
@@ -25,7 +27,7 @@ const StatusChecker: React.FC<StatusCheckerProps> = ({ request, onComplete, onCa
       });
 
       setCheckResult(result);
-      
+
       if (result.success) {
         setTimeout(() => {
           onComplete({
@@ -59,21 +61,31 @@ const StatusChecker: React.FC<StatusCheckerProps> = ({ request, onComplete, onCa
 
   const getIcon = () => {
     switch (request.checkType) {
-      case 'login': return '🔐';
-      case 'pageLoad': return '📄';
-      case 'element': return '🎯';
-      case 'custom': return '⚙️';
-      default: return '📋';
+      case 'login':
+        return '🔐';
+      case 'pageLoad':
+        return '📄';
+      case 'element':
+        return '🎯';
+      case 'custom':
+        return '⚙️';
+      default:
+        return '📋';
     }
   };
 
   const getCheckTypeLabel = () => {
     switch (request.checkType) {
-      case 'login': return '로그인 상태';
-      case 'pageLoad': return '페이지 로딩';
-      case 'element': return '요소 확인';
-      case 'custom': return '사용자 정의';
-      default: return '상태 확인';
+      case 'login':
+        return '로그인 상태';
+      case 'pageLoad':
+        return '페이지 로딩';
+      case 'element':
+        return '요소 확인';
+      case 'custom':
+        return '사용자 정의';
+      default:
+        return '상태 확인';
     }
   };
 
@@ -98,11 +110,7 @@ const StatusChecker: React.FC<StatusCheckerProps> = ({ request, onComplete, onCa
         )}
 
         <div className="check-actions">
-          <button
-            className="btn btn-primary"
-            onClick={performCheck}
-            disabled={isChecking}
-          >
+          <button className="btn btn-primary" onClick={performCheck} disabled={isChecking}>
             {isChecking ? (
               <>
                 <span className="spinner"></span>

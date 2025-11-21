@@ -364,11 +364,11 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
               name: 'get-text',
               selector: '.test',
               findBy: 'cssSelector',
-              option: {}
-            }
-          }
-        ]
-      }
+              option: {},
+            },
+          },
+        ],
+      },
     };
   });
 
@@ -390,7 +390,7 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
                   name: 'Test Workspace',
                   image: 'https://example.com/image.png',
                   memberCount: 5,
-                  isAdmin: true
+                  isAdmin: true,
                 },
                 {
                   id: 'ws-2',
@@ -398,18 +398,18 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
                   name: 'Another Workspace',
                   image: 'https://example.com/image2.png',
                   memberCount: 3,
-                  isAdmin: false
-                }
-              ]
+                  isAdmin: false,
+                },
+              ],
             },
             startedAt: '2023-01-01T00:00:00Z',
             finishedAt: '2023-01-01T00:00:01Z',
-            attempts: 1
-          }
+            attempts: 1,
+          },
         ],
         context: { steps: {}, vars: {} },
         targetUrl: 'https://test.com',
-        timestamp: '2023-01-01T00:00:00Z'
+        timestamp: '2023-01-01T00:00:00Z',
       };
 
       vi.spyOn(client, 'collectWorkflow').mockResolvedValue(mockWorkflowResult);
@@ -424,7 +424,7 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
         name: 'Test Workspace',
         image: 'https://example.com/image.png',
         memberCount: 5,
-        isAdmin: true
+        isAdmin: true,
       });
     });
 
@@ -444,24 +444,24 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
                   name: 'Test Workspace',
                   image: 'https://example.com/image.png',
                   memberCount: 5,
-                  isAdmin: true
+                  isAdmin: true,
                 },
                 {
                   // Invalid data - missing required fields
                   id: 'ws-2',
-                  slug: 'invalid-workspace'
+                  slug: 'invalid-workspace',
                   // missing name, image, memberCount
-                }
-              ]
+                },
+              ],
             },
             startedAt: '2023-01-01T00:00:00Z',
             finishedAt: '2023-01-01T00:00:01Z',
-            attempts: 1
-          }
+            attempts: 1,
+          },
         ],
         context: { steps: {}, vars: {} },
         targetUrl: 'https://test.com',
-        timestamp: '2023-01-01T00:00:00Z'
+        timestamp: '2023-01-01T00:00:00Z',
       };
 
       vi.spyOn(client, 'collectWorkflow').mockResolvedValue(mockWorkflowResult);
@@ -477,7 +477,7 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
         expect.any(Object),
         expect.any(Object)
       );
-      
+
       consoleSpy.mockRestore();
     });
 
@@ -490,16 +490,16 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
             skipped: false,
             success: true,
             result: {
-              data: null
+              data: null,
             },
             startedAt: '2023-01-01T00:00:00Z',
             finishedAt: '2023-01-01T00:00:01Z',
-            attempts: 1
-          }
+            attempts: 1,
+          },
         ],
         context: { steps: {}, vars: {} },
         targetUrl: 'https://test.com',
-        timestamp: '2023-01-01T00:00:00Z'
+        timestamp: '2023-01-01T00:00:00Z',
       };
 
       vi.spyOn(client, 'collectWorkflow').mockResolvedValue(mockWorkflowResult);
@@ -529,17 +529,17 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
                 publicEmail: 'public@test.com',
                 billingEmail: 'billing@test.com',
                 orgPageUrl: 'https://test.com',
-                roles: ['admin', 'member']
-              }
+                roles: ['admin', 'member'],
+              },
             },
             startedAt: '2023-01-01T00:00:00Z',
             finishedAt: '2023-01-01T00:00:01Z',
-            attempts: 1
-          }
+            attempts: 1,
+          },
         ],
         context: { steps: {}, vars: {} },
         targetUrl: 'https://test.com',
-        timestamp: '2023-01-01T00:00:00Z'
+        timestamp: '2023-01-01T00:00:00Z',
       };
 
       vi.spyOn(client, 'collectWorkflow').mockResolvedValue(mockWorkflowResult);
@@ -555,7 +555,7 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
         publicEmail: 'public@test.com',
         billingEmail: 'billing@test.com',
         orgPageUrl: 'https://test.com',
-        roles: ['admin', 'member']
+        roles: ['admin', 'member'],
       });
     });
 
@@ -570,18 +570,18 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
             result: {
               data: {
                 // Invalid data - missing required fields
-                slug: 'test-workspace'
+                slug: 'test-workspace',
                 // missing other required fields
-              }
+              },
             },
             startedAt: '2023-01-01T00:00:00Z',
             finishedAt: '2023-01-01T00:00:01Z',
-            attempts: 1
-          }
+            attempts: 1,
+          },
         ],
         context: { steps: {}, vars: {} },
         targetUrl: 'https://test.com',
-        timestamp: '2023-01-01T00:00:00Z'
+        timestamp: '2023-01-01T00:00:00Z',
       };
 
       vi.spyOn(client, 'collectWorkflow').mockResolvedValue(mockWorkflowResult);
@@ -596,7 +596,7 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
         expect.any(Object),
         expect.any(Object)
       );
-      
+
       consoleSpy.mockRestore();
     });
   });
@@ -609,7 +609,7 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
         context: { steps: {}, vars: {} },
         targetUrl: 'https://test.com',
         timestamp: '2023-01-01T00:00:00Z',
-        error: 'Workflow failed'
+        error: 'Workflow failed',
       };
 
       vi.spyOn(client, 'collectWorkflow').mockResolvedValue(mockWorkflowResult);
@@ -629,11 +629,11 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
             skipped: false,
             success: true,
             result: {
-              data: 'not-the-final-data'
+              data: 'not-the-final-data',
             },
             startedAt: '2023-01-01T00:00:00Z',
             finishedAt: '2023-01-01T00:00:01Z',
-            attempts: 1
+            attempts: 1,
           },
           {
             stepId: 'step2',
@@ -647,18 +647,18 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
                   name: 'Test Workspace',
                   image: 'https://example.com/image.png',
                   memberCount: 5,
-                  isAdmin: true
-                }
-              ]
+                  isAdmin: true,
+                },
+              ],
             },
             startedAt: '2023-01-01T00:00:01Z',
             finishedAt: '2023-01-01T00:00:02Z',
-            attempts: 1
-          }
+            attempts: 1,
+          },
         ],
         context: { steps: {}, vars: {} },
         targetUrl: 'https://test.com',
-        timestamp: '2023-01-01T00:00:00Z'
+        timestamp: '2023-01-01T00:00:00Z',
       };
 
       vi.spyOn(client, 'collectWorkflow').mockResolvedValue(mockWorkflowResult);
@@ -679,7 +679,7 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
         name: 'Test Workspace',
         image: 'https://example.com/image.png',
         memberCount: 5,
-        isAdmin: true
+        isAdmin: true,
       };
 
       const mockWorkflowResult: CollectWorkflowResult = {
@@ -692,12 +692,12 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
             result: { data: [testData] },
             startedAt: '2023-01-01T00:00:00Z',
             finishedAt: '2023-01-01T00:00:01Z',
-            attempts: 1
-          }
+            attempts: 1,
+          },
         ],
         context: { steps: {}, vars: {} },
         targetUrl: 'https://test.com',
-        timestamp: '2023-01-01T00:00:00Z'
+        timestamp: '2023-01-01T00:00:00Z',
       };
 
       vi.spyOn(client, 'collectWorkflow').mockResolvedValue(mockWorkflowResult);
@@ -706,7 +706,7 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
 
       // Check that the extracted data matches the exact DTO structure
       expect(result.data![0]).toEqual(testData);
-      
+
       // Validate schema consistency
       const validation = WorkspaceItemSchema.safeParse(result.data![0]);
       expect(validation.success).toBe(true);
@@ -722,7 +722,7 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
         publicEmail: 'public@test.com',
         billingEmail: 'billing@test.com',
         orgPageUrl: 'https://test.com',
-        roles: ['admin', 'member']
+        roles: ['admin', 'member'],
       };
 
       const mockWorkflowResult: CollectWorkflowResult = {
@@ -735,12 +735,12 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
             result: { data: testData },
             startedAt: '2023-01-01T00:00:00Z',
             finishedAt: '2023-01-01T00:00:01Z',
-            attempts: 1
-          }
+            attempts: 1,
+          },
         ],
         context: { steps: {}, vars: {} },
         targetUrl: 'https://test.com',
-        timestamp: '2023-01-01T00:00:00Z'
+        timestamp: '2023-01-01T00:00:00Z',
       };
 
       vi.spyOn(client, 'collectWorkflow').mockResolvedValue(mockWorkflowResult);
@@ -749,7 +749,7 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
 
       // Check that the extracted data matches the exact DTO structure
       expect(result.data).toEqual(testData);
-      
+
       // Validate schema consistency
       const validation = WorkspaceDetailItemSchema.safeParse(result.data);
       expect(validation.success).toBe(true);

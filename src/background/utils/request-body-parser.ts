@@ -166,11 +166,7 @@ function valuesEqual(actual: any, expected: any): boolean {
     return true;
   }
 
-  if (
-    typeof actual === 'string' &&
-    typeof expected === 'number' &&
-    isFiniteNumberString(actual)
-  ) {
+  if (typeof actual === 'string' && typeof expected === 'number' && isFiniteNumberString(actual)) {
     return Number(actual) === expected;
   }
 
@@ -200,4 +196,3 @@ function isFiniteNumberString(value: string): boolean {
   const parsed = Number(value);
   return Number.isFinite(parsed);
 }
-

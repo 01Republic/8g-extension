@@ -15,11 +15,7 @@ export class WorkflowService {
     // TabManager의 executeBlock 메서드를 executor 함수로 주입
     const executeBlock = (block: Block, tabId: number) =>
       this.tabManager.executeBlock(block, tabId);
-    const createTab = async (
-      targetUrl: string,
-      activateTab: boolean,
-      originTabId?: number
-    ) => {
+    const createTab = async (targetUrl: string, activateTab: boolean, originTabId?: number) => {
       const tab = await this.tabManager.createTab(
         targetUrl,
         activateTab,

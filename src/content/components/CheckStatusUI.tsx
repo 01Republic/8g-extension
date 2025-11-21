@@ -29,14 +29,14 @@ const CheckStatusUI: React.FC<CheckStatusUIProps> = ({
     setMessage('확인 중...');
 
     // 약간의 딜레이 (UX를 위해)
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     const result = performStatusCheck(checkType);
-    
+
     if (result.success) {
       setStatus('success');
       setMessage(result.message);
-      
+
       // 2초 후 자동으로 계속 진행
       setTimeout(() => {
         onConfirm(result);
@@ -65,14 +65,14 @@ const CheckStatusUI: React.FC<CheckStatusUIProps> = ({
 
   const handleMouseMove = (e: MouseEvent) => {
     if (!isDragging) return;
-    
+
     const newX = e.clientX - dragStart.x;
     const newY = e.clientY - dragStart.y;
-    
+
     // 화면 경계 체크
     const maxX = window.innerWidth - 80;
     const maxY = window.innerHeight - 80;
-    
+
     setButtonPosition({
       x: Math.max(20, Math.min(newX, maxX)),
       y: Math.max(20, Math.min(newY, maxY)),
@@ -105,7 +105,8 @@ const CheckStatusUI: React.FC<CheckStatusUIProps> = ({
     borderRadius: '12px',
     boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)',
     zIndex: 2147483646, // StatusUI보다 1 낮게 설정
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    fontFamily:
+      '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
     fontSize: '14px',
     lineHeight: '1.5',
     color: '#333',
@@ -123,8 +124,8 @@ const CheckStatusUI: React.FC<CheckStatusUIProps> = ({
     backgroundColor: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     borderRadius: '50%',
-    boxShadow: isDragging 
-      ? '0 8px 30px rgba(102, 126, 234, 0.6)' 
+    boxShadow: isDragging
+      ? '0 8px 30px rgba(102, 126, 234, 0.6)'
       : '0 4px 20px rgba(102, 126, 234, 0.4)',
     cursor: isDragging ? 'grabbing' : 'grab',
     display: isMinimized ? 'flex' : 'none',
@@ -174,9 +175,14 @@ const CheckStatusUI: React.FC<CheckStatusUIProps> = ({
   const statusIconStyle: React.CSSProperties = {
     fontSize: '48px',
     marginBottom: '20px',
-    animation: status === 'checking' ? 'rotate 1s linear infinite' : 
-               status === 'success' ? 'bounce 0.5s ease' : 
-               status === 'error' ? 'shake 0.5s ease' : 'none',
+    animation:
+      status === 'checking'
+        ? 'rotate 1s linear infinite'
+        : status === 'success'
+          ? 'bounce 0.5s ease'
+          : status === 'error'
+            ? 'shake 0.5s ease'
+            : 'none',
   };
 
   // CSS 애니메이션 추가
@@ -257,12 +263,12 @@ const CheckStatusUI: React.FC<CheckStatusUIProps> = ({
     <>
       {/* 애니메이션 스타일 */}
       <style>{animationStyles}</style>
-      
+
       {/* 메인 UI */}
       <div style={containerStyle}>
         <div style={headerStyle}>
           <h3 style={titleStyle}>8G Extension</h3>
-          <button 
+          <button
             style={closeButtonStyle}
             onClick={handleMinimize}
             onMouseEnter={(e) => {
@@ -278,18 +284,14 @@ const CheckStatusUI: React.FC<CheckStatusUIProps> = ({
 
         <div style={contentStyle}>
           <div style={statusIconStyle}>{getStatusIcon()}</div>
-          <div style={messageStyle}>
-            {status === 'idle' ? title : message}
-          </div>
-          {description && status === 'idle' && (
-            <div style={descriptionStyle}>{description}</div>
-          )}
+          <div style={messageStyle}>{status === 'idle' ? title : message}</div>
+          {description && status === 'idle' && <div style={descriptionStyle}>{description}</div>}
         </div>
 
         <div style={buttonContainerStyle}>
           {status === 'idle' && (
             <>
-              <button 
+              <button
                 style={primaryButtonStyle}
                 onClick={handleCheck}
                 onMouseEnter={(e) => {
@@ -303,7 +305,7 @@ const CheckStatusUI: React.FC<CheckStatusUIProps> = ({
               >
                 확인
               </button>
-              <button 
+              <button
                 style={secondaryButtonStyle}
                 onClick={onCancel}
                 onMouseEnter={(e) => {
@@ -326,7 +328,7 @@ const CheckStatusUI: React.FC<CheckStatusUIProps> = ({
 
           {status === 'error' && (
             <>
-              <button 
+              <button
                 style={primaryButtonStyle}
                 onClick={handleCheck}
                 onMouseEnter={(e) => {
@@ -340,7 +342,7 @@ const CheckStatusUI: React.FC<CheckStatusUIProps> = ({
               >
                 다시 시도
               </button>
-              <button 
+              <button
                 style={secondaryButtonStyle}
                 onClick={onCancel}
                 onMouseEnter={(e) => {
@@ -365,7 +367,7 @@ const CheckStatusUI: React.FC<CheckStatusUIProps> = ({
 
       {/* 플로팅 버튼 (최소화 시) */}
       {isMinimized && (
-        <div 
+        <div
           style={floatingButtonStyle}
           onClick={handleRestore}
           onMouseDown={handleMouseDown}

@@ -159,7 +159,12 @@ export function ConfirmationUI({
   const positionStyle = position === 'top' ? { top: 0 } : { bottom: 0 };
 
   // 디버깅: position 값 확인
-  console.log('[ConfirmationUI] Rendering with position:', position, 'positionStyle:', positionStyle);
+  console.log(
+    '[ConfirmationUI] Rendering with position:',
+    position,
+    'positionStyle:',
+    positionStyle
+  );
 
   const containerStyle: React.CSSProperties = {
     position: 'fixed',
@@ -176,7 +181,8 @@ export function ConfirmationUI({
         ? 'translateY(-100%)'
         : 'translateY(100%)',
     opacity: isAnimating ? 1 : 0,
-    transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    transition:
+      'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
   };
 
   const innerContainerStyle: React.CSSProperties = {
@@ -199,7 +205,6 @@ export function ConfirmationUI({
     flex: 1,
     minWidth: 0,
   };
-
 
   const buttonStyle: React.CSSProperties = {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',

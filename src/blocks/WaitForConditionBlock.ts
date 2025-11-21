@@ -289,7 +289,11 @@ export async function handlerWaitForCondition(
 
       // 외부에서 확인 이벤트를 트리거할 수 있도록 이벤트 리스너 추가
       // (예: 새 탭에서 확인 버튼을 누른 경우)
-      if ((mode === 'manual' || mode === 'auto-or-manual') && hasManualConfirmation && confirmResolve) {
+      if (
+        (mode === 'manual' || mode === 'auto-or-manual') &&
+        hasManualConfirmation &&
+        confirmResolve
+      ) {
         const handleTriggerConfirmation = (event: Event) => {
           console.log('[WaitForCondition] External confirmation triggered via event', {
             eventType: event.type,
@@ -297,13 +301,13 @@ export async function handlerWaitForCondition(
             currentTarget: event.currentTarget,
             windowLocation: window.location.href,
           });
-          
+
           // 이미 resolve되었으면 무시
           if (resolved) {
             console.log('[WaitForCondition] Already resolved, ignoring trigger');
             return;
           }
-          
+
           if (confirmResolve) {
             confirmResolve();
           }

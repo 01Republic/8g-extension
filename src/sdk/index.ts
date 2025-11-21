@@ -7,7 +7,6 @@ export {
   type WorkspaceBillingDto,
   type WorkspaceBillingHistoryDto,
   type WorkspaceMemberDto,
-  type ConnectWorkspaceResponseDto,
   // Enums
   BillingCycleTerm,
   // Schemas

@@ -40,7 +40,7 @@ const App: React.FC = () => {
     });
 
     setCurrentCheck(null);
-    
+
     setTimeout(() => {
       chrome.runtime.sendMessage({ type: 'SIDE_PANEL_READY' }, (response) => {
         if (response?.hasPendingCheck) {

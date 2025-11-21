@@ -484,19 +484,19 @@ export class EightGClient {
 
     // steps에서 데이터 추출
     const rawData = result.steps[result.steps.length - 1]?.result?.data;
-    
+
     if (!rawData) {
-      return { 
-        ...result, 
-        data: isArray ? ([] as T[]) : undefined 
+      return {
+        ...result,
+        data: isArray ? ([] as T[]) : undefined,
       } as CollectWorkflowResult<T | T[]>;
     }
 
     if (isArray) {
       if (!Array.isArray(rawData)) {
-        return { 
-          ...result, 
-          data: [] as T[] 
+        return {
+          ...result,
+          data: [] as T[],
         } as CollectWorkflowResult<T[]>;
       }
 
@@ -511,23 +511,23 @@ export class EightGClient {
         }
       }
 
-      return { 
-        ...result, 
-        data: validatedItems 
+      return {
+        ...result,
+        data: validatedItems,
       } as CollectWorkflowResult<T[]>;
     } else {
       // 단일 객체 검증
       const parsed = schema.safeParse(rawData);
       if (parsed.success) {
-        return { 
-          ...result, 
-          data: parsed.data 
+        return {
+          ...result,
+          data: parsed.data,
         } as CollectWorkflowResult<T>;
       } else {
         console.warn(`Invalid data:`, rawData, parsed.error);
-        return { 
-          ...result, 
-          data: undefined 
+        return {
+          ...result,
+          data: undefined,
         } as CollectWorkflowResult<T>;
       }
     }

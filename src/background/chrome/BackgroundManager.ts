@@ -100,7 +100,6 @@ export class BackgroundManager {
         return true;
       }
 
-
       if ((message as any).type === 'NETWORK_CATCH' && isNetworkCatchMessage(message)) {
         const tabId = message.data.tabId || sender.tab?.id;
         if (!tabId) {
@@ -118,7 +117,7 @@ export class BackgroundManager {
       if ((message as any).type === 'CLOSE_TAB_AND_FOCUS_PARENT') {
         const tabId = sender.tab?.id;
         const parentTabId = (message as any).data?.parentTabId;
-        
+
         if (!tabId) {
           sendResponse({
             $isError: true,
@@ -200,41 +199,41 @@ export class BackgroundManager {
   ) {
     try {
       console.log('[BackgroundManager] Closing tab and focusing parent:', { tabId, parentTabId });
-      
+
       // 실제 워크플로우가 실행 중인 탭 찾기 (wait-for-condition 블록이 대기 중인 탭)
       const executingWorkflowTabId = this.tabManager.findExecutingWorkflowTab(tabId);
-      
+
       // 탭 체인을 따라 올라가면서 단계적으로 정리
       // 예: 자식2 -> 자식 -> 부모
       let currentTabId: number | undefined = tabId;
       const tabsToClose: number[] = [];
       const visited = new Set<number>();
-      
+
       // 워크플로우 실행 중인 탭까지 올라가면서 닫을 탭들 수집
       while (currentTabId) {
         if (visited.has(currentTabId)) break;
         visited.add(currentTabId);
-        
+
         // 워크플로우 실행 중인 탭은 닫지 않음
         // 단, 추적 중인 자식 탭이면서 동시에 executingWorkflowTabs에 있는 경우는 제외
         // (자식 탭은 Execution Status만 표시하고 실제로는 워크플로우를 실행하지 않음)
         const isExecutingWorkflow = this.tabManager.isExecutingWorkflow(currentTabId);
         const isTrackedChild = this.tabManager.isTrackedChildTab(currentTabId);
-        
+
         if (isExecutingWorkflow && !isTrackedChild) {
           console.log(
             `[BackgroundManager] Reached executing workflow tab ${currentTabId}, stopping collection`
           );
           break;
         }
-        
+
         // 추적 중인 자식 탭이거나 워크플로우 실행 중이 아닌 탭은 닫을 목록에 추가
         tabsToClose.push(currentTabId);
         currentTabId = this.tabManager.getDirectParentTabId(currentTabId);
       }
-      
+
       console.log('[BackgroundManager] Tabs to close in order:', tabsToClose);
-      
+
       // 역순으로 닫기 (가장 깊은 탭부터)
       // 각 탭을 닫을 때마다 직접 부모로 포커스 이동
       for (let i = tabsToClose.length - 1; i >= 0; i--) {
@@ -245,7 +244,7 @@ export class BackgroundManager {
           );
           // 각 탭을 닫으면 직접 부모로 포커스 이동
           await this.tabManager.closeTab(tabToClose);
-          
+
           // 짧은 딜레이로 사용자가 단계적으로 올라가는 것을 볼 수 있도록
           if (i > 0) {
             await new Promise((resolve) => setTimeout(resolve, 300));
@@ -254,7 +253,7 @@ export class BackgroundManager {
           console.warn(`[BackgroundManager] Failed to close tab ${tabToClose}:`, error);
         }
       }
-      
+
       // 실제 워크플로우 실행 중인 탭에 확인 이벤트 전달
       if (executingWorkflowTabId && executingWorkflowTabId !== tabId) {
         console.log(
@@ -277,7 +276,7 @@ export class BackgroundManager {
           `[BackgroundManager] Skipping confirmation event: executingWorkflowTabId=${executingWorkflowTabId}, tabId=${tabId}`
         );
       }
-      
+
       sendResponse({ success: true });
     } catch (error) {
       console.error('[BackgroundManager] Error closing tab:', error);
@@ -288,7 +287,6 @@ export class BackgroundManager {
       } as ErrorResponse);
     }
   }
-
 
   // Network Catch 요청 처리
   private async handleAsyncNetworkCatch(
@@ -345,21 +343,28 @@ export class BackgroundManager {
           if (!req.requestPostData) return false;
 
           if (typeof requestData.requestBodyPattern === 'string') {
-            console.log('[BackgroundManager] Handle network catch request:', req.requestPostData, requestData.requestBodyPattern);
+            console.log(
+              '[BackgroundManager] Handle network catch request:',
+              req.requestPostData,
+              requestData.requestBodyPattern
+            );
             return req.requestPostData.includes(requestData.requestBodyPattern);
           }
 
           const parsedBody = parseRequestBodyToObject(req.requestPostData, req.requestHeaders);
           console.log('[BackgroundManager] Handle network catch request:', parsedBody);
-          console.log('[BackgroundManager] Handle network catch request:', requestData.requestBodyPattern);
+          console.log(
+            '[BackgroundManager] Handle network catch request:',
+            requestData.requestBodyPattern
+          );
           if (!parsedBody) {
             return false;
           }
 
-          console.log('[BackgroundManager] Handle network catch request:', matchesObjectPattern(
-            parsedBody,
-            requestData.requestBodyPattern as Record<string, any>
-          ));
+          console.log(
+            '[BackgroundManager] Handle network catch request:',
+            matchesObjectPattern(parsedBody, requestData.requestBodyPattern as Record<string, any>)
+          );
           return matchesObjectPattern(
             parsedBody,
             requestData.requestBodyPattern as Record<string, any>

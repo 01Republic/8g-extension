@@ -28,7 +28,7 @@ const FloatingNotificationButton: React.FC<FloatingNotificationButtonProps> = ({
   const [isVisible, setIsVisible] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  
+
   // Fixed position for CDP auto-click
   const FIXED_POSITION = { x: 60, y: 200 };
   const [position, setPosition] = useState(fixedPosition ? FIXED_POSITION : { x: 30, y: 150 });
@@ -38,20 +38,20 @@ const FloatingNotificationButton: React.FC<FloatingNotificationButtonProps> = ({
   // 자동 위치 조정 (다른 UI와 충돌 방지) - fixed position이 아닐 때만
   useEffect(() => {
     if (fixedPosition) return;
-    
+
     const checkCollision = () => {
       // StatusUI 또는 다른 플로팅 요소와 충돌 체크
       const existingElements = document.querySelectorAll('[data-floating-element]');
       let adjustedY = 150;
-      
+
       existingElements.forEach((el) => {
         const rect = el.getBoundingClientRect();
         if (Math.abs(rect.bottom - window.innerHeight + adjustedY) < 80) {
           adjustedY += 80; // 충돌 시 아래로 이동
         }
       });
-      
-      setPosition(prev => ({ ...prev, y: adjustedY }));
+
+      setPosition((prev) => ({ ...prev, y: adjustedY }));
     };
 
     checkCollision();
@@ -60,7 +60,7 @@ const FloatingNotificationButton: React.FC<FloatingNotificationButtonProps> = ({
   // 드래그 핸들러
   const handleMouseDown = (e: React.MouseEvent) => {
     if (disableDrag || fixedPosition) return;
-    
+
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
@@ -72,13 +72,13 @@ const FloatingNotificationButton: React.FC<FloatingNotificationButtonProps> = ({
 
   const handleMouseMove = (e: MouseEvent) => {
     if (!isDragging) return;
-    
+
     const newX = e.clientX - dragStart.x;
     const newY = e.clientY - dragStart.y;
-    
+
     const maxX = window.innerWidth - 80;
     const maxY = window.innerHeight - 80;
-    
+
     setPosition({
       x: Math.max(20, Math.min(newX, maxX)),
       y: Math.max(20, Math.min(newY, maxY)),
@@ -149,7 +149,7 @@ const FloatingNotificationButton: React.FC<FloatingNotificationButtonProps> = ({
     right: `${position.x}px`,
     bottom: `${position.y}px`,
     zIndex: 2147483647, // 최상위 z-index for CDP auto-click
-    cursor: (disableDrag || fixedPosition) ? 'pointer' : (isDragging ? 'grabbing' : 'grab'),
+    cursor: disableDrag || fixedPosition ? 'pointer' : isDragging ? 'grabbing' : 'grab',
     userSelect: 'none',
     transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
   };
@@ -176,9 +176,10 @@ const FloatingNotificationButton: React.FC<FloatingNotificationButtonProps> = ({
     bottom: 0,
     borderRadius: '50%',
     background: colors.pulse,
-    animation: urgency === 'high' 
-      ? 'pulse-urgent 1s ease-in-out infinite' 
-      : 'pulse-normal 2s ease-in-out infinite',
+    animation:
+      urgency === 'high'
+        ? 'pulse-urgent 1s ease-in-out infinite'
+        : 'pulse-normal 2s ease-in-out infinite',
     pointerEvents: 'none',
   };
 
@@ -285,21 +286,25 @@ const FloatingNotificationButton: React.FC<FloatingNotificationButtonProps> = ({
   // 아이콘 선택
   const getIcon = () => {
     switch (urgency) {
-      case 'high': return '🔔';
-      case 'medium': return '📋';
-      case 'low': return 'ℹ️';
-      default: return '📋';
+      case 'high':
+        return '🔔';
+      case 'medium':
+        return '📋';
+      case 'low':
+        return 'ℹ️';
+      default:
+        return '📋';
     }
   };
 
   return (
     <>
       <style>{animationStyles}</style>
-      <div 
+      <div
         ref={buttonRef}
         data-floating-element="notification"
         data-notification-id={id}
-        data-auto-click-target={autoClickTarget ? "true" : "false"}
+        data-auto-click-target={autoClickTarget ? 'true' : 'false'}
         data-position-x={position.x}
         data-position-y={position.y}
         style={containerStyle}
@@ -312,11 +317,7 @@ const FloatingNotificationButton: React.FC<FloatingNotificationButtonProps> = ({
           <span style={iconStyle}>{getIcon()}</span>
           {badge > 0 && <div style={badgeStyle}>{badge > 9 ? '9+' : badge}</div>}
           {onDismiss && (
-            <button 
-              style={closeButtonStyle}
-              onClick={handleDismiss}
-              title="닫기"
-            >
+            <button style={closeButtonStyle} onClick={handleDismiss} title="닫기">
               ✕
             </button>
           )}

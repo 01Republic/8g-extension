@@ -55,18 +55,17 @@ export class SidePanelService {
       }
 
       await chrome.sidePanel.open({ tabId: sender.tab.id });
-      
+
       sendResponse({ success: true });
 
       setTimeout(() => {
         this.sendCheckStatusToSidePanel(notificationId);
       }, 100);
-      
     } catch (error) {
       console.error('[SidePanelService] Failed to open side panel:', error);
-      sendResponse({ 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      sendResponse({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -87,7 +86,7 @@ export class SidePanelService {
 
   private handleSidePanelReady(sendResponse: (response: any) => void) {
     const pendingChecksList = Array.from(this.pendingChecks.values());
-    
+
     if (pendingChecksList.length > 0) {
       const firstCheck = pendingChecksList[0];
       sendResponse({
@@ -105,12 +104,14 @@ export class SidePanelService {
     const check = this.pendingChecks.get(notificationId);
     if (!check) return;
 
-    chrome.runtime.sendMessage({
-      type: 'SHOW_CHECK_STATUS',
-      payload: check,
-    }).catch(error => {
-      console.error('[SidePanelService] Failed to send check status to side panel:', error);
-    });
+    chrome.runtime
+      .sendMessage({
+        type: 'SHOW_CHECK_STATUS',
+        payload: check,
+      })
+      .catch((error) => {
+        console.error('[SidePanelService] Failed to send check status to side panel:', error);
+      });
   }
 
   private handleCheckStatusResult(payload: {
@@ -131,7 +132,7 @@ export class SidePanelService {
         },
       });
     }
-    
+
     this.pendingChecks.delete(payload.notificationId);
   }
 
@@ -142,8 +143,8 @@ export class SidePanelService {
         checksToRemove.push(id);
       }
     });
-    
-    checksToRemove.forEach(id => this.pendingChecks.delete(id));
+
+    checksToRemove.forEach((id) => this.pendingChecks.delete(id));
   }
 }
 

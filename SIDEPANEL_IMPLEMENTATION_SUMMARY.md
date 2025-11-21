@@ -3,6 +3,7 @@
 ## ✅ 완성된 기능
 
 ### Phase 1: Floating Notification Button System
+
 - ✅ FloatingNotificationButton 컴포넌트 구현
   - 긴급도별 색상 및 애니메이션 (low/medium/high)
   - 드래그 가능한 위치 조정
@@ -14,6 +15,7 @@
   - 다중 알림 처리
 
 ### Phase 2: Side Panel System
+
 - ✅ SidePanelService 구현 (Background)
   - 사용자 제스처 기반 Side Panel 열기
   - 대기 중인 체크 상태 관리
@@ -24,6 +26,7 @@
   - 자동 완료 처리
 
 ### Phase 3: Message Protocol
+
 - ✅ Content Script ↔ Background
   - OPEN_SIDE_PANEL_FROM_NOTIFICATION
   - NOTIFICATION_DISMISSED
@@ -36,6 +39,7 @@
   - PERFORM_STATUS_CHECK
 
 ### Phase 4: CheckStatusBlock Integration
+
 - ✅ CheckStatusBlock 수정
   - notification 필드 추가
   - 2단계 실행 로직 구현
@@ -84,15 +88,18 @@ src/
 ## 🎯 주요 특징
 
 ### Chrome API 제약 우회
+
 - Side Panel API의 사용자 제스처 요구사항을 플로팅 버튼으로 해결
 - 2단계 접근법으로 자연스러운 UX 구현
 
 ### 상태 관리
+
 - **플로팅 버튼**: 단순 표시 상태
 - **Side Panel**: 복잡한 상태 및 상호작용
 - **Background**: 전체 조율 및 메시지 라우팅
 
 ### 에러 처리
+
 - Side Panel 열기 실패 시 폴백 UI 표시
 - 타임아웃 처리
 - 사용자 취소 처리
@@ -134,5 +141,5 @@ src/
 
 ---
 
-*구현 완료: 2024년 11월 20일*
-*버전: 1.0.0*
+_구현 완료: 2024년 11월 20일_
+_버전: 1.0.0_

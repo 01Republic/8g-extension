@@ -51,24 +51,24 @@ export class TabManager {
         // 네트워크 데이터 정리
         this.cdpService.clearNetworkRequests(tabId);
 
-      this.activeTabs.delete(tabId);
-      this.closedTabs.add(tabId);
-      this.executingWorkflowTabs.delete(tabId);
-      this.trackedChildTabs.delete(tabId);
+        this.activeTabs.delete(tabId);
+        this.closedTabs.add(tabId);
+        this.executingWorkflowTabs.delete(tabId);
+        this.trackedChildTabs.delete(tabId);
 
-      // 메모리 누수 방지를 위해 1분 후 제거
-      setTimeout(() => {
-        this.closedTabs.delete(tabId);
-      }, 60000);
-    }
+        // 메모리 누수 방지를 위해 1분 후 제거
+        setTimeout(() => {
+          this.closedTabs.delete(tabId);
+        }, 60000);
+      }
 
-    // 추적 중인 자식 탭이 닫혔는지 확인
-    if (this.trackedChildTabs.has(tabId)) {
-      this.trackedChildTabs.delete(tabId);
-    }
+      // 추적 중인 자식 탭이 닫혔는지 확인
+      if (this.trackedChildTabs.has(tabId)) {
+        this.trackedChildTabs.delete(tabId);
+      }
 
-    await this.focusSiblingOrParent(tabId);
-  });
+      await this.focusSiblingOrParent(tabId);
+    });
   }
 
   // 탭 업데이트(페이지 로드) 이벤트 리스너 초기화
@@ -98,16 +98,16 @@ export class TabManager {
           console.log(
             `[TabManager] Tracked child tab loaded, showing execution status and confirmation UI. Child: ${tabId}, Parent: ${parentTabId}`
           );
-          
+
           // 부모 탭의 execution status 정보 가져오기
           const parentWorkflowInfo = this.executingWorkflowTabs.get(parentTabId);
           const executionMessage = parentWorkflowInfo?.message || '워크플로우 실행 중';
-          
+
           // 짧은 딜레이 후 Execution Status와 ConfirmationUI 표시 (content script 준비 대기)
           setTimeout(async () => {
             // Execution Status 표시 (부모와 동일한 메시지, 하지만 executingWorkflowTabs에는 등록하지 않음)
             await this.showExecutionStatus(tabId, executionMessage, false);
-            
+
             // ConfirmationUI 표시 (상단에 표시)
             await this.showConfirmation(tabId, parentTabId, undefined, undefined, 'top');
           }, 1000);
@@ -125,7 +125,7 @@ export class TabManager {
       // window.open()으로 새 탭이 열리면 새 탭이 즉시 활성화될 수 있으므로,
       // 같은 윈도우의 모든 탭을 확인하여 워크플로우 실행 중인 탭을 찾음
       const allTabs = await chrome.tabs.query({ windowId: tab.windowId });
-      
+
       // 워크플로우 실행 중인 탭 찾기 (활성 순서 상관없이)
       let parentTabId: number | undefined;
       for (const t of allTabs) {
@@ -245,14 +245,14 @@ export class TabManager {
 
     await chrome.tabs.remove(tabId);
     this.activeTabs.delete(tabId);
-    
+
     // 탭 관계 정리
     const visited = new Set<number>();
     let currentTabId: number | undefined = tabId;
     while (currentTabId) {
       if (visited.has(currentTabId)) break;
       visited.add(currentTabId);
-      
+
       const nextTabId = this.tabOrigins.get(currentTabId);
       this.tabOrigins.delete(currentTabId);
       this.trackedChildTabs.delete(currentTabId);
@@ -312,7 +312,7 @@ export class TabManager {
 
     try {
       await chrome.tabs.sendMessage(tabId, statusMessage);
-      
+
       // 워크플로우 실행 시작 시 초록색 ConfirmationUI도 함께 표시
       if (registerAsExecuting) {
         await this.showConfirmation(
@@ -326,7 +326,7 @@ export class TabManager {
           false // showClose false (워크플로우 실행 중에는 닫을 수 없음)
         );
       }
-      
+
       console.log('[TabManager] Execution status shown', {
         tabId,
         registerAsExecuting,
@@ -562,22 +562,26 @@ export class TabManager {
   private async focusSiblingOrParent(tabId: number): Promise<void> {
     // 부모 탭 ID 저장 (관계 정리 전에 먼저 저장해야 함)
     const parentTabId = this.tabOrigins.get(tabId);
-    
+
     // 워크플로우 실행 중인 아무 탭이나 찾기 (관계 정리 전에 먼저 찾아야 함)
     const executingTabId = this.findAnyExecutingTab(tabId);
-    
+
     // 최근 생성된 형제 탭 찾기 (아직 executingWorkflowTabs에 등록되지 않았을 수 있음)
     const recentlyCreatedSiblingTabId = this.findRecentlyCreatedSiblingTab(tabId);
-    
+
     // 닫힌 탭의 관계 제거 (직접 관계만)
     this.tabOrigins.delete(tabId);
     this.trackedChildTabs.delete(tabId);
-    
+
     // 현재 활성화된 탭 확인 (이미 활성화된 실행 중인 탭이 있는지 체크)
     try {
       const activeTabs = await chrome.tabs.query({ active: true });
       for (const activeTab of activeTabs) {
-        if (activeTab.id && activeTab.id !== tabId && this.executingWorkflowTabs.has(activeTab.id)) {
+        if (
+          activeTab.id &&
+          activeTab.id !== tabId &&
+          this.executingWorkflowTabs.has(activeTab.id)
+        ) {
           // 이미 활성화된 실행 중인 탭이 있으면 포커스 전환을 하지 않음
           console.log(
             `[TabManager] Skipping focus change - already active executing tab ${activeTab.id} exists`
@@ -589,13 +593,13 @@ export class TabManager {
       console.warn('[TabManager] Failed to check active tabs:', error);
       // 에러가 나도 계속 진행
     }
-    
+
     // 최근 생성된 형제 탭이 있고, 아직 실행 중인 탭이 없으면 약간의 딜레이 후 다시 확인
     if (recentlyCreatedSiblingTabId && !executingTabId) {
       console.log(
         `[TabManager] Found recently created sibling tab ${recentlyCreatedSiblingTabId}, waiting for workflow to start...`
       );
-      
+
       // 1초 후 다시 확인 (워크플로우가 시작될 시간을 줌)
       setTimeout(async () => {
         // 최근 생성된 형제 탭이 여전히 존재하고 활성화되어 있는지 먼저 확인
@@ -609,7 +613,7 @@ export class TabManager {
               );
               return;
             }
-            
+
             // 형제 탭이 실행 중인 탭으로 등록되었는지 확인
             if (this.executingWorkflowTabs.has(recentlyCreatedSiblingTabId)) {
               console.log(
@@ -632,7 +636,7 @@ export class TabManager {
           // 탭을 찾을 수 없으면 (닫혔거나 에러) 계속 진행
           console.warn('[TabManager] Failed to check sibling tab after delay:', error);
         }
-        
+
         // 현재 활성화된 탭 확인 (이미 활성화된 실행 중인 탭이 있는지 체크)
         try {
           const activeTabs = await chrome.tabs.query({ active: true });
@@ -650,10 +654,10 @@ export class TabManager {
         } catch (error) {
           console.warn('[TabManager] Failed to check active tabs after delay:', error);
         }
-        
+
         // 다시 실행 중인 탭 찾기
         const delayedExecutingTabId = this.findAnyExecutingTab(tabId);
-        
+
         if (delayedExecutingTabId) {
           // 실행 중인 탭이 있으면 그 탭으로 이동
           try {
@@ -676,16 +680,16 @@ export class TabManager {
             console.warn('[TabManager] Failed to focus executing tab after delay:', error);
           }
         }
-        
+
         // 여전히 실행 중인 탭이 없으면 부모로 이동
         if (parentTabId) {
           await this.focusParentTabById(parentTabId, tabId);
         }
       }, 1000);
-      
+
       return; // 딜레이 후 처리하므로 여기서 종료
     }
-    
+
     if (executingTabId) {
       // 워크플로우 실행 중인 탭이 있으면 그 탭으로 이동
       try {
@@ -861,7 +865,7 @@ export class TabManager {
   getIntermediateTabs(tabId: number): number[] {
     const intermediateTabs: number[] = [];
     const rootParentTabId = this.findRootParentTab(tabId);
-    
+
     if (!rootParentTabId || rootParentTabId === tabId) {
       return intermediateTabs;
     }

@@ -194,7 +194,6 @@ export function ExecutionStatusUI({
     minWidth: 0,
   };
 
-
   return createPortal(
     <>
       <style>

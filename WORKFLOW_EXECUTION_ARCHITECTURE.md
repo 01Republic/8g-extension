@@ -1228,15 +1228,15 @@ const workflow = {
         description: '계속하려면 로그인이 필요합니다',
         notification: {
           message: '로그인 확인 필요 🔐',
-          urgency: 'high'
+          urgency: 'high',
         },
         options: {
           timeoutMs: 60000,
-          retryable: true
-        }
+          retryable: true,
+        },
       },
       onSuccess: 'collectData',
-      onFailure: 'loginRequired'
+      onFailure: 'loginRequired',
     },
     {
       id: 'collectData',
@@ -1244,18 +1244,18 @@ const workflow = {
         name: 'get-text',
         selector: '.user-data',
         findBy: 'cssSelector',
-        option: {}
-      }
+        option: {},
+      },
     },
     {
       id: 'loginRequired',
       block: {
         name: 'navigate',
         url: '/login',
-        waitForLoad: true
-      }
-    }
-  ]
+        waitForLoad: true,
+      },
+    },
+  ],
 };
 ```
 
@@ -1275,17 +1275,17 @@ const workflow = {
         description: 'CDP를 통해 자동으로 확인됩니다',
         notification: {
           message: '자동 확인 중... 🤖',
-          urgency: 'medium'
+          urgency: 'medium',
         },
         options: {
-          autoClick: true,           // CDP 자동 클릭 활성화
-          clickDelay: 1000,          // 1초 후 자동 클릭
-          fallbackToManual: true,    // 실패 시 수동 모드
+          autoClick: true, // CDP 자동 클릭 활성화
+          clickDelay: 1000, // 1초 후 자동 클릭
+          fallbackToManual: true, // 실패 시 수동 모드
           timeoutMs: 30000,
-          retryable: false
-        }
+          retryable: false,
+        },
       },
-      next: 'processResult'
+      next: 'processResult',
     },
     {
       id: 'processResult',
@@ -1293,20 +1293,22 @@ const workflow = {
         name: 'get-text',
         selector: '.result',
         findBy: 'cssSelector',
-        option: {}
-      }
-    }
-  ]
+        option: {},
+      },
+    },
+  ],
 };
 ```
 
 #### 지원하는 checkType
+
 - `login`: 로그인 상태 확인
-- `pageLoad`: 페이지 로딩 완료 확인  
+- `pageLoad`: 페이지 로딩 완료 확인
 - `element`: 특정 요소 존재 확인
 - `custom`: 사용자 정의 확인 로직
 
 #### 실행 플로우
+
 1. 플로팅 알림 버튼 표시
 2. 사용자 클릭 OR CDP 자동 클릭
 3. Chrome Side Panel 열기

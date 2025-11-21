@@ -140,7 +140,8 @@ const executeSubtreeRepeat = async (params: {
       if (!iterationSuccess) {
         errors.push({
           index,
-          message: iterationRun.results.find((r) => !r.success)?.message || 'Subtree iteration failed',
+          message:
+            iterationRun.results.find((r) => !r.success)?.message || 'Subtree iteration failed',
         });
         if (!repeatConfig.continueOnError) {
           updatedContext = exitLoopInContext(updatedContext);
@@ -268,4 +269,3 @@ const findLastStepIndex = (results: WorkflowStepRunResult<any>[], stepId: string
   }
   return -1;
 };
-

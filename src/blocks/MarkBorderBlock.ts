@@ -424,7 +424,14 @@ function createOverlay(
   overlay.appendChild(background);
 
   // SVG 마스크로 스팟라이트 효과
-  const svg = createSpotlightMask(x, y, width, height, options.borderRadius, options.overlayOpacity);
+  const svg = createSpotlightMask(
+    x,
+    y,
+    width,
+    height,
+    options.borderRadius,
+    options.overlayOpacity
+  );
   overlay.appendChild(svg);
 
   // 펄스 애니메이션 링
@@ -657,13 +664,10 @@ function createPointerIcon(
     'M11.5 11.5l6.88 6.88a1 1 0 0 1-.7 1.7H15l-3-3-3 3H3.32a1 1 0 0 1-.7-1.7l6.88-6.88L11.5 11.5z'
   );
   svg.appendChild(path);
-  
+
   // 포인터 본체
   const pointerBody = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  pointerBody.setAttribute(
-    'd',
-    'M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z'
-  );
+  pointerBody.setAttribute('d', 'M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z');
   svg.insertBefore(pointerBody, path);
 
   // 애니메이션 스타일 추가

@@ -69,20 +69,24 @@ export class InternalMessageHandler {
 
         // 확인 버튼 클릭 시 탭을 닫고 원래 탭으로 포커스하는 콜백 생성
         // buttonText가 있을 때만 onConfirm 제공 (워크플로우 실행 중에는 버튼이 없음)
-        const onConfirm = buttonText && parentTabId
-          ? () => {
-              console.log('[InternalMessageHandler] User confirmed, closing tab and focusing parent:', parentTabId);
-              
-              // Background에 탭 닫기 요청
-              chrome.runtime.sendMessage({
-                type: 'CLOSE_TAB_AND_FOCUS_PARENT',
-                data: { parentTabId },
-              });
+        const onConfirm =
+          buttonText && parentTabId
+            ? () => {
+                console.log(
+                  '[InternalMessageHandler] User confirmed, closing tab and focusing parent:',
+                  parentTabId
+                );
 
-              // UI 숨김
-              window.dispatchEvent(new CustomEvent('8g-hide-confirmation-ui'));
-            }
-          : undefined;
+                // Background에 탭 닫기 요청
+                chrome.runtime.sendMessage({
+                  type: 'CLOSE_TAB_AND_FOCUS_PARENT',
+                  data: { parentTabId },
+                });
+
+                // UI 숨김
+                window.dispatchEvent(new CustomEvent('8g-hide-confirmation-ui'));
+              }
+            : undefined;
 
         // 닫기 버튼 클릭 시 콜백
         const onClose = () => {
@@ -131,7 +135,10 @@ export class InternalMessageHandler {
 
       // Check status message handler
       if ((message as any).type === 'CHECK_STATUS') {
-        console.log('[InternalMessageHandler] Check status message received:', (message as any).checkType);
+        console.log(
+          '[InternalMessageHandler] Check status message received:',
+          (message as any).checkType
+        );
         const result = performStatusCheck((message as any).checkType);
         sendResponse(result);
         return false;
@@ -139,7 +146,10 @@ export class InternalMessageHandler {
 
       // Perform status check from Side Panel
       if ((message as any).type === 'PERFORM_STATUS_CHECK') {
-        console.log('[InternalMessageHandler] Perform status check from Side Panel:', (message as any).payload?.checkType);
+        console.log(
+          '[InternalMessageHandler] Perform status check from Side Panel:',
+          (message as any).payload?.checkType
+        );
         const result = performStatusCheck((message as any).payload?.checkType);
         sendResponse(result);
         return false;
@@ -148,9 +158,11 @@ export class InternalMessageHandler {
       // Check status dismissed handler
       if ((message as any).type === 'CHECK_STATUS_DISMISSED') {
         const { notificationId, message: msg } = (message as any).payload || {};
-        window.dispatchEvent(new CustomEvent('8g-notification-dismissed', {
-          detail: { notificationId, message: msg },
-        }));
+        window.dispatchEvent(
+          new CustomEvent('8g-notification-dismissed', {
+            detail: { notificationId, message: msg },
+          })
+        );
         sendResponse({ success: true });
         return false;
       }
@@ -171,13 +183,15 @@ export class InternalMessageHandler {
    * 현재 페이지에서 계정 정보 추출
    */
   private extractAccountInfo(): any {
-    const emailElement = document.querySelector('[data-email]') || 
-                         document.querySelector('.user-email') ||
-                         document.querySelector('input[type="email"][disabled]');
-    
-    const nameElement = document.querySelector('[data-name]') || 
-                        document.querySelector('.user-name') ||
-                        document.querySelector('.profile-name');
+    const emailElement =
+      document.querySelector('[data-email]') ||
+      document.querySelector('.user-email') ||
+      document.querySelector('input[type="email"][disabled]');
+
+    const nameElement =
+      document.querySelector('[data-name]') ||
+      document.querySelector('.user-name') ||
+      document.querySelector('.profile-name');
 
     return {
       email: emailElement?.textContent || (emailElement as HTMLInputElement)?.value || null,

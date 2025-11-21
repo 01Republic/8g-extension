@@ -61,11 +61,11 @@ import NotificationManager from './components/NotificationManager';
       // Check Status UI 이벤트 리스너
       window.addEventListener('8g-show-check-status', ((event: CustomEvent) => {
         const detail = event.detail;
-        
+
         if (!checkStatusReactRoot) {
           checkStatusReactRoot = createRoot(checkStatusRoot);
         }
-        
+
         checkStatusReactRoot.render(
           <CheckStatusUI
             checkType={detail.checkType}
