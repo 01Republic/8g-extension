@@ -132,6 +132,20 @@ export class CollectWorkflowResult<T = any> {
   error?: string;
 }
 
+/**
+ * addMembers/deleteMembers 전용 응답 타입
+ * data 필드가 항상 ResDataContainer 배열임을 보장
+ */
+export class CollectMemberOperationResult<T = MemberOperationResult> {
+  success!: boolean;
+  data!: ResDataContainer<T>[]; // 항상 배열
+  steps!: WorkflowStepRunResult<T>[];
+  context!: ExecutionContext;
+  targetUrl!: string;
+  timestamp!: string;
+  error?: string;
+}
+
 export class ResDataContainer<T = any> {
   success!: boolean;
   message?: string;
