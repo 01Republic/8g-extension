@@ -280,20 +280,11 @@ export class EightGClient {
 
           const data = steps[steps.length - 1]?.result?.data;
 
-          let resContainer: ResDataContainer | ResDataContainer[];
-          if (Array.isArray(data)) {
-            resContainer = data.map((item) => ({
-              success: response.success,
-              message: response.message,
-              data: item,
-            }));
-          } else {
-            resContainer = {
-              success: response.success,
-              message: response.message,
-              data: data,
-            };
-          }
+          const resContainer = {
+            success: response.success,
+            message: response.message,
+            data: data,
+          };
 
           resolve({
             success: response.success,
