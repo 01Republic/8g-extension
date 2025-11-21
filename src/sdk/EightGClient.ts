@@ -4,6 +4,7 @@ import {
   CurrencyCode,
   ExecutionContext,
   ResDataContainer,
+  MemberOperationResult,
 } from './types';
 import { EightGError } from './errors';
 import { ExtensionResponseMessage, isExtensionResponseMessage } from '@/types/external-messages';
@@ -426,7 +427,7 @@ export class EightGClient {
     slug: string,
     emails: string[],
     request: CollectWorkflowRequest
-  ): Promise<CollectWorkflowResult> {
+  ): Promise<CollectWorkflowResult<MemberOperationResult>> {
     request.workflow.vars = {
       ...request.workflow.vars,
       workspaceKey,
@@ -435,11 +436,14 @@ export class EightGClient {
     };
 
     const result = await this.collectWorkflow(request);
-    if (!result.success) {
-      throw new EightGError('Failed to add members', 'ADD_MEMBERS_FAILED');
+    
+    // 워크플로우 자체가 실패한 경우에만 에러 throw
+    // 개별 멤버 실패는 data 배열에서 처리
+    if (!result.success && result.error) {
+      throw new EightGError(result.error, 'ADD_MEMBERS_WORKFLOW_FAILED');
     }
 
-    return { ...result };
+    return this.transformMemberOperationResult(result);
   }
 
   async deleteMembers(
@@ -447,7 +451,7 @@ export class EightGClient {
     slug: string,
     emails: string[],
     request: CollectWorkflowRequest
-  ): Promise<CollectWorkflowResult> {
+  ): Promise<CollectWorkflowResult<MemberOperationResult>> {
     request.workflow.vars = {
       ...request.workflow.vars,
       workspaceKey,
@@ -456,11 +460,67 @@ export class EightGClient {
     };
 
     const result = await this.collectWorkflow(request);
-    if (!result.success) {
-      throw new EightGError('Failed to delete members', 'DELETE_MEMBERS_FAILED');
+    
+    // 워크플로우 자체가 실패한 경우에만 에러 throw
+    // 개별 멤버 실패는 data 배열에서 처리
+    if (!result.success && result.error) {
+      throw new EightGError(result.error, 'DELETE_MEMBERS_WORKFLOW_FAILED');
     }
 
-    return { ...result };
+    // 🎯 여기서만 변환!
+    return this.transformMemberOperationResult(result);
+  }
+
+  // MemberOperationResult 타입 가드 함수들
+  private isMemberOperationResult(obj: any): obj is MemberOperationResult {
+    return obj && 
+           typeof obj.email === 'string' &&
+           ['add', 'delete'].includes(obj.operation) &&
+           typeof obj.completed === 'boolean';
+  }
+
+  private isMemberOperationResultArray(obj: any): obj is MemberOperationResult[] {
+    return Array.isArray(obj) && 
+           obj.length > 0 && 
+           obj.every(item => this.isMemberOperationResult(item));
+  }
+
+  // MemberOperationResult 변환 함수
+  private transformMemberOperationResult<T>(
+    result: CollectWorkflowResult<T>
+  ): CollectWorkflowResult<MemberOperationResult> {
+    // 워크플로우에서 온 결과가 MemberOperationResult 배열인지 체크
+    const rawData = Array.isArray(result.data) ? null : result.data?.data;
+    
+    if (this.isMemberOperationResultArray(rawData)) {
+      // 배열인 경우: 각각을 ResDataContainer로 래핑
+      return {
+        ...result,
+        data: rawData.map(item => ({
+          success: item.completed,
+          message: item.reason,
+          data: item
+        }))
+      } as CollectWorkflowResult<MemberOperationResult>;
+    }
+    
+    if (this.isMemberOperationResult(rawData)) {
+      // 단일 객체인 경우: 배열로 만들어서 래핑
+      return {
+        ...result,
+        data: [{
+          success: rawData.completed,
+          message: rawData.reason,
+          data: rawData
+        }]
+      } as CollectWorkflowResult<MemberOperationResult>;
+    }
+    
+    // 기본 fallback: 빈 배열
+    return {
+      ...result,
+      data: []
+    } as CollectWorkflowResult<MemberOperationResult>;
   }
 
   static getFromContext(context: ExecutionContext, path: string): any {

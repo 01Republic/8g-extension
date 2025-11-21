@@ -249,3 +249,13 @@ export const CurrencyInfoSchema = {
     description: 'Formatted display text (e.g., US$57.75)',
   },
 };
+
+/**
+ * 멤버 조작 결과 타입 (addMembers/deleteMembers 전용)
+ */
+export interface MemberOperationResult {
+  email: string;
+  operation: 'add' | 'delete';
+  completed: boolean;
+  reason?: string;
+}

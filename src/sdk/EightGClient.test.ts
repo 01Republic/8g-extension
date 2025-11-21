@@ -937,3 +937,337 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
     });
   });
 });
+
+describe('EightGClient - Member Operations (addMembers/deleteMembers)', () => {
+  let client: EightGClient;
+  let mockRequest: CollectWorkflowRequest;
+
+  beforeEach(() => {
+    client = new EightGClient();
+    mockRequest = {
+      targetUrl: 'https://workspace.example.com',
+      workflow: {
+        version: '1.0',
+        start: 'step1',
+        steps: [
+          {
+            id: 'step1',
+            block: {
+              name: 'add-member-action',
+              selector: '.member-form',
+              findBy: 'cssSelector',
+              option: {},
+            },
+          },
+        ],
+      },
+    };
+  });
+
+  describe('addMembers', () => {
+    it('should transform MemberOperationResult array to ResDataContainer array', async () => {
+      const emails = ['user1@example.com', 'user2@example.com', 'invalid-email'];
+      
+      // Mock workflow result with MemberOperationResult array
+      const mockWorkflowResult: CollectWorkflowResult = {
+        success: true,
+        data: {
+          success: true,
+          message: undefined,
+          data: [
+            {
+              email: 'user1@example.com',
+              operation: 'add',
+              completed: true,
+            },
+            {
+              email: 'user2@example.com',
+              operation: 'add', 
+              completed: false,
+              reason: 'User already exists',
+            },
+            {
+              email: 'invalid-email',
+              operation: 'add',
+              completed: false,
+              reason: 'Invalid email format',
+            },
+          ],
+        },
+        steps: [
+          {
+            stepId: 'processMembers',
+            skipped: false,
+            success: true,
+            result: {
+              data: [
+                {
+                  email: 'user1@example.com',
+                  operation: 'add',
+                  completed: true,
+                },
+                {
+                  email: 'user2@example.com',
+                  operation: 'add',
+                  completed: false,
+                  reason: 'User already exists',
+                },
+                {
+                  email: 'invalid-email',
+                  operation: 'add',
+                  completed: false,
+                  reason: 'Invalid email format',
+                },
+              ],
+            },
+            startedAt: '2023-01-01T00:00:00Z',
+            finishedAt: '2023-01-01T00:00:03Z',
+            attempts: 1,
+          },
+        ],
+        context: { 
+          steps: {}, 
+          vars: {
+            workspaceKey: 'test-workspace',
+            slug: 'test-slug',
+            emails: emails,
+          } 
+        },
+        targetUrl: 'https://workspace.example.com',
+        timestamp: '2023-01-01T00:00:00Z',
+      };
+
+      vi.spyOn(client, 'collectWorkflow').mockResolvedValue(mockWorkflowResult);
+
+      const result = await client.addMembers('test-workspace', 'test-slug', emails, mockRequest);
+
+      // Check overall workflow success
+      expect(result.success).toBe(true);
+      
+      // Check transformed data structure - should be ResDataContainer array
+      expect(Array.isArray(result.data)).toBe(true);
+      expect(result.data).toHaveLength(3);
+      
+      // Check first member (success)
+      expect(result.data[0]).toEqual({
+        success: true,
+        message: undefined,
+        data: {
+          email: 'user1@example.com',
+          operation: 'add',
+          completed: true,
+        },
+      });
+      
+      // Check second member (failure with reason)
+      expect(result.data[1]).toEqual({
+        success: false,
+        message: 'User already exists',
+        data: {
+          email: 'user2@example.com',
+          operation: 'add',
+          completed: false,
+          reason: 'User already exists',
+        },
+      });
+      
+      // Check third member (failure with reason)
+      expect(result.data[2]).toEqual({
+        success: false,
+        message: 'Invalid email format',
+        data: {
+          email: 'invalid-email',
+          operation: 'add',
+          completed: false,
+          reason: 'Invalid email format',
+        },
+      });
+
+      // Verify collectWorkflow was called with correct vars
+      expect(client.collectWorkflow).toHaveBeenCalledWith({
+        ...mockRequest,
+        workflow: {
+          ...mockRequest.workflow,
+          vars: {
+            workspaceKey: 'test-workspace',
+            slug: 'test-slug', 
+            emails: emails,
+          },
+        },
+      });
+    });
+
+    it('should transform single MemberOperationResult to ResDataContainer array', async () => {
+      const emails = ['user1@example.com'];
+      
+      // Mock workflow result with single MemberOperationResult
+      const mockWorkflowResult: CollectWorkflowResult = {
+        success: true,
+        data: {
+          success: true,
+          message: undefined,
+          data: {
+            email: 'user1@example.com',
+            operation: 'add',
+            completed: true,
+          },
+        },
+        steps: [],
+        context: { steps: {}, vars: {} },
+        targetUrl: 'https://workspace.example.com',
+        timestamp: '2023-01-01T00:00:00Z',
+      };
+
+      vi.spyOn(client, 'collectWorkflow').mockResolvedValue(mockWorkflowResult);
+
+      const result = await client.addMembers('test-workspace', 'test-slug', emails, mockRequest);
+
+      // Should still return array format
+      expect(Array.isArray(result.data)).toBe(true);
+      expect(result.data).toHaveLength(1);
+      
+      expect(result.data[0]).toEqual({
+        success: true,
+        message: undefined,
+        data: {
+          email: 'user1@example.com',
+          operation: 'add',
+          completed: true,
+        },
+      });
+    });
+
+    it('should return empty array when no MemberOperationResult is found', async () => {
+      const emails = ['user1@example.com'];
+      
+      // Mock workflow result with invalid data
+      const mockWorkflowResult: CollectWorkflowResult = {
+        success: true,
+        data: {
+          success: true,
+          message: undefined,
+          data: 'invalid data format',
+        },
+        steps: [],
+        context: { steps: {}, vars: {} },
+        targetUrl: 'https://workspace.example.com',
+        timestamp: '2023-01-01T00:00:00Z',
+      };
+
+      vi.spyOn(client, 'collectWorkflow').mockResolvedValue(mockWorkflowResult);
+
+      const result = await client.addMembers('test-workspace', 'test-slug', emails, mockRequest);
+
+      // Should return empty array when data format is invalid
+      expect(Array.isArray(result.data)).toBe(true);
+      expect(result.data).toHaveLength(0);
+    });
+
+    it('should throw error when workflow fails', async () => {
+      const emails = ['user1@example.com'];
+      
+      const mockWorkflowResult: CollectWorkflowResult = {
+        success: false,
+        data: [],
+        steps: [],
+        context: { steps: {}, vars: {} },
+        targetUrl: 'https://workspace.example.com',
+        timestamp: '2023-01-01T00:00:00Z',
+        error: 'Network timeout',
+      };
+
+      vi.spyOn(client, 'collectWorkflow').mockResolvedValue(mockWorkflowResult);
+
+      await expect(
+        client.addMembers('test-workspace', 'test-slug', emails, mockRequest)
+      ).rejects.toThrow('Network timeout');
+      
+      try {
+        await client.addMembers('test-workspace', 'test-slug', emails, mockRequest);
+        expect.fail('Should have thrown an error');
+      } catch (error) {
+        expect(error).toBeInstanceOf(EightGError);
+        expect((error as EightGError).code).toBe('ADD_MEMBERS_WORKFLOW_FAILED');
+      }
+    });
+  });
+
+  describe('deleteMembers', () => {
+    it('should transform MemberOperationResult array to ResDataContainer array', async () => {
+      const emails = ['user1@example.com', 'user2@example.com'];
+      
+      // Mock workflow result with MemberOperationResult array
+      const mockWorkflowResult: CollectWorkflowResult = {
+        success: true,
+        data: {
+          success: true,
+          message: undefined,
+          data: [
+            {
+              email: 'user1@example.com',
+              operation: 'delete',
+              completed: true,
+            },
+            {
+              email: 'user2@example.com',
+              operation: 'delete',
+              completed: false,
+              reason: 'User not found',
+            },
+          ],
+        },
+        steps: [],
+        context: { steps: {}, vars: {} },
+        targetUrl: 'https://workspace.example.com',
+        timestamp: '2023-01-01T00:00:00Z',
+      };
+
+      vi.spyOn(client, 'collectWorkflow').mockResolvedValue(mockWorkflowResult);
+
+      const result = await client.deleteMembers('test-workspace', 'test-slug', emails, mockRequest);
+
+      // Check overall workflow success
+      expect(result.success).toBe(true);
+      
+      // Check transformed data structure
+      expect(Array.isArray(result.data)).toBe(true);
+      expect(result.data).toHaveLength(2);
+      
+      // Check first member (success)
+      expect(result.data[0]).toEqual({
+        success: true,
+        message: undefined,
+        data: {
+          email: 'user1@example.com',
+          operation: 'delete',
+          completed: true,
+        },
+      });
+      
+      // Check second member (failure)
+      expect(result.data[1]).toEqual({
+        success: false,
+        message: 'User not found',
+        data: {
+          email: 'user2@example.com',
+          operation: 'delete',
+          completed: false,
+          reason: 'User not found',
+        },
+      });
+
+      // Verify collectWorkflow was called with correct vars
+      expect(client.collectWorkflow).toHaveBeenCalledWith({
+        ...mockRequest,
+        workflow: {
+          ...mockRequest.workflow,
+          vars: {
+            workspaceKey: 'test-workspace',
+            slug: 'test-slug', 
+            emails: emails,
+          },
+        },
+      });
+    });
+  });
+});

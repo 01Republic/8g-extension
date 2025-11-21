@@ -225,3 +225,219 @@ try {
 4. **steps와 context를 활용한 디버깅**
    - `result.steps`: 각 스텝별 실행 결과 확인
    - `result.context`: 워크플로우 실행 컨텍스트 및 변수 상태 확인
+
+---
+
+## 새로운 스펙: addMembers / deleteMembers
+
+### 개요
+
+`addMembers`와 `deleteMembers` 메소드는 기존 응답 구조와 다르게, **개별 이메일별 성공/실패 결과**를 제공하는 새로운 스펙을 적용합니다.
+
+### 새로운 응답 구조
+
+```typescript
+// addMembers / deleteMembers 전용 응답 구조
+interface CollectWorkflowResult<MemberOperationResult> {
+  success: boolean;                              // 워크플로우 전체 성공 여부
+  data: ResDataContainer<MemberOperationResult>[];  // 각 이메일별 결과 배열
+  steps: WorkflowStepRunResult[];               // 각 스텝 실행 결과
+  context: ExecutionContext;                    // 실행 컨텍스트
+  targetUrl: string;                           // 대상 URL
+  timestamp: string;                           // 실행 시간
+  error?: string;                              // 에러 메시지 (실패시)
+}
+
+// 멤버 조작 결과 타입
+interface MemberOperationResult {
+  email: string;
+  operation: 'add' | 'delete';
+  completed: boolean;
+  reason?: string;
+}
+```
+
+### 사용 예시
+
+#### 3명의 멤버 추가 시나리오
+```typescript
+const emails = ['user1@example.com', 'user2@example.com', 'invalid-email'];
+const result = await client.addMembers(workspaceKey, slug, emails, request);
+
+// 응답 예시:
+{
+  success: true,  // 워크플로우는 성공적으로 완료
+  data: [
+    {
+      success: true,
+      data: {
+        email: "user1@example.com",
+        operation: "add",
+        completed: true
+      }
+    },
+    {
+      success: false,
+      message: "User already exists",
+      data: {
+        email: "user2@example.com", 
+        operation: "add",
+        completed: false,
+        reason: "Already a member"
+      }
+    },
+    {
+      success: false,
+      message: "Invalid email format",
+      data: {
+        email: "invalid-email",
+        operation: "add", 
+        completed: false,
+        reason: "Invalid email format"
+      }
+    }
+  ],
+  steps: [...],
+  context: {...},
+  targetUrl: "https://workspace.example.com",
+  timestamp: "2023-12-01T10:00:00Z"
+}
+```
+
+### 클라이언트 사용법
+
+```typescript
+// addMembers 사용 예시
+const emails = ['user1@example.com', 'user2@example.com', 'user3@example.com'];
+const result = await client.addMembers(workspaceKey, slug, emails, request);
+
+if (result.success) {
+  // 각 멤버별 결과 처리
+  result.data.forEach((memberResult, index) => {
+    const email = emails[index];
+    if (memberResult.success && memberResult.data?.completed) {
+      console.log(`✅ ${email} added successfully`);
+    } else {
+      const reason = memberResult.data?.reason || memberResult.message;
+      console.log(`❌ ${email} failed: ${reason}`);
+    }
+  });
+
+  // 통계 정보
+  const successCount = result.data.filter(r => r.success && r.data?.completed).length;
+  const failureCount = result.data.length - successCount;
+  console.log(`Success: ${successCount}, Failed: ${failureCount}`);
+} else {
+  console.error('Workflow failed:', result.error);
+}
+```
+
+### API 설계 개선안
+
+#### 현재 문제점
+```typescript
+// 현재: 전체 성공/실패만 알 수 있음
+async addMembers(...): Promise<CollectWorkflowResult> {
+  const result = await this.collectWorkflow(request);
+  if (!result.success) {
+    throw new EightGError('Failed to add members', 'ADD_MEMBERS_FAILED');
+  }
+  return { ...result };
+}
+```
+
+#### 개선된 설계
+```typescript
+async addMembers(
+  workspaceKey: string,
+  slug: string, 
+  emails: string[],
+  request: CollectWorkflowRequest
+): Promise<CollectWorkflowResult<MemberOperationResult>> {
+  request.workflow.vars = {
+    ...request.workflow.vars,
+    workspaceKey,
+    slug,
+    emails,
+  };
+
+  const result = await this.collectWorkflow(request);
+  
+  // 워크플로우 자체가 실패한 경우에만 에러 throw
+  // 개별 멤버 실패는 data 배열에서 처리
+  if (!result.success && result.error) {
+    throw new EightGError(result.error, 'ADD_MEMBERS_WORKFLOW_FAILED');
+  }
+
+  // result.data는 이미 ResDataContainer<MemberOperationResult>[] 형태
+  return result as CollectWorkflowResult<MemberOperationResult>;
+}
+
+async deleteMembers(
+  workspaceKey: string,
+  slug: string,
+  emails: string[], 
+  request: CollectWorkflowRequest
+): Promise<CollectWorkflowResult<MemberOperationResult>> {
+  // addMembers와 동일한 패턴
+  request.workflow.vars = {
+    ...request.workflow.vars,
+    workspaceKey,
+    slug, 
+    emails,
+  };
+
+  const result = await this.collectWorkflow(request);
+  
+  if (!result.success && result.error) {
+    throw new EightGError(result.error, 'DELETE_MEMBERS_WORKFLOW_FAILED');
+  }
+
+  return result as CollectWorkflowResult<MemberOperationResult>;
+}
+```
+
+### 워크플로우 구현 요구사항
+
+이 새로운 스펙을 지원하려면 워크플로우에서 다음과 같은 구조가 필요합니다:
+
+1. **forEach 반복**: `vars.emails` 배열을 순회
+2. **개별 결과 수집**: 각 이메일별로 `ResDataContainer` 생성
+3. **에러 처리**: `continueOnError: true`로 실패해도 계속 진행
+
+```json
+{
+  "steps": [
+    {
+      "id": "processMembers",
+      "repeat": {
+        "forEach": "vars.emails",
+        "continueOnError": true,
+        "delayBetween": 200
+      },
+      "block": {
+        "name": "add-member-action",
+        "selector": "...",
+        "option": {}
+      }
+    }
+  ]
+}
+```
+
+### 기존 API와의 차이점
+
+| API | 기존 스펙 | addMembers/deleteMembers 스펙 |
+|-----|----------|------------------------------|
+| data 구조 | `ResDataContainer<T>` | `ResDataContainer<T>[]` |
+| 결과 입도 | 전체 성공/실패 | 개별 아이템별 성공/실패 |
+| 에러 처리 | 전체 실패시 throw | 워크플로우 실패시에만 throw |
+| 사용 사례 | 단일/목록 조회 | 다중 아이템 처리 |
+
+### 마이그레이션 체크리스트
+
+- [ ] `MemberOperationResult` 타입 정의
+- [ ] `addMembers` 메소드 수정 
+- [ ] `deleteMembers` 메소드 수정
+- [ ] 워크플로우에서 배열 결과 수집 지원
+- [ ] 클라이언트 코드 업데이트 가이드 작성
