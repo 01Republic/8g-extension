@@ -242,6 +242,32 @@ const result = await client.collectWorkflow({
 // 결과: boolean (성공 여부)
 ```
 
+**check-status** - 상태 확인 (Side Panel + CDP Auto-click)
+
+```typescript
+{
+  name: 'check-status',
+  checkType: 'login' | 'pageLoad' | 'element' | 'custom',
+  title: string,                     // 확인 제목
+  description?: string,              // 확인 설명
+  notification?: {
+    message: string,                 // 플로팅 버튼 메시지
+    urgency?: 'low' | 'medium' | 'high'
+  },
+  options?: {
+    timeoutMs?: number,              // 타임아웃 (ms)
+    retryable?: boolean,             // 재시도 가능 여부
+    autoClick?: boolean,             // CDP 자동 클릭 활성화
+    clickDelay?: number,             // 클릭 전 대기 시간 (ms)
+    fallbackToManual?: boolean,      // 자동 클릭 실패 시 수동 모드
+    customValidator?: string         // 사용자 정의 검증 로직
+  }
+}
+// selector, findBy, option 불필요
+// 플로팅 알림 버튼 → 사용자 클릭 or CDP 자동 클릭 → Side Panel → 상태 확인
+// 결과: { confirmed: boolean, data?: any }
+```
+
 **save-assets** - 이미지/미디어 수집
 
 ```typescript
@@ -423,6 +449,7 @@ src/blocks/
 ├── FetchApiBlock.ts          # API 호출
 ├── AiParseDataBlock.ts       # AI 파싱
 ├── DataExtractBlock.ts       # 데이터 추출/변환
+├── CheckStatusBlock.ts       # 상태 확인 (Side Panel + CDP Auto-click)
 ├── types.ts                  # 공통 타입
 └── index.ts                  # BlockHandler + 통합
 ```
@@ -464,6 +491,8 @@ export class BlockHandler {
         return handlerGetText(validateGetTextBlock(block));
       case 'event-click':
         return handlerEventClick(validateEventClickBlock(block));
+      case 'check-status':
+        return handlerCheckStatus(validateCheckStatusBlock(block));
       // ...
     }
   }

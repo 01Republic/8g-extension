@@ -55,11 +55,6 @@ export const WorkspaceDetailItemSchema = z.object({
 
 export type WorkspaceDetailItemDto = z.infer<typeof WorkspaceDetailItemSchema>;
 
-export type ConnectWorkspaceResponseDto = {
-  data: WorkspaceItemDto[];
-  isSuccess: boolean;
-};
-
 export enum BillingCycleTerm {
   None = 'None',
   Monthly = 'Monthly',
@@ -310,38 +305,14 @@ export class EightGClient {
 
   async getWorkspaces(
     request: CollectWorkflowRequest
-  ): Promise<ConnectWorkspaceResponseDto & CollectWorkflowResult> {
-    const result = await this.collectWorkflow(request);
-    if (!result.success) {
-      throw new EightGError('Failed to get workspaces', 'GET_WORKSPACES_FAILED');
-    }
-
-    // steps에서 데이터 추출
-    const rawData = result.steps[result.steps.length - 1]?.result?.data;
-    if (!rawData || !Array.isArray(rawData)) {
-      return {
-        ...result,
-        data: [],
-        isSuccess: false,
-      };
-    }
-
-    // Zod로 각 아이템 검증
-    const validatedWorkspaces: WorkspaceItemDto[] = [];
-    for (const item of rawData) {
-      const parsed = WorkspaceItemSchema.safeParse(item);
-      if (parsed.success) {
-        validatedWorkspaces.push(parsed.data);
-      } else {
-        console.warn('Invalid workspace data:', item, parsed.error);
-      }
-    }
-
-    return {
-      ...result,
-      data: validatedWorkspaces,
-      isSuccess: true,
-    };
+  ): Promise<CollectWorkflowResult<WorkspaceItemDto[]>> {
+    return this.executeWorkflowAndValidate(
+      request,
+      WorkspaceItemSchema,
+      'GET_WORKSPACES_FAILED',
+      'Failed to get workspaces',
+      true
+    ) as Promise<CollectWorkflowResult<WorkspaceItemDto[]>>;
   }
 
   // 워크스페이스 상세
@@ -349,34 +320,20 @@ export class EightGClient {
     workspaceKey: string,
     slug: string,
     request: CollectWorkflowRequest
-  ): Promise<({ data: WorkspaceDetailItemDto } & CollectWorkflowResult) | CollectWorkflowResult> {
+  ): Promise<CollectWorkflowResult<WorkspaceDetailItemDto>> {
     request.workflow.vars = {
       ...request.workflow.vars,
       workspaceKey,
       slug,
     };
 
-    const result = await this.collectWorkflow(request);
-    if (!result.success) {
-      throw new EightGError('Failed to get workspaces', 'GET_WORKSPACES_FAILED');
-    }
-
-    // steps에서 데이터 추출
-    const rawData = result.steps[result.steps.length - 1]?.result?.data;
-
-    if (!rawData) {
-      return { ...result };
-    }
-
-    const parsed = WorkspaceDetailItemSchema.safeParse(rawData);
-
-    if (parsed.success) {
-      const data = parsed.data as WorkspaceDetailItemDto;
-      return { ...result, data: data };
-    } else {
-      console.warn('Invalid workspace detail data:', rawData, parsed.error);
-      return { ...result, data: undefined };
-    }
+    return this.executeWorkflowAndValidate(
+      request,
+      WorkspaceDetailItemSchema,
+      'GET_WORKSPACE_DETAIL_FAILED',
+      'Failed to get workspace detail',
+      false
+    ) as Promise<CollectWorkflowResult<WorkspaceDetailItemDto>>;
   }
 
   // 플랜, 결제주기
@@ -384,34 +341,20 @@ export class EightGClient {
     workspaceKey: string,
     slug: string,
     request: CollectWorkflowRequest
-  ): Promise<({ data: WorkspaceBillingDto } & CollectWorkflowResult) | CollectWorkflowResult> {
+  ): Promise<CollectWorkflowResult<WorkspaceBillingDto>> {
     request.workflow.vars = {
       ...request.workflow.vars,
       workspaceKey,
       slug,
     };
 
-    const result = await this.collectWorkflow(request);
-    if (!result.success) {
-      throw new EightGError(
-        'Failed to get workspace plan and cycle',
-        'GET_WORKSPACE_PLAN_AND_CYCLE_FAILED'
-      );
-    }
-
-    const rawData = result.steps[result.steps.length - 1]?.result?.data;
-    if (!rawData) {
-      return { ...result };
-    }
-
-    const parsed = WorkspaceBillingSchema.safeParse(rawData);
-    if (parsed.success) {
-      const data = parsed.data as WorkspaceBillingDto;
-      return { ...result, data: data };
-    } else {
-      console.warn('Invalid workspace billing data:', rawData, parsed.error);
-      return { ...result, data: undefined };
-    }
+    return this.executeWorkflowAndValidate(
+      request,
+      WorkspaceBillingSchema,
+      'GET_WORKSPACE_BILLING_FAILED',
+      'Failed to get workspace billing',
+      false
+    ) as Promise<CollectWorkflowResult<WorkspaceBillingDto>>;
   }
 
   // 결제내역
@@ -419,38 +362,20 @@ export class EightGClient {
     workspaceKey: string,
     slug: string,
     request: CollectWorkflowRequest
-  ): Promise<{ data: WorkspaceBillingHistoryDto[] } & CollectWorkflowResult> {
+  ): Promise<CollectWorkflowResult<WorkspaceBillingHistoryDto[]>> {
     request.workflow.vars = {
       ...request.workflow.vars,
       workspaceKey,
       slug,
     };
 
-    const result = await this.collectWorkflow(request);
-    if (!result.success) {
-      throw new EightGError(
-        'Failed to get workspace billing histories',
-        'GET_WORKSPACE_BILLING_HISTORIES_FAILED'
-      );
-    }
-
-    const rawData = result.steps[result.steps.length - 1]?.result?.data;
-    if (!rawData || !Array.isArray(rawData)) {
-      return { ...result, data: [] };
-    }
-
-    // 배열의 각 아이템 검증
-    const validatedHistories: WorkspaceBillingHistoryDto[] = [];
-    for (const item of rawData) {
-      const parsed = WorkspaceBillingHistorySchema.safeParse(item);
-      if (parsed.success) {
-        validatedHistories.push(parsed.data);
-      } else {
-        console.warn('Invalid workspace billing history data:', item, parsed.error);
-      }
-    }
-
-    return { ...result, data: validatedHistories };
+    return this.executeWorkflowAndValidate(
+      request,
+      WorkspaceBillingHistorySchema,
+      'GET_WORKSPACE_BILLING_HISTORIES_FAILED',
+      'Failed to get workspace billing histories',
+      true
+    ) as Promise<CollectWorkflowResult<WorkspaceBillingHistoryDto[]>>;
   }
 
   // 구성원
@@ -458,35 +383,20 @@ export class EightGClient {
     workspaceKey: string,
     slug: string,
     request: CollectWorkflowRequest
-  ): Promise<{ data: WorkspaceMemberDto[] } & CollectWorkflowResult> {
+  ): Promise<CollectWorkflowResult<WorkspaceMemberDto[]>> {
     request.workflow.vars = {
       ...request.workflow.vars,
       workspaceKey,
       slug,
     };
 
-    const result = await this.collectWorkflow(request);
-    if (!result.success) {
-      throw new EightGError('Failed to get workspace members', 'GET_WORKSPACE_MEMBERS_FAILED');
-    }
-
-    const rawData = result.steps[result.steps.length - 1]?.result?.data;
-    if (!rawData || !Array.isArray(rawData)) {
-      return { ...result, data: [] };
-    }
-
-    // 배열의 각 아이템 검증
-    const validatedMembers: WorkspaceMemberDto[] = [];
-    for (const item of rawData) {
-      const parsed = WorkspaceMemberSchema.safeParse(item);
-      if (parsed.success) {
-        validatedMembers.push(parsed.data);
-      } else {
-        console.warn('Invalid workspace member data:', item, parsed.error);
-      }
-    }
-
-    return { ...result, data: validatedMembers };
+    return this.executeWorkflowAndValidate(
+      request,
+      WorkspaceMemberSchema,
+      'GET_WORKSPACE_MEMBERS_FAILED',
+      'Failed to get workspace members',
+      true
+    ) as Promise<CollectWorkflowResult<WorkspaceMemberDto[]>>;
   }
 
   async addMembers(
@@ -555,5 +465,71 @@ export class EightGClient {
 
   static getVar(context: ExecutionContext, varKey: string): any {
     return context.vars[varKey];
+  }
+
+  /**
+   * 공통 워크플로우 실행 및 데이터 검증 로직
+   */
+  private async executeWorkflowAndValidate<T>(
+    request: CollectWorkflowRequest,
+    schema: z.ZodSchema<T>,
+    errorCode: string,
+    errorMessage: string,
+    isArray: boolean = false
+  ): Promise<CollectWorkflowResult<T | T[]>> {
+    const result = await this.collectWorkflow(request);
+    if (!result.success) {
+      throw new EightGError(errorMessage, errorCode);
+    }
+
+    // steps에서 데이터 추출
+    const rawData = result.steps[result.steps.length - 1]?.result?.data;
+    
+    if (!rawData) {
+      return { 
+        ...result, 
+        data: isArray ? ([] as T[]) : undefined 
+      } as CollectWorkflowResult<T | T[]>;
+    }
+
+    if (isArray) {
+      if (!Array.isArray(rawData)) {
+        return { 
+          ...result, 
+          data: [] as T[] 
+        } as CollectWorkflowResult<T[]>;
+      }
+
+      // 배열의 각 아이템 검증
+      const validatedItems: T[] = [];
+      for (const item of rawData) {
+        const parsed = schema.safeParse(item);
+        if (parsed.success) {
+          validatedItems.push(parsed.data);
+        } else {
+          console.warn(`Invalid data:`, item, parsed.error);
+        }
+      }
+
+      return { 
+        ...result, 
+        data: validatedItems 
+      } as CollectWorkflowResult<T[]>;
+    } else {
+      // 단일 객체 검증
+      const parsed = schema.safeParse(rawData);
+      if (parsed.success) {
+        return { 
+          ...result, 
+          data: parsed.data 
+        } as CollectWorkflowResult<T>;
+      } else {
+        console.warn(`Invalid data:`, rawData, parsed.error);
+        return { 
+          ...result, 
+          data: undefined 
+        } as CollectWorkflowResult<T>;
+      }
+    }
   }
 }

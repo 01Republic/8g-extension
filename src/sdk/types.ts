@@ -124,6 +124,7 @@ export class WorkflowStepRunResult<T = any> {
 
 export class CollectWorkflowResult<T = any> {
   success!: boolean;
+  data?: T;
   steps!: WorkflowStepRunResult<T>[];
   context!: ExecutionContext;
   targetUrl!: string;

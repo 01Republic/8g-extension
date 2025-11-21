@@ -1176,7 +1176,7 @@ console.log(stepResult.success, stepResult.skipped);
 }
 ```
 
-**예외:** `keypress`, `wait`, `fetch-api`, `ai-parse-data`, `navigate`, `wait-for-condition` 블록은 `selector`, `findBy`, `option` 불필요
+**예외:** `keypress`, `wait`, `fetch-api`, `ai-parse-data`, `navigate`, `wait-for-condition`, `check-status` 블록은 `selector`, `findBy`, `option` 불필요
 
 ### delayAfterMs 활용
 
@@ -1207,6 +1207,112 @@ console.log(stepResult.success, stepResult.skipped);
   }
 }
 ```
+
+### 예제 8: 상태 확인 (Side Panel + CDP Auto-click)
+
+`check-status` 블록을 사용하여 워크플로우 실행 중 사용자 상태를 확인할 수 있습니다. 자동 클릭 기능을 사용하면 사용자 개입 없이 자동으로 확인됩니다.
+
+#### 수동 모드 (기본)
+
+```typescript
+const workflow = {
+  version: '1.0',
+  start: 'checkLogin',
+  steps: [
+    {
+      id: 'checkLogin',
+      block: {
+        name: 'check-status',
+        checkType: 'login',
+        title: '로그인 상태 확인',
+        description: '계속하려면 로그인이 필요합니다',
+        notification: {
+          message: '로그인 확인 필요 🔐',
+          urgency: 'high'
+        },
+        options: {
+          timeoutMs: 60000,
+          retryable: true
+        }
+      },
+      onSuccess: 'collectData',
+      onFailure: 'loginRequired'
+    },
+    {
+      id: 'collectData',
+      block: {
+        name: 'get-text',
+        selector: '.user-data',
+        findBy: 'cssSelector',
+        option: {}
+      }
+    },
+    {
+      id: 'loginRequired',
+      block: {
+        name: 'navigate',
+        url: '/login',
+        waitForLoad: true
+      }
+    }
+  ]
+};
+```
+
+#### 자동 클릭 모드 (CDP Auto-click)
+
+```typescript
+const workflow = {
+  version: '1.0',
+  start: 'autoCheckLogin',
+  steps: [
+    {
+      id: 'autoCheckLogin',
+      block: {
+        name: 'check-status',
+        checkType: 'login',
+        title: '로그인 상태 자동 확인',
+        description: 'CDP를 통해 자동으로 확인됩니다',
+        notification: {
+          message: '자동 확인 중... 🤖',
+          urgency: 'medium'
+        },
+        options: {
+          autoClick: true,           // CDP 자동 클릭 활성화
+          clickDelay: 1000,          // 1초 후 자동 클릭
+          fallbackToManual: true,    // 실패 시 수동 모드
+          timeoutMs: 30000,
+          retryable: false
+        }
+      },
+      next: 'processResult'
+    },
+    {
+      id: 'processResult',
+      block: {
+        name: 'get-text',
+        selector: '.result',
+        findBy: 'cssSelector',
+        option: {}
+      }
+    }
+  ]
+};
+```
+
+#### 지원하는 checkType
+- `login`: 로그인 상태 확인
+- `pageLoad`: 페이지 로딩 완료 확인  
+- `element`: 특정 요소 존재 확인
+- `custom`: 사용자 정의 확인 로직
+
+#### 실행 플로우
+1. 플로팅 알림 버튼 표시
+2. 사용자 클릭 OR CDP 자동 클릭
+3. Chrome Side Panel 열기
+4. 상태 확인 UI 표시
+5. 사용자 확인/취소
+6. 워크플로우 계속/중단
 
 ## 디버깅
 
