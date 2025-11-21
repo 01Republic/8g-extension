@@ -381,11 +381,11 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
       // Mock collectWorkflow to return valid workspace data
       const mockWorkflowResult: CollectWorkflowResult = {
         success: true,
-        data: [
-          {
-            success: true,
-            message: undefined,
-            data: {
+        data: {
+          success: true,
+          message: undefined,
+          data: [
+            {
               id: 'ws-1',
               slug: 'test-workspace',
               name: 'Test Workspace',
@@ -393,11 +393,7 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
               memberCount: 5,
               isAdmin: true,
             },
-          },
-          {
-            success: true,
-            message: undefined,
-            data: {
+            {
               id: 'ws-2',
               slug: 'another-workspace',
               name: 'Another Workspace',
@@ -405,8 +401,8 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
               memberCount: 3,
               isAdmin: false,
             },
-          },
-        ],
+          ],
+        },
         steps: [
           {
             stepId: 'step1',
@@ -447,8 +443,10 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
       const result = await client.getWorkspaces(mockRequest);
 
       expect(result.success).toBe(true);
-      expect(result.data).toHaveLength(2);
-      expect(result.data![0]).toEqual({
+      expect(result.data).toHaveProperty('success', true);
+      expect(result.data).toHaveProperty('data');
+      expect((result.data as any).data).toHaveLength(2);
+      expect((result.data as any).data[0]).toEqual({
         id: 'ws-1',
         slug: 'test-workspace',
         name: 'Test Workspace',
@@ -461,11 +459,11 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
     it('should filter out invalid items in array data', async () => {
       const mockWorkflowResult: CollectWorkflowResult = {
         success: true,
-        data: [
-          {
-            success: true,
-            message: undefined,
-            data: {
+        data: {
+          success: true,
+          message: undefined,
+          data: [
+            {
               id: 'ws-1',
               slug: 'test-workspace',
               name: 'Test Workspace',
@@ -473,18 +471,14 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
               memberCount: 5,
               isAdmin: true,
             },
-          },
-          {
-            success: true,
-            message: undefined,
-            data: {
+            {
               // Invalid data - missing required fields
               id: 'ws-2',
               slug: 'invalid-workspace',
               // missing name, image, memberCount
             },
-          },
-        ],
+          ],
+        },
         steps: [
           {
             stepId: 'step1',
@@ -524,8 +518,10 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
       const result = await client.getWorkspaces(mockRequest);
 
       expect(result.success).toBe(true);
-      expect(result.data).toHaveLength(1); // Invalid items are filtered out, not set to undefined
-      expect(result.data![0]).toEqual({
+      expect(result.data).toHaveProperty('success', true);
+      expect(result.data).toHaveProperty('data');
+      expect((result.data as any).data).toHaveLength(1); // Invalid items are filtered out, not set to undefined
+      expect((result.data as any).data[0]).toEqual({
         id: 'ws-1',
         slug: 'test-workspace',
         name: 'Test Workspace',
@@ -579,8 +575,10 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
       const result = await client.getWorkspaces(mockRequest);
 
       expect(result.success).toBe(true);
-      expect(result.data).toHaveLength(2);
-      expect(result.data![0]).toEqual({
+      expect(result.data).toHaveProperty('success', true);
+      expect(result.data).toHaveProperty('data');
+      expect((result.data as any).data).toHaveLength(2);
+      expect((result.data as any).data[0]).toEqual({
         id: 'w1690183656-zyq378249',
         slug: 'w1690183656-zyq378249',
         name: '오구오구',
@@ -588,7 +586,7 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
         memberCount: 6,
         isAdmin: true,
       });
-      expect(result.data![1]).toEqual({
+      expect((result.data as any).data[1]).toEqual({
         id: 'slack-qwo8340',
         slug: 'slack-qwo8340',
         name: 'Slack',
@@ -765,11 +763,11 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
     it('should extract data from result.data directly', async () => {
       const mockWorkflowResult: CollectWorkflowResult = {
         success: true,
-        data: [
-          {
-            success: true,
-            message: undefined,
-            data: {
+        data: {
+          success: true,
+          message: undefined,
+          data: [
+            {
               id: 'ws-1',
               slug: 'test-workspace',
               name: 'Test Workspace',
@@ -777,8 +775,8 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
               memberCount: 5,
               isAdmin: true,
             },
-          },
-        ],
+          ],
+        },
         steps: [
           {
             stepId: 'step1',
@@ -822,8 +820,10 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
       const result = await client.getWorkspaces(mockRequest);
 
       expect(result.success).toBe(true);
-      expect(result.data).toHaveLength(1);
-      expect(result.data![0]).toEqual({
+      expect(result.data).toHaveProperty('success', true);
+      expect(result.data).toHaveProperty('data');
+      expect((result.data as any).data).toHaveLength(1);
+      expect((result.data as any).data[0]).toEqual({
         id: 'ws-1',
         slug: 'test-workspace',
         name: 'Test Workspace',
@@ -847,13 +847,11 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
 
       const mockWorkflowResult: CollectWorkflowResult = {
         success: true,
-        data: [
-          {
-            success: true,
-            message: undefined,
-            data: testData,
-          },
-        ],
+        data: {
+          success: true,
+          message: undefined,
+          data: [testData],
+        },
         steps: [
           {
             stepId: 'step1',
@@ -875,10 +873,12 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
       const result = await client.getWorkspaces(mockRequest);
 
       // Check that the extracted data matches the DTO structure
-      expect(result.data![0]).toEqual(testData);
+      expect(result.data).toHaveProperty('success', true);
+      expect(result.data).toHaveProperty('data');
+      expect((result.data as any).data[0]).toEqual(testData);
 
       // Validate schema consistency
-      const validation = WorkspaceItemSchema.safeParse(result.data![0]);
+      const validation = WorkspaceItemSchema.safeParse((result.data as any).data[0]);
       expect(validation.success).toBe(true);
       expect(validation.data).toEqual(testData);
     });

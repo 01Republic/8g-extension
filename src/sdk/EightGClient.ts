@@ -515,27 +515,50 @@ export class EightGClient {
     }
 
     if (isArray) {
-      // rawData가 ResDataContainer 형태라면 data 속성을 추출
-      const actualData = (rawData as any)?.data || rawData;
+      // rawData가 ResDataContainer 형태인지 확인
+      if ((rawData as any)?.data && Array.isArray((rawData as any).data)) {
+        // ResDataContainer 구조: { success: true, data: [...] }
+        const container = rawData as ResDataContainer<T[]>;
+        const validatedItems: T[] = [];
+        
+        if (container.data) {
+          for (const item of container.data) {
+            const parsed = schema.safeParse(item);
+            if (parsed.success) {
+              validatedItems.push(parsed.data);
+            } else {
+              console.warn(`Invalid data:`, item, parsed.error);
+              // 검증 실패한 아이템은 건너뛰기
+            }
+          }
+        }
+
+        // ResDataContainer 구조를 유지하면서 검증된 데이터로 교체
+        return {
+          ...result,
+          data: {
+            ...container,
+            data: validatedItems,
+          },
+        } as CollectWorkflowResult<T[]>;
+      }
       
-      if (!Array.isArray(actualData)) {
+      // 일반 배열 형태 처리
+      if (!Array.isArray(rawData)) {
         return {
           ...result,
           data: [] as T[],
         } as CollectWorkflowResult<T[]>;
       }
 
-      // 배열의 각 아이템 검증
       const validatedItems: T[] = [];
-      for (const item of actualData) {
-        // item이 { data: {...} } 구조라면 data 부분만 추출, 아니면 item 자체 사용
+      for (const item of rawData) {
         const itemData = (item as any)?.data !== undefined ? (item as any).data : item;
         const parsed = schema.safeParse(itemData);
         if (parsed.success) {
           validatedItems.push(parsed.data);
         } else {
           console.warn(`Invalid data:`, item, parsed.error);
-          // 검증 실패한 아이템은 건너뛰기 (undefined 추가하지 않음)
         }
       }
 
