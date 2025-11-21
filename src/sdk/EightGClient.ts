@@ -511,22 +511,14 @@ export class EightGClient {
       }
 
       // 배열의 각 아이템 검증
-      const validatedItems: ResDataContainer<T>[] = [];
+      const validatedItems: T[] = [];
       for (const item of rawData) {
         const parsed = schema.safeParse(item.data);
         if (parsed.success) {
-          validatedItems.push({
-            success: item.success,
-            message: item.message,
-            data: parsed.data,
-          });
+          validatedItems.push(parsed.data);
         } else {
           console.warn(`Invalid data:`, item, parsed.error);
-          validatedItems.push({
-            success: false,
-            message: parsed.error.message,
-            data: undefined,
-          });
+          validatedItems.push(undefined as T);
         }
       }
 
@@ -535,22 +527,19 @@ export class EightGClient {
         data: validatedItems,
       } as CollectWorkflowResult<T[]>;
     } else {
-      // 단일 객체 검증
-      const parsed = schema.safeParse(rawData);
+      // 단일 객체 검증 - rawData가 ResDataContainer 형태임
+      const container = rawData as ResDataContainer<any>;
+      const parsed = schema.safeParse(container.data);
       if (parsed.success) {
         return {
           ...result,
           data: parsed.data,
         } as CollectWorkflowResult<T>;
       } else {
-        console.warn(`Invalid data:`, rawData, parsed.error);
+        console.warn(`Invalid data:`, container, parsed.error);
         return {
           ...result,
-          data: {
-            ...rawData,
-            success: false,
-            message: 'Invalid data',
-          },
+          data: undefined as T,
         } as CollectWorkflowResult<T>;
       }
     }

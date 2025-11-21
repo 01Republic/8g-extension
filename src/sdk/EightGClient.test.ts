@@ -7,7 +7,6 @@ import {
   ExecutionContext,
   CollectWorkflowRequest,
   CollectWorkflowResult,
-  ResDataContainer,
 } from './types';
 import { EightGError } from './errors';
 
@@ -450,16 +449,12 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
       expect(result.success).toBe(true);
       expect(result.data).toHaveLength(2);
       expect(result.data![0]).toEqual({
-        success: true,
-        message: undefined,
-        data: {
-          id: 'ws-1',
-          slug: 'test-workspace',
-          name: 'Test Workspace',
-          image: 'https://example.com/image.png',
-          memberCount: 5,
-          isAdmin: true,
-        },
+        id: 'ws-1',
+        slug: 'test-workspace',
+        name: 'Test Workspace',
+        image: 'https://example.com/image.png',
+        memberCount: 5,
+        isAdmin: true,
       });
     });
 
@@ -529,11 +524,16 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
       const result = await client.getWorkspaces(mockRequest);
 
       expect(result.success).toBe(true);
-      expect(result.data).toHaveLength(2); // Both items remain but one marked as invalid
-      expect(result.data![0].success).toBe(true);
-      expect(result.data![0].data!.id).toBe('ws-1');
-      expect(result.data![1].success).toBe(false);
-      expect(result.data![1].message).toContain('Required');
+      expect(result.data).toHaveLength(2); // Both items remain but one is undefined
+      expect(result.data![0]).toEqual({
+        id: 'ws-1',
+        slug: 'test-workspace',
+        name: 'Test Workspace',
+        image: 'https://example.com/image.png',
+        memberCount: 5,
+        isAdmin: true,
+      });
+      expect(result.data![1]).toBeUndefined();
       expect(consoleSpy).toHaveBeenCalledWith(
         'Invalid data:',
         expect.any(Object),
@@ -625,18 +625,14 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual({
-        success: false,
-        message: 'Invalid data',
-        data: {
-          slug: 'test-workspace',
-          displayName: 'Test Workspace',
-          profileImageUrl: 'https://example.com/image.png',
-          description: 'A test workspace',
-          publicEmail: 'public@test.com',
-          billingEmail: 'billing@test.com',
-          orgPageUrl: 'https://test.com',
-          roles: ['admin', 'member'],
-        },
+        slug: 'test-workspace',
+        displayName: 'Test Workspace',
+        profileImageUrl: 'https://example.com/image.png',
+        description: 'A test workspace',
+        publicEmail: 'public@test.com',
+        billingEmail: 'billing@test.com',
+        orgPageUrl: 'https://test.com',
+        roles: ['admin', 'member'],
       });
     });
 
@@ -680,12 +676,7 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
       const result = await client.getWorkspaceDetail('test-key', 'test-slug', mockRequest);
 
       expect(result.success).toBe(true);
-      const singleResult = result.data as ResDataContainer<any>;
-      expect(singleResult.success).toBe(false);
-      expect(singleResult.message).toBe('Invalid data');
-      expect(singleResult.data).toEqual({
-        slug: 'test-workspace',
-      });
+      expect(result.data).toBeUndefined();
       expect(consoleSpy).toHaveBeenCalledWith(
         'Invalid data:',
         expect.any(Object),
@@ -777,8 +768,14 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
 
       expect(result.success).toBe(true);
       expect(result.data).toHaveLength(1);
-      expect(result.data![0].success).toBe(true);
-      expect(result.data![0].data!.id).toBe('ws-1');
+      expect(result.data![0]).toEqual({
+        id: 'ws-1',
+        slug: 'test-workspace',
+        name: 'Test Workspace',
+        image: 'https://example.com/image.png',
+        memberCount: 5,
+        isAdmin: true,
+      });
     });
   });
 
@@ -822,15 +819,11 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
 
       const result = await client.getWorkspaces(mockRequest);
 
-      // Check that the extracted data matches the ResDataContainer structure
-      expect(result.data![0]).toEqual({
-        success: true,
-        message: undefined,
-        data: testData,
-      });
+      // Check that the extracted data matches the DTO structure
+      expect(result.data![0]).toEqual(testData);
 
-      // Validate schema consistency for the inner data
-      const validation = WorkspaceItemSchema.safeParse(result.data![0].data);
+      // Validate schema consistency
+      const validation = WorkspaceItemSchema.safeParse(result.data![0]);
       expect(validation.success).toBe(true);
       expect(validation.data).toEqual(testData);
     });
@@ -874,14 +867,11 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
 
       const result = await client.getWorkspaceDetail('test-key', 'test-slug', mockRequest);
 
-      // Check that the extracted data matches the ResDataContainer structure with invalid data
-      const singleResult = result.data as ResDataContainer<any>;
-      expect(singleResult.success).toBe(false);
-      expect(singleResult.message).toBe('Invalid data');
-      expect(singleResult.data).toEqual(testData);
+      // Check that the extracted data matches the DTO structure
+      expect(result.data).toEqual(testData);
 
-      // The inner data should be valid since we provided valid test data
-      const validation = WorkspaceDetailItemSchema.safeParse(singleResult.data);
+      // Validate schema consistency
+      const validation = WorkspaceDetailItemSchema.safeParse(result.data);
       expect(validation.success).toBe(true);
       expect(validation.data).toEqual(testData);
     });
