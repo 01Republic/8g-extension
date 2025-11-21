@@ -124,12 +124,18 @@ export class WorkflowStepRunResult<T = any> {
 
 export class CollectWorkflowResult<T = any> {
   success!: boolean;
-  data?: T;
+  data!: ResDataContainer<T> | ResDataContainer<T>[];
   steps!: WorkflowStepRunResult<T>[];
   context!: ExecutionContext;
   targetUrl!: string;
   timestamp!: string;
   error?: string;
+}
+
+export class ResDataContainer<T = any> {
+  success!: boolean;
+  message?: string;
+  data?: T;
 }
 
 export enum CurrencyCode {

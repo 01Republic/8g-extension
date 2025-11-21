@@ -3,6 +3,7 @@ import {
   CollectWorkflowResult,
   CurrencyCode,
   ExecutionContext,
+  ResDataContainer,
 } from './types';
 import { EightGError } from './errors';
 import { ExtensionResponseMessage, isExtensionResponseMessage } from '@/types/external-messages';
@@ -277,8 +278,26 @@ export class EightGClient {
           const context = response?.result?.context ??
             response?.result?.result?.context ?? { steps: {}, vars: {} };
 
+          const data = steps[steps.length - 1]?.result?.data;
+
+          let resContainer: ResDataContainer | ResDataContainer[];
+          if (Array.isArray(data)) {
+            resContainer = data.map((item) => ({
+              success: response.success,
+              message: response.message,
+              data: item,
+            }));
+          } else {
+            resContainer = {
+              success: response.success,
+              message: response.message,
+              data: data,
+            };
+          }
+
           resolve({
             success: response.success,
+            data: resContainer,
             steps,
             context,
             error: response.success ? undefined : 'Workflow failed',
@@ -483,7 +502,7 @@ export class EightGClient {
     }
 
     // steps에서 데이터 추출
-    const rawData = result.steps[result.steps.length - 1]?.result?.data;
+    const rawData = result.data;
 
     if (!rawData) {
       return {
@@ -501,13 +520,22 @@ export class EightGClient {
       }
 
       // 배열의 각 아이템 검증
-      const validatedItems: T[] = [];
+      const validatedItems: ResDataContainer<T>[] = [];
       for (const item of rawData) {
-        const parsed = schema.safeParse(item);
+        const parsed = schema.safeParse(item.data);
         if (parsed.success) {
-          validatedItems.push(parsed.data);
+          validatedItems.push({
+            success: item.success,
+            message: item.message,
+            data: parsed.data,
+          });
         } else {
           console.warn(`Invalid data:`, item, parsed.error);
+          validatedItems.push({
+            success: false,
+            message: parsed.error.message,
+            data: undefined,
+          });
         }
       }
 
@@ -527,7 +555,11 @@ export class EightGClient {
         console.warn(`Invalid data:`, rawData, parsed.error);
         return {
           ...result,
-          data: undefined,
+          data: {
+            ...rawData,
+            success: false,
+            message: 'Invalid data',
+          },
         } as CollectWorkflowResult<T>;
       }
     }
