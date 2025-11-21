@@ -524,7 +524,7 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
       const result = await client.getWorkspaces(mockRequest);
 
       expect(result.success).toBe(true);
-      expect(result.data).toHaveLength(2); // Both items remain but one is undefined
+      expect(result.data).toHaveLength(1); // Invalid items are filtered out, not set to undefined
       expect(result.data![0]).toEqual({
         id: 'ws-1',
         slug: 'test-workspace',
@@ -533,7 +533,6 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
         memberCount: 5,
         isAdmin: true,
       });
-      expect(result.data![1]).toBeUndefined();
       expect(consoleSpy).toHaveBeenCalledWith(
         'Invalid data:',
         expect.any(Object),
@@ -541,6 +540,62 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
       );
 
       consoleSpy.mockRestore();
+    });
+
+    it('should handle ResDataContainer format correctly', async () => {
+      // Mock workflow result with ResDataContainer structure like your real data
+      const mockWorkflowResult: CollectWorkflowResult = {
+        success: true,
+        data: {
+          data: [
+            {
+              id: 'w1690183656-zyq378249',
+              slug: 'w1690183656-zyq378249',
+              name: '오구오구',
+              image: 'https://a.slack-edge.com/80588/img/avatars-teams/ava_0017-88.png',
+              memberCount: 6,
+              isAdmin: true,
+            },
+            {
+              id: 'slack-qwo8340',
+              slug: 'slack-qwo8340',
+              name: 'Slack',
+              image: 'https://a.slack-edge.com/80588/img/avatars-teams/ava_0021-88.png',
+              memberCount: 1,
+              isAdmin: false,
+            },
+          ],
+          success: true,
+          message: undefined,
+        },
+        steps: [],
+        context: { steps: {}, vars: {} },
+        targetUrl: 'https://test.com',
+        timestamp: '2023-01-01T00:00:00Z',
+      };
+
+      vi.spyOn(client, 'collectWorkflow').mockResolvedValue(mockWorkflowResult);
+
+      const result = await client.getWorkspaces(mockRequest);
+
+      expect(result.success).toBe(true);
+      expect(result.data).toHaveLength(2);
+      expect(result.data![0]).toEqual({
+        id: 'w1690183656-zyq378249',
+        slug: 'w1690183656-zyq378249',
+        name: '오구오구',
+        image: 'https://a.slack-edge.com/80588/img/avatars-teams/ava_0017-88.png',
+        memberCount: 6,
+        isAdmin: true,
+      });
+      expect(result.data![1]).toEqual({
+        id: 'slack-qwo8340',
+        slug: 'slack-qwo8340',
+        name: 'Slack',
+        image: 'https://a.slack-edge.com/80588/img/avatars-teams/ava_0021-88.png',
+        memberCount: 1,
+        isAdmin: false,
+      });
     });
 
     it('should return empty array when no array data is provided', async () => {

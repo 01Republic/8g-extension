@@ -515,7 +515,10 @@ export class EightGClient {
     }
 
     if (isArray) {
-      if (!Array.isArray(rawData)) {
+      // rawData가 ResDataContainer 형태라면 data 속성을 추출
+      const actualData = (rawData as any)?.data || rawData;
+      
+      if (!Array.isArray(actualData)) {
         return {
           ...result,
           data: [] as T[],
@@ -524,13 +527,15 @@ export class EightGClient {
 
       // 배열의 각 아이템 검증
       const validatedItems: T[] = [];
-      for (const item of rawData) {
-        const parsed = schema.safeParse(item.data);
+      for (const item of actualData) {
+        // item이 { data: {...} } 구조라면 data 부분만 추출, 아니면 item 자체 사용
+        const itemData = (item as any)?.data !== undefined ? (item as any).data : item;
+        const parsed = schema.safeParse(itemData);
         if (parsed.success) {
           validatedItems.push(parsed.data);
         } else {
           console.warn(`Invalid data:`, item, parsed.error);
-          validatedItems.push(undefined as T);
+          // 검증 실패한 아이템은 건너뛰기 (undefined 추가하지 않음)
         }
       }
 
