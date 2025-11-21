@@ -278,11 +278,16 @@ export class EightGClient {
           const context = response?.result?.context ??
             response?.result?.result?.context ?? { steps: {}, vars: {} };
 
-          const data = steps[steps.length - 1]?.result?.data;
+          // 워크플로우 전체 성공 여부 판단: 모든 step이 성공하거나 skipped여야 함
+          const allStepsSuccessful = steps.length > 0 && steps.every((step: any) => step.success || step.skipped);
+          
+          // 실패한 step이 있다면 그 에러 정보 수집, 없으면 마지막 step의 data 사용
+          const failedStep = steps.find((step: any) => !step.success && !step.skipped);
+          const data = failedStep ? failedStep.result : steps[steps.length - 1]?.result?.data;
 
           const resContainer = {
-            success: response.success,
-            message: response.message,
+            success: allStepsSuccessful,
+            message: failedStep ? failedStep.message : response.message,
             data: data,
           };
 
