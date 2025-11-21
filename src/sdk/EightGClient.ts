@@ -436,7 +436,7 @@ export class EightGClient {
 
     const result = await this.collectWorkflow(request);
     if (!result.success) {
-      throw new EightGError('Failed to add sheets', 'ADD_SHEETS_FAILED');
+      throw new EightGError('Failed to add members', 'ADD_MEMBERS_FAILED');
     }
 
     return { ...result };
@@ -567,20 +567,52 @@ export class EightGClient {
         data: validatedItems,
       } as CollectWorkflowResult<T[]>;
     } else {
-      // 단일 객체 검증 - rawData가 ResDataContainer 형태임
-      const container = rawData as ResDataContainer<any>;
-      const parsed = schema.safeParse(container.data);
-      if (parsed.success) {
-        return {
-          ...result,
-          data: parsed.data,
-        } as CollectWorkflowResult<T>;
+      // 단일 객체 검증
+      // rawData가 ResDataContainer 형태인지 확인
+      if ((rawData as any)?.data !== undefined && (rawData as any)?.success !== undefined) {
+        // ResDataContainer 구조: { success: true, data: {...} }
+        const container = rawData as ResDataContainer<any>;
+        const parsed = schema.safeParse(container.data);
+        if (parsed.success) {
+          return {
+            ...result,
+            data: {
+              ...container,
+              data: parsed.data,
+            },
+          } as CollectWorkflowResult<T>;
+        } else {
+          console.warn(`Invalid data:`, container, parsed.error);
+          return {
+            ...result,
+            data: {
+              ...container,
+              data: undefined,
+            },
+          } as CollectWorkflowResult<T>;
+        }
       } else {
-        console.warn(`Invalid data:`, container, parsed.error);
-        return {
-          ...result,
-          data: undefined as T,
-        } as CollectWorkflowResult<T>;
+        // 직접 데이터가 온 경우 - ResDataContainer로 래핑
+        const parsed = schema.safeParse(rawData);
+        if (parsed.success) {
+          return {
+            ...result,
+            data: {
+              success: true,
+              data: parsed.data,
+            },
+          } as CollectWorkflowResult<T>;
+        } else {
+          console.warn(`Invalid data:`, rawData, parsed.error);
+          return {
+            ...result,
+            data: {
+              success: false,
+              message: 'Data validation failed',
+              data: undefined,
+            },
+          } as CollectWorkflowResult<T>;
+        }
       }
     }
   }

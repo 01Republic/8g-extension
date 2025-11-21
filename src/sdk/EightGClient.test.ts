@@ -677,7 +677,9 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
       const result = await client.getWorkspaceDetail('test-key', 'test-slug', mockRequest);
 
       expect(result.success).toBe(true);
-      expect(result.data).toEqual({
+      expect(result.data).toHaveProperty('success', true);
+      expect(result.data).toHaveProperty('data');
+      expect((result.data as any).data).toEqual({
         slug: 'test-workspace',
         displayName: 'Test Workspace',
         profileImageUrl: 'https://example.com/image.png',
@@ -729,7 +731,8 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
       const result = await client.getWorkspaceDetail('test-key', 'test-slug', mockRequest);
 
       expect(result.success).toBe(true);
-      expect(result.data).toBeUndefined();
+      expect(result.data).toHaveProperty('success', true);
+      expect(result.data).toHaveProperty('data', undefined);
       expect(consoleSpy).toHaveBeenCalledWith(
         'Invalid data:',
         expect.any(Object),
@@ -923,10 +926,12 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
       const result = await client.getWorkspaceDetail('test-key', 'test-slug', mockRequest);
 
       // Check that the extracted data matches the DTO structure
-      expect(result.data).toEqual(testData);
+      expect(result.data).toHaveProperty('success', true);
+      expect(result.data).toHaveProperty('data');
+      expect((result.data as any).data).toEqual(testData);
 
       // Validate schema consistency
-      const validation = WorkspaceDetailItemSchema.safeParse(result.data);
+      const validation = WorkspaceDetailItemSchema.safeParse((result.data as any).data);
       expect(validation.success).toBe(true);
       expect(validation.data).toEqual(testData);
     });
