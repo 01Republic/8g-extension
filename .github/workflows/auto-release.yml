@@ -50,6 +50,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          registry-url: 'https://registry.npmjs.org/'
           
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -145,12 +146,27 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish to NPM
+      - name: Setup NPM authentication
         run: |
           cd packages/extension
           echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > .npmrc
-          npm publish
+          echo "registry=https://registry.npmjs.org/" >> .npmrc
+          echo "always-auth=true" >> .npmrc
+          cat .npmrc
         env:
+          NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
+
+      - name: Verify NPM authentication
+        run: |
+          cd packages/extension
+          npm whoami || echo "NPM auth verification failed"
+
+      - name: Publish to NPM
+        run: |
+          cd packages/extension
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
           NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
 
       - name: Send Slack notification on success
