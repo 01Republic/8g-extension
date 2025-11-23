@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { CheckType } from '@/sidepanel/types';
 import { performStatusCheck } from '@/blocks/CheckStatusBlock';
 
 interface CheckStatusUIProps {
-  checkType: CheckType;
+  checkType: 'login' | 'pageLoad' | 'element' | 'custom';
   title: string;
   description?: string;
   onConfirm: (result: any) => void;

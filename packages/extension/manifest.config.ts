@@ -14,11 +14,8 @@ export default defineManifest({
     },
     default_popup: 'src/popup/index.html',
   },
-  permissions: ['tabs', 'debugger', 'downloads', 'clipboardRead', 'clipboardWrite', 'sidePanel'],
+  permissions: ['tabs', 'debugger', 'downloads', 'clipboardRead', 'clipboardWrite'],
   host_permissions: ['<all_urls>'],
-  side_panel: {
-    default_path: 'src/sidepanel/index.html',
-  },
   content_scripts: [
     {
       js: ['src/content/main.tsx'],

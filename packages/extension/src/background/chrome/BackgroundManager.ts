@@ -19,7 +19,6 @@ import { CdpService } from '../service/CdpService';
 import { WorkflowService } from '../service/WorkflowService';
 import { ApiService } from '../service/ApiService';
 import { ExportDataService } from '../service/ExportDataService';
-import { SidePanelService } from '../service/SidePanelService';
 import {
   matchesObjectPattern,
   parseRequestBodyToObject,
@@ -38,8 +37,6 @@ export class BackgroundManager {
     this.tabManager = new TabManager(this.cdpService);
     this.workflowService = new WorkflowService(this.tabManager);
     this.apiService = new ApiService();
-    // Initialize SidePanelService separately as it has its own message listener
-    new SidePanelService();
   }
 
   initHandler() {

@@ -70,14 +70,14 @@ const NotificationManager: React.FC<NotificationManagerProps> = () => {
     };
   }, [notifications, activeNotification]);
 
-  // 알림 클릭 핸들러 - 사용자 제스처로 Side Panel 열기
+  // 알림 클릭 핸들러 - CheckStatusUI 표시
   const handleNotificationClick = (notification: NotificationData) => {
     console.log('[NotificationManager] User clicked notification:', notification);
 
     // Background로 메시지 전송 (사용자 제스처 컨텍스트 유지)
     chrome.runtime.sendMessage(
       {
-        type: 'OPEN_SIDE_PANEL_FROM_NOTIFICATION',
+        type: 'SHOW_CHECK_STATUS_FALLBACK',
         payload: {
           notificationId: notification.id,
           checkType: notification.checkType,
@@ -89,18 +89,18 @@ const NotificationManager: React.FC<NotificationManagerProps> = () => {
       (response) => {
         if (chrome.runtime.lastError) {
           console.error(
-            '[NotificationManager] Failed to open side panel:',
+            '[NotificationManager] Failed to show check status UI:',
             chrome.runtime.lastError
           );
 
-          // 폴백: Side Panel 열기 실패 시 인라인 UI 표시
+          // 폴백: 인라인 CheckStatusUI 표시
           window.dispatchEvent(
             new CustomEvent('8g-show-check-status-fallback', {
               detail: notification,
             })
           );
         } else if (response?.success) {
-          console.log('[NotificationManager] Side panel opened successfully');
+          console.log('[NotificationManager] Check status UI opened successfully');
 
           // 성공하면 해당 알림 제거
           setNotifications((prev) => prev.filter((n) => n.id !== notification.id));

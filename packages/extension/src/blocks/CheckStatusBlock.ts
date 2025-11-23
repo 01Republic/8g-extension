@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { Block, BlockResult } from './types';
-import { CheckType } from '@/sidepanel/types';
 
 /**
  * CheckStatus Block
@@ -27,7 +26,7 @@ import { CheckType } from '@/sidepanel/types';
  */
 export interface CheckStatusBlock extends Omit<Block, 'selector' | 'findBy' | 'option'> {
   readonly name: 'check-status';
-  checkType: CheckType;
+  checkType: 'login' | 'pageLoad' | 'element' | 'custom';
   title: string;
   description?: string;
   notification?: {
@@ -260,7 +259,7 @@ export async function handlerCheckStatus(block: CheckStatusBlock): Promise<Block
 }
 
 // 특정 체크 타입에 대한 검증 로직 (Content Script에서 실행)
-export function performStatusCheck(checkType: CheckType): {
+export function performStatusCheck(checkType: 'login' | 'pageLoad' | 'element' | 'custom'): {
   success: boolean;
   message: string;
   data?: any;
