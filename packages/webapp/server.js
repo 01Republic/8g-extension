@@ -2,6 +2,11 @@ import { createRequestHandler } from "@react-router/express";
 import express from "express";
 import { WebSocketServer } from "ws";
 import { createServer } from "http";
+import dotenv from "dotenv";
+import path from "path";
+
+// Load .env from monorepo root (2 levels up)
+dotenv.config({ path: path.resolve(process.cwd(), "../../.env") });
 
 const app = express();
 
