@@ -12,6 +12,7 @@ jobs:
     outputs:
       should-release: ${{ steps.check.outputs.match }}
       version: ${{ steps.check.outputs.version }}
+      version-number: ${{ steps.check.outputs.version-number }}
     steps:
       - name: Check if release commit
         id: check
@@ -23,10 +24,12 @@ jobs:
           if [[ "$COMMIT_MSG" =~ ^chore:\ release\ v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
             echo "match=true" >> $GITHUB_OUTPUT
             echo "version=v${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
+            echo "version-number=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
             echo "✅ Release commit detected: v${BASH_REMATCH[1]}"
           else
             echo "match=false" >> $GITHUB_OUTPUT
             echo "version=" >> $GITHUB_OUTPUT
+            echo "version-number=" >> $GITHUB_OUTPUT
             echo "❌ Not a release commit, skipping..."
           fi
 
@@ -75,12 +78,44 @@ jobs:
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
 
-      - name: Run Ship.js trigger
+      - name: Build extension
         run: |
           cd packages/extension
-          npx shipjs trigger
+          pnpm run build
+          pnpm run build:extension
+
+      - name: Create GitHub Release and Tag
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ needs.check-commit.outputs.version }}
+          release_name: Release ${{ needs.check-commit.outputs.version }}
+          body: |
+            Release ${{ needs.check-commit.outputs.version }}
+            
+            Commit: ${{ github.event.head_commit.message }}
+            Author: ${{ github.event.head_commit.author.name }}
+          draft: false
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Release Asset (Chrome Extension Zip)
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: packages/extension/release/scordi-extension-${{ needs.check-commit.outputs.version-number }}.zip
+          asset_name: scordi-extension-${{ needs.check-commit.outputs.version-number }}.zip
+          asset_content_type: application/zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to NPM
+        run: |
+          cd packages/extension
+          echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > .npmrc
+          npm publish
+        env:
           NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
 
       - name: Send Slack notification on success
@@ -128,7 +163,7 @@ jobs:
                   "elements": [
                     {
                       "type": "mrkdwn",
-                      "text": "✅ Ship.js trigger 성공적으로 실행됨"
+                      "text": "✅ GitHub Release, NPM 배포 성공적으로 완료됨"
                     }
                   ]
                 }
