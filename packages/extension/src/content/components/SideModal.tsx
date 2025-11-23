@@ -4,14 +4,18 @@ export interface SideModalProps {
   defaultOpen?: boolean;
   onToggle?: (isOpen: boolean) => void;
   serviceName?: string;
-  userEmail?: string;
+  workspaceName?: string;
+  workspaceId?: string;
+  workspaceSlug?: string;
 }
 
 const SideModal: React.FC<SideModalProps> = ({ 
   defaultOpen = false, 
   onToggle,
   serviceName = "Slack",
-  userEmail = "user@company.com"
+  workspaceName = "Test Workspace",
+  workspaceId = "ws-1",
+  workspaceSlug = "test-workspace"
 }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -367,7 +371,7 @@ const SideModal: React.FC<SideModalProps> = ({
                 </span>
               </div>
 
-              {/* 계정 정보 */}
+              {/* 워크스페이스 정보 */}
               <div style={{ 
                 marginBottom: '16px',
                 background: '#f9fafb',
@@ -380,7 +384,7 @@ const SideModal: React.FC<SideModalProps> = ({
                   color: '#6b7280',
                   margin: '0 0 8px 0',
                 }}>
-                  현재 로그인된 계정
+                  현재 연결된 워크스페이스
                 </p>
                 <p style={{
                   fontSize: '14px',
@@ -388,7 +392,7 @@ const SideModal: React.FC<SideModalProps> = ({
                   fontWeight: '600',
                   margin: '0',
                 }}>
-                  {userEmail}
+                  {workspaceName}
                 </p>
               </div>
 
