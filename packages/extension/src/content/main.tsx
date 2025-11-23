@@ -6,6 +6,7 @@ import { ConfirmationUIContainer } from './components/ConfirmationUI';
 import { ExecutionStatusUIContainer } from './components/ExecutionStatusUI';
 import CheckStatusUI from './components/CheckStatusUI';
 import NotificationManager from './components/NotificationManager';
+import { SideModalContainer } from './components/SideModal';
 
 // Prevent multiple injections
 (() => {
@@ -91,6 +92,15 @@ import NotificationManager from './components/NotificationManager';
 
       const notificationReactRoot = createRoot(notificationRoot);
       notificationReactRoot.render(<NotificationManager />);
+
+      // Side Modal 마운트
+      const sideModalRoot = document.createElement('div');
+      sideModalRoot.id = '8g-side-modal-root';
+      sideModalRoot.style.cssText = 'all: initial; position: fixed; z-index: 2147483647;';
+      document.body.appendChild(sideModalRoot);
+
+      const sideModalReactRoot = createRoot(sideModalRoot);
+      sideModalReactRoot.render(<SideModalContainer />);
 
       console.log('[8G Extension] UI Components mounted (top frame only)');
     };
