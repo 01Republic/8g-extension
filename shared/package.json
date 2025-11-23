@@ -1,0 +1,37 @@
+{
+  "name": "8g-shared",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "description": "Shared types and utilities for 8G Extension and Webapp",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "rm -rf dist/ *.tsbuildinfo",
+    "dev": "tsc -b --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "echo 'No tests for shared package yet'",
+    "test:run": "echo 'No tests for shared package yet'",
+    "lint": "echo 'No lint script for shared package yet'",
+    "lint:fix": "echo 'No lint:fix script for shared package yet'",
+    "format": "echo 'No format script for shared package yet'",
+    "format:check": "echo 'No format:check script for shared package yet'"
+  },
+  "dependencies": {
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "typescript": "~5.8.3"
+  }
+}

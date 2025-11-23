@@ -17,7 +17,7 @@ export default defineConfig({
   },
   plugins: [
     react(),
-    crx({ manifest }),
+    crx({ manifest }) as any,
     zip({ outDir: 'release', outFileName: `crx-${name}-${version}.zip` }),
   ],
   server: {
