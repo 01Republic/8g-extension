@@ -100,11 +100,19 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Check generated files
+        run: |
+          cd packages/extension
+          echo "Files in release directory:"
+          ls -la release/ || echo "release directory not found"
+          echo "Generated zip files:"
+          find . -name "*.zip" -type f
+
       - name: Upload Release Asset (Chrome Extension Zip)
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: packages/extension/release/scordi-extension-${{ needs.check-commit.outputs.version-number }}.zip
+          asset_path: packages/extension/release/crx-scordi-extension-${{ needs.check-commit.outputs.version-number }}.zip
           asset_name: scordi-extension-${{ needs.check-commit.outputs.version-number }}.zip
           asset_content_type: application/zip
         env:
