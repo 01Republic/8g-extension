@@ -4,12 +4,12 @@ import { allEntities } from "./entities/index";
 
 // 환경변수 설정
 const config = {
-  type: (process.env.DB_TYPE || "mysql") as "mysql" | "mariadb",
+  type: (process.env.DB_DIALECT || "mysql") as "mysql" | "mariadb",
   host: process.env.DB_HOST || "localhost",
   port: parseInt(process.env.DB_PORT || "3306"),
-  username: process.env.DB_USER || "root",
+  username: process.env.DB_USERNAME || "root",
   password: process.env.DB_PASSWORD || "",
-  database: process.env.DB_NAME || "your_database_name",
+  database: process.env.DB_DATABASE || "your_database_name",
 };
 
 export const AppDataSource = new DataSource({
@@ -20,7 +20,7 @@ export const AppDataSource = new DataSource({
   password: config.password,
   database: config.database,
   synchronize: false, // 기존 DB가 있으므로 false로 설정
-  logging: process.env.NODE_ENV === "development",
+  logging: process.env.DB_LOGGING === "true" || process.env.NODE_ENV === "development",
   entities: allEntities,
 });
 
