@@ -84,6 +84,33 @@ jobs:
           pnpm run build
           pnpm run build:extension
 
+      - name: Delete existing tag and release if exists
+        run: |
+          TAG_NAME="${{ needs.check-commit.outputs.version }}"
+          echo "Checking for existing tag: $TAG_NAME"
+          
+          # Delete existing release if it exists
+          RELEASE_ID=$(gh release view $TAG_NAME --json id --jq '.id' 2>/dev/null || echo "")
+          if [ ! -z "$RELEASE_ID" ]; then
+            echo "Deleting existing release: $TAG_NAME"
+            gh release delete $TAG_NAME --yes --cleanup-tag
+          else
+            echo "No existing release found for $TAG_NAME"
+          fi
+          
+          # Delete existing tag if it exists (both local and remote)
+          if git tag -l | grep -q "^${TAG_NAME}$"; then
+            echo "Deleting existing local tag: $TAG_NAME"
+            git tag -d $TAG_NAME
+          fi
+          
+          if git ls-remote --tags origin | grep -q "refs/tags/${TAG_NAME}$"; then
+            echo "Deleting existing remote tag: $TAG_NAME"
+            git push --delete origin $TAG_NAME
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create GitHub Release and Tag
         id: create_release
         uses: actions/create-release@v1
