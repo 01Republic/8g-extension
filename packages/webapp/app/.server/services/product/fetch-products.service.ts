@@ -1,32 +1,49 @@
-import type { ProductsResponse } from "./types";
-
-const PRODUCT_API_BASE_URL =
-  process.env.PRODUCT_API_BASE_URL || "http://localhost:8000";
+import { Product } from "../../db/entities";
+import { AppDataSource, initializeDatabase } from "../../db/config";
+import type { ProductsResponse, ProductDto } from "./types";
 
 export async function fetchProducts(params?: {
   isLive?: boolean;
   keyword?: string;
   itemsPerPage?: number;
 }): Promise<ProductsResponse> {
-  const queryParams = new URLSearchParams();
+  // Initialize database connection if not already done
+  await initializeDatabase();
 
-  if (params?.isLive !== undefined) {
-    queryParams.append("isLive", String(params.isLive));
-  }
+  const productRepository = AppDataSource.getRepository(Product);
+  
+  let query = productRepository.createQueryBuilder("product");
+
+  // Apply keyword search if provided
   if (params?.keyword) {
-    queryParams.append("keyword", params.keyword);
-  }
-  if (params?.itemsPerPage) {
-    queryParams.append("itemsPerPage", String(params.itemsPerPage));
-  }
-
-  const url = `${PRODUCT_API_BASE_URL}/products?${queryParams.toString()}`;
-
-  const response = await fetch(url);
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch products: ${response.statusText}`);
+    query = query.where(
+      "product.nameKo LIKE :keyword OR product.nameEn LIKE :keyword",
+      { keyword: `%${params.keyword}%` }
+    );
   }
 
-  return response.json();
+  // Apply pagination
+  const itemsPerPage = params?.itemsPerPage || 20;
+  query = query.take(itemsPerPage);
+
+  // Order by ID for consistent results
+  query = query.orderBy("product.id", "ASC");
+
+  const products = await query.getMany();
+  
+  // Transform to DTO format
+  const items: ProductDto[] = products.map(product => ({
+    id: product.id,
+    nameKo: product.nameKo,
+    nameEn: product.nameEn,
+    image: product.image,
+  }));
+
+  return {
+    items,
+    totalItemCount: items.length,
+    currentPage: 1,
+    itemsPerPage,
+    totalPages: 1,
+  };
 }

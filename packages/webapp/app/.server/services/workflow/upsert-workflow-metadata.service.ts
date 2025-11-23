@@ -1,8 +1,6 @@
-import type { WorkflowType } from "~/.server/db/entities/IntegrationAppWorkflowMetadata";
+import { initializeDatabase } from "~/.server/db/config";
+import { IntegrationAppWorkflowMetadata, type WorkflowType } from "~/.server/db/entities/IntegrationAppWorkflowMetadata";
 import type { FormWorkflow } from "~/models/workflow/types";
-
-const WORKFLOW_API_BASE_URL =
-  process.env.WORKFLOW_API_BASE_URL || "http://localhost:8000";
 
 interface UpsertWorkflowMetadataPayload {
   workflowId?: number;
@@ -19,33 +17,31 @@ export async function upsertWorkflowMetadata({
   meta,
   type = "WORKFLOW",
 }: UpsertWorkflowMetadataPayload) {
-  const requestBody = {
-    workflowId,
-    productId,
-    description,
-    meta,
-    type,
-  };
+  await initializeDatabase();
 
-  const response = await fetch(`${WORKFLOW_API_BASE_URL}/8g/workflows`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(requestBody),
-  });
+  if (workflowId) {
+    // Update existing workflow
+    await IntegrationAppWorkflowMetadata.update(workflowId, {
+      productId,
+      description,
+      meta,
+      type,
+    });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(
-      `Failed to upsert workflow: ${response.statusText} - ${errorText}`,
-    );
+    const updated = await IntegrationAppWorkflowMetadata.findOne({
+      where: { id: workflowId }
+    });
+    return updated;
+  } else {
+    // Create new workflow
+    const workflow = IntegrationAppWorkflowMetadata.create({
+      productId,
+      description,
+      meta,
+      type,
+    });
+
+    const saved = await IntegrationAppWorkflowMetadata.save(workflow);
+    return saved;
   }
-
-  // 201 Created는 body가 없을 수 있음
-  const text = await response.text();
-  if (text) {
-    return JSON.parse(text);
-  }
-  return null;
 }

@@ -1,21 +1,9 @@
+// Minimal Product interface based on actual webapp usage
 export interface ProductDto {
   id: number;
   nameKo: string;
   nameEn: string;
-  desc: string;
-  searchText: string;
   image: string;
-  tagline?: string;
-  ogImageUrl?: string;
-  homepageUrl?: string;
-  pricingPageUrl?: string;
-  companyName?: string;
-  connectMethod?: string;
-  isAutoTrackable?: boolean;
-  isFreeTierAvailable?: boolean;
-  connectedOrgCount?: number;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface ProductsResponse {

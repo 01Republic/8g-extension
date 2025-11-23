@@ -1,5 +1,6 @@
 import { IntegrationAppWorkflowMetadata } from "./IntegrationAppWorkflowMetadata";
+import { Product } from "./Product";
 
-const allEntities = [IntegrationAppWorkflowMetadata];
+const allEntities = [IntegrationAppWorkflowMetadata, Product];
 
-export { allEntities };
+export { allEntities, Product };
