@@ -15,8 +15,8 @@ pnpm install
 
 ### Development Mode
 ```bash
-# All packages in parallel development mode
-pnpm dev
+# All packages in parallel development mode (includes automatic build)
+pnpm dev              # Builds shared & extension, then starts both in dev mode
 
 # Individual package development
 pnpm dev:extension    # Chrome Extension development
@@ -122,15 +122,19 @@ pnpm build:shared && pnpm build:extension && pnpm build:webapp
 - Extension SDK changes require webapp restart to see updates
 - Use `pnpm dev` to start all packages with hot reload
 
-### Database Setup (Webapp)
-Create `.env` in `packages/webapp/`:
+### Environment Setup
+Create `.env` in project root:
 ```env
+DB_DIALECT=mariadb
+DB_LOGGING=true
 DB_HOST=localhost
 DB_PORT=3306
-DB_USER=myuser
+DB_DATABASE=payplo_staging
+DB_USERNAME=myuser
 DB_PASSWORD=mypassword
-DB_NAME=payplo_staging
 NEXT_PUBLIC_CARD_SIGN_KEY=spurstodo
+ANTHROPIC_API_KEY=your_anthropic_api_key
+OPENAI_API_KEY=your_openai_api_key
 ```
 
 Manually create workflow table:

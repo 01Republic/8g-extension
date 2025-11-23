@@ -5,7 +5,7 @@
   "private": true,
   "description": "8G Extension and Webapp Monorepo",
   "scripts": {
-    "dev": "pnpm --parallel --filter=\"{packages/*}\" run dev",
+    "dev": "pnpm run build:shared && pnpm run build:extension && pnpm --parallel --filter=\"{packages/*}\" run dev",
     "dev:extension": "pnpm --filter=scordi-extension run dev",
     "dev:webapp": "pnpm --filter=8g-webapp run dev",
     "build": "pnpm run build:shared && pnpm run build:extension && pnpm run build:webapp",
