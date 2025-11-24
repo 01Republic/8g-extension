@@ -14,6 +14,168 @@ interface SiteInfo {
   siteName: string;
 }
 
+interface WorkspaceCardProps {
+  workspace: WorkspaceItemDto;
+  isLast: boolean;
+}
+
+const WorkspaceCard: React.FC<WorkspaceCardProps> = ({ workspace: ws, isLast }) => {
+  const isNotAdmin = ws.isAdmin === false;
+  
+  return (
+    <div style={{
+      background: 'white',
+      padding: '1rem',
+      borderRadius: '0.5rem',
+      border: isNotAdmin ? '1px solid #f87171' : '1px solid #10b981',
+      marginBottom: isLast ? '0' : '0.5rem',
+      opacity: isNotAdmin ? 0.9 : 1,
+      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+    }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.75rem',
+      }}>
+        <div style={{
+          width: '2rem',
+          height: '2rem',
+          borderRadius: '0.375rem',
+          flexShrink: 0,
+          overflow: 'hidden',
+          background: ws.image ? 'transparent' : '#f3f4f6',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          border: '1px solid #e5e7eb',
+        }}>
+          {ws.image ? (
+            <img 
+              src={ws.image} 
+              alt="workspace" 
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+              }}
+              onError={(e) => {
+                const parent = e.currentTarget.parentElement!;
+                parent.style.background = '#f3f4f6';
+                parent.innerHTML = `
+                  <div style="
+                    font-size: 14px;
+                    color: #6b7280;
+                    font-weight: 600;
+                  ">
+                    ${ws.name.charAt(0).toUpperCase()}
+                  </div>
+                `;
+              }}
+            />
+          ) : (
+            <div style={{
+              fontSize: '14px',
+              color: '#6b7280',
+              fontWeight: '600',
+            }}>
+              {ws.name.charAt(0).toUpperCase()}
+            </div>
+          )}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{
+            fontSize: '17px',
+            color: '#1f2937',
+            fontWeight: '600',
+            margin: '0 0 4px 0',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}>
+            {ws.name}
+          </p>
+          {ws.slug && (
+            <p style={{
+              fontSize: '12px',
+              color: '#9ca3af',
+              margin: '0',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}>
+              @{ws.slug}
+            </p>
+          )}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', flexShrink: 0 }}>
+          {ws.isAdmin === true && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.25rem',
+              background: '#dcfce7',
+              padding: '0.1875rem 0.5rem',
+              borderRadius: '0.25rem',
+            }}>
+              <div style={{
+                width: '0.875rem',
+                height: '0.875rem',
+                background: '#059669',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '9px',
+                color: 'white',
+              }}>
+                ✓
+              </div>
+              <span style={{
+                fontSize: '11px',
+                color: '#059669',
+                fontWeight: '500',
+              }}>
+                Admin
+              </span>
+            </div>
+          )}
+          {isNotAdmin && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.25rem',
+              background: '#fee2e2',
+              padding: '0.1875rem 0.5rem',
+              borderRadius: '0.25rem',
+            }}>
+              <div style={{
+                width: '0.875rem',
+                height: '0.875rem',
+                background: '#dc2626',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '10px',
+                color: 'white',
+              }}>
+                ⚠
+              </div>
+              <span style={{
+                fontSize: '11px',
+                color: '#dc2626',
+                fontWeight: '500',
+              }}>
+                No Access
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const SideModal: React.FC<SideModalProps> = ({ 
   defaultOpen = false, 
   onToggle,
@@ -141,7 +303,8 @@ const SideModal: React.FC<SideModalProps> = ({
     right: 0,
     top: 0,
     bottom: 0,
-    width: '350px',
+    width: 'min(90vw, 350px)',
+    maxHeight: '100vh',
     background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
     boxShadow: '-2px 0 30px rgba(0, 0, 0, 0.15)',
     transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
@@ -151,40 +314,6 @@ const SideModal: React.FC<SideModalProps> = ({
     flexDirection: 'column',
     overflow: 'hidden',
     fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-  };
-
-
-  const titleStyle: React.CSSProperties = {
-    fontSize: '18px',
-    fontWeight: '600',
-    margin: 0,
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-  };
-
-  const closeButtonStyle: React.CSSProperties = {
-    background: 'rgba(255, 255, 255, 0.2)',
-    border: 'none',
-    color: 'white',
-    width: '32px',
-    height: '32px',
-    borderRadius: '50%',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '18px',
-    transition: 'all 0.2s ease',
-  };
-
-  const contentStyle: React.CSSProperties = {
-    flex: 1,
-    padding: '24px',
-    overflowY: 'auto',
-    fontSize: '14px',
-    lineHeight: 1.6,
-    color: '#334155',
   };
 
   const triggerButtonStyle: React.CSSProperties = {
@@ -218,14 +347,6 @@ const SideModal: React.FC<SideModalProps> = ({
     boxShadow: '0 8px 30px rgba(102, 126, 234, 0.6)',
   };
 
-  // 컨텐츠 아이템 스타일
-  const contentItemStyle: React.CSSProperties = {
-    opacity: isOpen ? 1 : 0,
-    transform: isOpen ? 'translateY(0)' : 'translateY(20px)',
-    transition: 'all 0.3s ease',
-    transitionDelay: isOpen ? '0.2s' : '0s',
-  };
-
   const [isHovering, setIsHovering] = useState(false);
 
   return (
@@ -247,7 +368,6 @@ const SideModal: React.FC<SideModalProps> = ({
       {/* 사이드 모달 */}
       <div ref={modalRef} style={backdropStyle} onClick={handleBackdropClick}>
         <div style={panelStyle}>
-
           {/* 콘텐츠 */}
           <div style={{
             flex: 1,
@@ -258,25 +378,31 @@ const SideModal: React.FC<SideModalProps> = ({
             {/* 메인 콘텐츠 */}
             <div style={{
               flex: 1,
-              padding: '16px 20px',
-              overflowY: 'auto',
-              fontSize: '14px',
+              padding: '1rem 1.25rem',
+              overflowY: 'auto', // 필요시 스크롤 허용
+              fontSize: '15px',
               lineHeight: 1.5,
               color: '#1d1c1d',
+              display: 'flex',
+              flexDirection: 'column',
+              minHeight: 0, // flex 아이템이 축소 가능하도록
             }}>
               <div style={{
                 opacity: isOpen ? 1 : 0,
                 transform: isOpen ? 'translateY(0)' : 'translateY(20px)',
                 transition: 'all 0.3s ease',
                 transitionDelay: isOpen ? '0.2s' : '0s',
+                display: 'flex',
+                flexDirection: 'column',
+                height: '100%',
               }}>
               
               {/* 서비스 제목 */}
               <div style={{ 
                 display: 'flex', 
                 alignItems: 'flex-start', 
-                gap: '12px',
-                marginBottom: '16px'
+                gap: '0.75rem',
+                marginBottom: '1rem'
               }}>
                 <div style={{
                   width: '40px',
@@ -309,7 +435,7 @@ const SideModal: React.FC<SideModalProps> = ({
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <h2 style={{
-                    fontSize: '18px',
+                    fontSize: '19px',
                     fontWeight: '600',
                     margin: '0',
                     color: '#1f2937',
@@ -320,7 +446,7 @@ const SideModal: React.FC<SideModalProps> = ({
                     {siteInfo.siteName}
                   </h2>
                   <p style={{
-                    fontSize: '14px',
+                    fontSize: '15px',
                     color: '#6b7280',
                     margin: '4px 0 0 0',
                   }}>
@@ -357,7 +483,7 @@ const SideModal: React.FC<SideModalProps> = ({
                 border: '1px solid #a7f3d0',
                 borderRadius: '8px',
                 padding: '10px 12px',
-                marginBottom: '16px',
+                marginBottom: '1rem',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
@@ -377,7 +503,7 @@ const SideModal: React.FC<SideModalProps> = ({
                   ✓
                 </div>
                 <span style={{
-                  fontSize: '14px',
+                  fontSize: '15px',
                   color: '#065f46',
                   fontWeight: '500',
                 }}>
@@ -386,190 +512,112 @@ const SideModal: React.FC<SideModalProps> = ({
               </div>
 
               {/* 워크스페이스 목록 */}
-              <div style={{ marginBottom: '16px' }}>
-                <p style={{
-                  fontSize: '13px',
-                  color: '#6b7280',
-                  margin: '0 0 12px 0',
-                }}>
-                  {displayWorkspaces.length === 1 
-                    ? t('ui.side_modal.current_workspace')
-                    : `Available Workspaces (${displayWorkspaces.length})`
-                  }
-                </p>
-                
-                {displayWorkspaces.map((ws: WorkspaceItemDto, index: number) => {
-                  const isNotAdmin = ws.isAdmin === false;
+              <div style={{ 
+                marginBottom: '1rem',
+                display: 'flex',
+                flexDirection: 'column',
+                maxHeight: '40vh', // 화면 높이의 40%로 조금 증가
+                minHeight: '220px', // 최소 높이도 조금 증가
+              }}>
+                {(() => {
+                  const adminWorkspaces = displayWorkspaces.filter(ws => ws.isAdmin === true);
+                  const nonAdminWorkspaces = displayWorkspaces.filter(ws => ws.isAdmin === false);
                   
                   return (
-                  <div key={ws.id || index} style={{
-                    background: isNotAdmin ? '#fef2f2' : '#f9fafb',
-                    padding: '12px 16px',
-                    borderRadius: '8px',
-                    border: isNotAdmin ? '1px solid #fecaca' : '1px solid #e5e7eb',
-                    marginBottom: index < displayWorkspaces.length - 1 ? '8px' : '0',
-                    opacity: isNotAdmin ? 0.8 : 1,
-                  }}>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                    }}>
-                      <div style={{
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '6px',
-                        flexShrink: 0,
-                        overflow: 'hidden',
-                        background: ws.image ? 'transparent' : '#f3f4f6',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        border: '1px solid #e5e7eb',
-                      }}>
-                        {ws.image ? (
-                          <img 
-                            src={ws.image} 
-                            alt="workspace" 
-                            style={{
-                              width: '100%',
-                              height: '100%',
-                              objectFit: 'cover',
-                            }}
-                            onError={(e) => {
-                              const parent = e.currentTarget.parentElement!;
-                              parent.style.background = '#f3f4f6';
-                              parent.innerHTML = `
-                                <div style="
-                                  font-size: 14px;
-                                  color: #6b7280;
-                                  font-weight: 600;
-                                ">
-                                  ${ws.name.charAt(0).toUpperCase()}
-                                </div>
-                              `;
-                            }}
-                          />
-                        ) : (
-                          <div style={{
-                            fontSize: '14px',
-                            color: '#6b7280',
-                            fontWeight: '600',
-                          }}>
-                            {ws.name.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{
-                          fontSize: '14px',
-                          color: '#1f2937',
-                          fontWeight: '600',
-                          margin: '0 0 2px 0',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
+                    <>
+                      {/* Available Workspaces 블록 */}
+                      {adminWorkspaces.length > 0 && (
+                        <div style={{ 
+                          flex: nonAdminWorkspaces.length > 0 ? 1 : 'none', // 두 블록이 있으면 균등 분할
+                          marginBottom: nonAdminWorkspaces.length > 0 ? '1rem' : '0.5rem',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          minHeight: nonAdminWorkspaces.length > 0 ? '80px' : 'auto', // 최소 높이 줄임
+                          maxHeight: nonAdminWorkspaces.length > 0 ? '45%' : 'none', // 최대 높이 제한
                         }}>
-                          {ws.name}
-                        </p>
-                        {ws.slug && (
                           <p style={{
-                            fontSize: '12px',
-                            color: '#6b7280',
-                            margin: '0',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
+                            fontSize: '15px',
+                            color: '#059669',
+                            margin: '0 0 0.75rem 0',
+                            fontWeight: '600',
+                            flexShrink: 0,
                           }}>
-                            @{ws.slug}
+                            Available Workspaces ({adminWorkspaces.length})
                           </p>
-                        )}
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-                        {ws.memberCount !== undefined && ws.memberCount > 0 && (
-                          <span style={{
-                            fontSize: '12px',
+                          <div style={{
+                            flex: 1,
+                            overflowY: 'auto',
+                            overflowX: 'hidden',
+                            border: '1px solid #d1fae5',
+                            borderRadius: '0.375rem',
+                            background: '#f0fdf4',
+                            padding: '0.5rem',
+                          }}>
+                            {adminWorkspaces.map((ws: WorkspaceItemDto, index: number) => (
+                              <WorkspaceCard key={ws.id || `admin-${index}`} workspace={ws} isLast={index === adminWorkspaces.length - 1} />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* No Access Workspaces 블록 */}
+                      {nonAdminWorkspaces.length > 0 && (
+                        <div style={{ 
+                          flex: adminWorkspaces.length > 0 ? 1 : 'none', // 두 블록이 있으면 균등 분할
+                          marginBottom: '0.5rem',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          minHeight: adminWorkspaces.length > 0 ? '80px' : 'auto', // 최소 높이 줄임
+                          maxHeight: adminWorkspaces.length > 0 ? '45%' : 'none', // 최대 높이 제한
+                        }}>
+                          <p style={{
+                            fontSize: '15px',
+                            color: '#dc2626',
+                            margin: '0 0 0.75rem 0',
+                            fontWeight: '600',
+                            flexShrink: 0,
+                          }}>
+                            No Access Workspaces ({nonAdminWorkspaces.length})
+                          </p>
+                          <div style={{
+                            flex: 1,
+                            overflowY: 'auto',
+                            overflowX: 'hidden',
+                            border: '1px solid #fecaca',
+                            borderRadius: '0.375rem',
+                            background: '#fef2f2',
+                            padding: '0.5rem',
+                          }}>
+                            {nonAdminWorkspaces.map((ws: WorkspaceItemDto, index: number) => (
+                              <WorkspaceCard key={ws.id || `noaccess-${index}`} workspace={ws} isLast={index === nonAdminWorkspaces.length - 1} />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* 단일 워크스페이스인 경우 */}
+                      {displayWorkspaces.length === 1 && (
+                        <div>
+                          <p style={{
+                            fontSize: '15px',
                             color: '#6b7280',
-                            background: '#f3f4f6',
-                            padding: '2px 6px',
-                            borderRadius: '4px',
+                            margin: '0 0 12px 0',
+                            fontWeight: '500',
                           }}>
-                            {ws.memberCount}
-                          </span>
-                        )}
-                        {ws.isAdmin === true && (
-                          <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            background: '#dcfce7',
-                            padding: '3px 8px',
-                            borderRadius: '4px',
-                          }}>
-                            <div style={{
-                              width: '14px',
-                              height: '14px',
-                              background: '#059669',
-                              borderRadius: '50%',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontSize: '9px',
-                              color: 'white',
-                            }}>
-                              ✓
-                            </div>
-                            <span style={{
-                              fontSize: '11px',
-                              color: '#059669',
-                              fontWeight: '500',
-                            }}>
-                              Admin
-                            </span>
-                          </div>
-                        )}
-                        {isNotAdmin && (
-                          <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            background: '#fee2e2',
-                            padding: '3px 8px',
-                            borderRadius: '4px',
-                          }}>
-                            <div style={{
-                              width: '14px',
-                              height: '14px',
-                              background: '#dc2626',
-                              borderRadius: '50%',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontSize: '10px',
-                              color: 'white',
-                            }}>
-                              ⚠
-                            </div>
-                            <span style={{
-                              fontSize: '11px',
-                              color: '#dc2626',
-                              fontWeight: '500',
-                            }}>
-                              No Access
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                            {t('ui.side_modal.current_workspace')}
+                          </p>
+                          <WorkspaceCard workspace={displayWorkspaces[0]} isLast={true} />
+                        </div>
+                      )}
+                    </>
                   );
-                })}
+                })()}
               </div>
 
               {/* 설명 텍스트 */}
-              <div style={{ marginBottom: '20px' }}>
+              <div style={{ marginBottom: '0.75rem' }}>
                 <p style={{
-                  fontSize: '14px',
+                  fontSize: '15px',
                   color: '#4b5563',
                   lineHeight: 1.5,
                   margin: '0 0 10px 0',
@@ -577,7 +625,7 @@ const SideModal: React.FC<SideModalProps> = ({
                   {t('ui.side_modal.admin_permission_required')}
                 </p>
                 <p style={{
-                  fontSize: '14px',
+                  fontSize: '15px',
                   color: '#4b5563',
                   lineHeight: 1.5,
                   margin: '0',
@@ -591,13 +639,13 @@ const SideModal: React.FC<SideModalProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '8px',
+                gap: '0.5rem',
                 width: '100%',
-                padding: '12px',
+                padding: '0.75rem',
                 background: 'white',
                 border: '1px solid #d1d5db',
-                borderRadius: '8px',
-                fontSize: '14px',
+                borderRadius: '0.5rem',
+                fontSize: '15px',
                 color: '#374151',
                 cursor: 'pointer',
                 marginBottom: '0',
@@ -628,17 +676,18 @@ const SideModal: React.FC<SideModalProps> = ({
 
             {/* 푸터 - 인증 버튼 영역 */}
             <div style={{
-              padding: '20px',
+              padding: '1rem 1.25rem',
               borderTop: '1px solid #f3f4f6',
               background: 'white',
               flexShrink: 0,
+              minHeight: 'fit-content', // 내용에 맞는 최소 높이
             }}>
               {/* 하단 텍스트 */}
               <p style={{
-                fontSize: '13px',
+                fontSize: '14px',
                 color: '#6b7280',
                 textAlign: 'center',
-                margin: '0 0 14px 0',
+                margin: '0 0 1rem 0',
                 lineHeight: 1.4,
                 wordWrap: 'break-word',
                 overflow: 'hidden',
@@ -649,12 +698,12 @@ const SideModal: React.FC<SideModalProps> = ({
               {/* 인증 버튼 */}
               <button style={{
                 width: '100%',
-                padding: '12px 16px',
+                padding: '0.75rem 1rem',
                 background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
                 color: 'white',
                 border: 'none',
-                borderRadius: '8px',
-                fontSize: '14px',
+                borderRadius: '0.5rem',
+                fontSize: '15px',
                 fontWeight: '600',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
@@ -689,24 +738,26 @@ const SideModal: React.FC<SideModalProps> = ({
 export const SideModalContainer: React.FC = () => {
   console.log('[8G SideModal] Rendering SideModalContainer');
   
-  // 더미 데이터 (테스트용)
+  // 더미 데이터 (테스트용 - 각각 20개씩)
   const dummyWorkspaces: WorkspaceItemDto[] = [
-    {
-      id: "ws-1",
-      slug: "slack-workspace",
-      name: "Slack Workspace",
-      image: "https://avatars.slack-edge.com/2023-09-18/5909002618259_7d2d9705b28fbbc4a832_88.png",
-      memberCount: 25,
+    // Available Workspaces (Admin = true) - 20개
+    ...Array.from({ length: 20 }, (_, i) => ({
+      id: `admin-ws-${i + 1}`,
+      slug: `admin-workspace-${i + 1}`,
+      name: `Admin Workspace ${i + 1}`,
+      image: i % 3 === 0 ? "https://avatars.slack-edge.com/2023-09-18/5909002618259_7d2d9705b28fbbc4a832_88.png" : "",
+      memberCount: Math.floor(Math.random() * 50) + 5,
       isAdmin: true
-    },
-    {
-      id: "ws-2",
-      slug: "dev-team",
-      name: "Development Team",
-      image: "",
-      memberCount: 12,
+    })),
+    // No Access Workspaces (Admin = false) - 20개
+    ...Array.from({ length: 20 }, (_, i) => ({
+      id: `noaccess-ws-${i + 1}`,
+      slug: `noaccess-workspace-${i + 1}`,
+      name: `No Access Workspace ${i + 1}`,
+      image: i % 4 === 0 ? "https://avatars.slack-edge.com/2023-09-18/5909002618259_7d2d9705b28fbbc4a832_88.png" : "",
+      memberCount: Math.floor(Math.random() * 100) + 10,
       isAdmin: false
-    }
+    }))
   ];
   
   return <SideModal workspaces={dummyWorkspaces} />;
