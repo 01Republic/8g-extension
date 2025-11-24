@@ -300,7 +300,9 @@ export class EightGClient {
     isArrayCheck: (obj: any) => obj is T[],
     isSingleCheck: (obj: any) => obj is T
   ): CollectWorkflowArrayResult<T> {
-    const rawData = Array.isArray(result.data) ? null : result.data?.data;
+    // 워크플로우 마지막 성공한 스텝에서 데이터 추출
+    const lastStep = result.steps[result.steps.length - 1];
+    const rawData = lastStep?.result?.data;
 
     if (isArrayCheck(rawData)) {
       // 배열인 경우: 각각을 ResDataContainer로 래핑하고 스키마 검증
