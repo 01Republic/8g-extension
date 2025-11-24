@@ -131,10 +131,21 @@ export class WorkflowService {
           await this.sideModalController.setWorkspaces(tabId, workspacesData);
           await this.sideModalController.show(tabId);
           
-          // Promise로 블로킹 - authenticate 버튼을 기다림
+          // 기존 Promise가 있으면 바로 결과 반환 (refresh인 경우)
+          const existingPromise = this.workspacePromises.get(tabId);
+          if (existingPromise) {
+            // refresh인 경우 - Promise를 새로 만들지 않고 결과만 업데이트
+            return result;
+          }
+          
+          // 첫 실행인 경우 - Promise로 블로킹 (authenticate 버튼을 기다림)
           return new Promise<typeof result>((resolve, reject) => {
             this.workspacePromises.set(tabId, {
-              resolve: () => resolve(result), // 워크스페이스 데이터 반환
+              resolve: () => {
+                // 가장 최신 결과를 가져와서 반환
+                const latestResult = this.lastWorkflowResults.get(tabId) || result;
+                resolve(latestResult);
+              },
               reject
             });
           });
@@ -205,6 +216,12 @@ export class WorkflowService {
         timestamp: new Date().toISOString(),
         closeTabAfterCollection: requestData.closeTabAfterCollection !== false,
       });
+      
+      // 정리 작업 (탭 닫기) - 명시적으로 false인 경우에만 탭을 유지
+      const shouldCloseTab = requestData.closeTabAfterCollection !== false;
+      if (tabId !== undefined && shouldCloseTab) {
+        await this.cleanup(tabId);
+      }
     } catch (error) {
       console.error('[WorkflowService] Workflow execution error:', error);
       sendResponse({
@@ -212,12 +229,6 @@ export class WorkflowService {
         message: error instanceof Error ? error.message : 'Workflow execution failed',
         data: {},
       } as ErrorResponse);
-    } finally {
-      // 4) 정리 작업 (탭 닫기) - 명시적으로 false인 경우에만 탭을 유지
-      const shouldCloseTab = requestData.closeTabAfterCollection !== false;
-      if (tabId !== undefined && shouldCloseTab) {
-        await this.cleanup(tabId);
-      }
     }
   }
 
@@ -265,10 +276,12 @@ export class WorkflowService {
   async completeWorkspaceSelection(tabId: number): Promise<void> {
     console.log('[WorkflowService] Completing workspace selection for tab:', tabId);
     
-    // Promise resolve - 워크스페이스 데이터 반환
+    // Promise resolve - 최신 워크스페이스 데이터 반환
     const promise = this.workspacePromises.get(tabId);
+    console.log('[WorkflowService] Promise:', promise);
+    console.log('[WorkflowService] Last workflow results:', this.lastWorkflowResults.get(tabId));
     if (promise) {
-      promise.resolve();
+      promise.resolve(this.lastWorkflowResults.get(tabId)); // resolve 함수 내부에서 최신 데이터를 가져옴
       this.workspacePromises.delete(tabId);
     }
     
@@ -289,7 +302,19 @@ export class WorkflowService {
       console.log('[WorkflowService] Refreshing workspace workflow for tab:', tabId);
       
       try {
-        // 같은 탭에서 워크플로우 재실행
+        // 1. 탭 강력 새로고침 (캐시 무시)
+        await chrome.tabs.reload(tabId, { bypassCache: true });
+        
+        // 2. 페이지 로드 대기
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // 3. targetUrl로 이동
+        await chrome.tabs.update(tabId, { url: lastRequest.targetUrl });
+        
+        // 4. 페이지 완전히 로드될 때까지 대기
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // 5. 같은 탭에서 워크플로우 재실행
         const result = await this.workflowRunner.runInExistingTab(
           lastRequest.workflow,
           tabId,
@@ -334,6 +359,7 @@ export class WorkflowService {
         
         console.log('[Refresh] Final extracted workspaces:', workspacesData);
         
+        // 워크스페이스 업데이트
         await this.sideModalController.setWorkspaces(tabId, workspacesData);
         
         // 모달은 이미 열려있으니 데이터만 업데이트

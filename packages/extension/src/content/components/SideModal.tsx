@@ -9,6 +9,7 @@ export interface SideModalProps {
   workspaces?: WorkspaceItemDto[];
   onAuthenticate?: () => void;
   onRefresh?: () => void;
+  isLoading?: boolean;  // 로딩 상태 prop 추가
 }
 
 interface SiteInfo {
@@ -189,7 +190,8 @@ const SideModal: React.FC<SideModalProps> = ({
   serviceName,
   workspaces = [],
   onAuthenticate,
-  onRefresh
+  onRefresh,
+  isLoading = false
 }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
@@ -691,12 +693,12 @@ const SideModal: React.FC<SideModalProps> = ({
                 gap: '0.5rem',
                 width: '100%',
                 padding: '0.75rem',
-                background: 'white',
+                background: isLoading ? '#f3f4f6' : 'white',
                 border: '1px solid #d1d5db',
                 borderRadius: '0.5rem',
                 fontSize: '15px',
-                color: '#374151',
-                cursor: 'pointer',
+                color: isLoading ? '#9ca3af' : '#374151',
+                cursor: isLoading ? 'not-allowed' : 'pointer',
                 marginBottom: '0',
                 transition: 'all 0.2s ease',
                 wordWrap: 'break-word',
@@ -706,10 +708,11 @@ const SideModal: React.FC<SideModalProps> = ({
                 boxSizing: 'border-box',
               }}
               onClick={() => {
-                if (onRefresh) {
+                if (!isLoading && onRefresh) {
                   onRefresh();
                 }
               }}
+              disabled={isLoading}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = '#f9fafb';
                 e.currentTarget.style.borderColor = '#9ca3af';
@@ -719,10 +722,33 @@ const SideModal: React.FC<SideModalProps> = ({
                 e.currentTarget.style.borderColor = '#d1d5db';
               }}
               >
-                <span style={{ fontSize: '16px', flexShrink: 0 }}>🔄</span>
-                <span style={{ wordWrap: 'break-word' }}>
-                  {t('ui.side_modal.refresh_login_status')}
-                </span>
+                {isLoading ? (
+                  <>
+                    <span style={{ 
+                      fontSize: '16px', 
+                      flexShrink: 0,
+                      animation: 'spin 1s linear infinite',
+                    }}>
+                      <style>{`
+                        @keyframes spin {
+                          from { transform: rotate(0deg); }
+                          to { transform: rotate(360deg); }
+                        }
+                      `}</style>
+                      🔄
+                    </span>
+                    <span style={{ wordWrap: 'break-word' }}>
+                      로딩 중...
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span style={{ fontSize: '16px', flexShrink: 0 }}>🔄</span>
+                    <span style={{ wordWrap: 'break-word' }}>
+                      {t('ui.side_modal.refresh_login_status')}
+                    </span>
+                  </>
+                )}
               </button>
               
               </div>
@@ -800,6 +826,7 @@ interface SideModalState {
   siteName?: string;
   favicon?: string;
   isLoggedIn: boolean;
+  isLoading: boolean;  // 로딩 상태 추가
 }
 
 export const SideModalContainer: React.FC = () => {
@@ -809,6 +836,7 @@ export const SideModalContainer: React.FC = () => {
     isOpen: false,
     workspaces: [],
     isLoggedIn: true,
+    isLoading: false,  // 초기값 false
   });
 
   useEffect(() => {
@@ -826,7 +854,8 @@ export const SideModalContainer: React.FC = () => {
     
     const handleUpdateWorkspaces = (event: CustomEvent) => {
       if (event.detail?.workspaces) { 
-        setState(prev => ({ ...prev, workspaces: event.detail.workspaces }));
+        // 워크스페이스 업데이트 시 로딩 종료
+        setState(prev => ({ ...prev, workspaces: event.detail.workspaces, isLoading: false }));
       }
     };
 
@@ -870,6 +899,7 @@ export const SideModalContainer: React.FC = () => {
       defaultOpen={state.isOpen} 
       workspaces={state.workspaces}
       serviceName={state.siteName}
+      isLoading={state.isLoading}
       onToggle={(isOpen) => setState(prev => ({ ...prev, isOpen }))}
       onAuthenticate={() => {
         // Background에 완료 신호만 전송
@@ -883,6 +913,9 @@ export const SideModalContainer: React.FC = () => {
         });
       }}
       onRefresh={() => {
+        // 로딩 상태 시작
+        setState(prev => ({ ...prev, isLoading: true }));
+        
         // Background에 새로고침 요청
         chrome.runtime.sendMessage({
           type: 'REFRESH_WORKSPACE_WORKFLOW'
@@ -890,6 +923,8 @@ export const SideModalContainer: React.FC = () => {
           console.log('[SideModal] Refresh request sent to background');
         }).catch(error => {
           console.error('[SideModal] Failed to send refresh request:', error);
+          // 에러 시 로딩 종료
+          setState(prev => ({ ...prev, isLoading: false }));
         });
       }}
     />
