@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { getTranslation, getCurrentLocale } from '../../locales';
 
 export type ConfirmationUIVariant = 'default' | 'warning' | 'info' | 'success';
 export type ConfirmationUIIcon = 'shield' | 'click' | 'alert';
@@ -34,6 +35,16 @@ export function ConfirmationUI({
 }: ConfirmationUIProps) {
   const [isAnimating, setIsAnimating] = useState(false);
 
+  // content script용 번역 함수
+  const t = (key: string, replacements?: Record<string, string | number>) => {
+    try {
+      return getTranslation(key, getCurrentLocale(), replacements);
+    } catch (error) {
+      console.warn('Translation failed:', key, error);
+      return key; // 실패시 키를 그대로 반환
+    }
+  };
+
   useEffect(() => {
     if (visible) {
       setTimeout(() => setIsAnimating(true), 10);
@@ -48,7 +59,7 @@ export function ConfirmationUI({
     const isLoginPage = currentUrl.includes('login') || currentUrl.includes('signin');
 
     if (isLoginPage) {
-      return '로그인 완료 후 확인 버튼을 클릭해주세요.';
+      return t('ui.confirmation.login_complete');
     }
     return message;
   };
@@ -290,7 +301,7 @@ export function ConfirmationUI({
                 e.currentTarget.style.backgroundColor = 'transparent';
               }}
               onClick={handleClose}
-              aria-label="닫기"
+              aria-label={t('ui.confirmation.close')}
             >
               <svg
                 width="16"

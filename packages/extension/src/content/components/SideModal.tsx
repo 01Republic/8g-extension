@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { getTranslation, getCurrentLocale } from '../../locales';
 
 export interface SideModalProps {
   defaultOpen?: boolean;
@@ -19,6 +20,16 @@ const SideModal: React.FC<SideModalProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const modalRef = useRef<HTMLDivElement>(null);
+
+  // content script용 번역 함수
+  const t = (key: string, replacements?: Record<string, string | number>) => {
+    try {
+      return getTranslation(key, getCurrentLocale(), replacements);
+    } catch (error) {
+      console.warn('Translation failed:', key, error);
+      return key; // 실패시 키를 그대로 반환
+    }
+  };
 
   const toggleModal = () => {
     const newState = !isOpen;
@@ -190,7 +201,7 @@ const SideModal: React.FC<SideModalProps> = ({
         onClick={toggleModal}
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
-        title={isOpen ? "Close scordi Panel" : "Open scordi Panel"}
+        title={isOpen ? t('ui.side_modal.close_panel') : t('ui.side_modal.open_panel')}
       >
         {isOpen ? '×' : 'S'}
       </button>
@@ -222,14 +233,14 @@ const SideModal: React.FC<SideModalProps> = ({
                   margin: '0',
                   color: '#1f2937',
                 }}>
-                  스코디
+                  {t('ui.side_modal.title')}
                 </h3>
                 <p style={{
                   fontSize: '12px',
                   color: '#6b7280',
                   margin: '0',
                 }}>
-                  {serviceName} 연동
+                  {t('ui.side_modal.service_integration', { serviceName })}
                 </p>
               </div>
             </div>
@@ -321,7 +332,7 @@ const SideModal: React.FC<SideModalProps> = ({
                     color: '#6b7280',
                     margin: '4px 0 0 0',
                   }}>
-                    서비스 연동 진행 중
+                    {t('ui.side_modal.service_in_progress')}
                   </p>
                 </div>
                 <button style={{
@@ -367,7 +378,7 @@ const SideModal: React.FC<SideModalProps> = ({
                   color: '#065f46',
                   fontWeight: '500',
                 }}>
-                  이미 로그인이 되어 있는 것 같아요
+                  {t('ui.side_modal.already_logged_in')}
                 </span>
               </div>
 
@@ -384,7 +395,7 @@ const SideModal: React.FC<SideModalProps> = ({
                   color: '#6b7280',
                   margin: '0 0 8px 0',
                 }}>
-                  현재 연결된 워크스페이스
+                  {t('ui.side_modal.current_workspace')}
                 </p>
                 <p style={{
                   fontSize: '14px',
@@ -404,7 +415,7 @@ const SideModal: React.FC<SideModalProps> = ({
                   lineHeight: 1.5,
                   margin: '0 0 10px 0',
                 }}>
-                  연결하려면 워크스페이스의 관리자 권한이 있는지 확인해주세요.
+                  {t('ui.side_modal.admin_permission_required')}
                 </p>
                 <p style={{
                   fontSize: '14px',
@@ -412,7 +423,7 @@ const SideModal: React.FC<SideModalProps> = ({
                   lineHeight: 1.5,
                   margin: '0',
                 }}>
-                  다른 {serviceName} 계정으로 연동하시려면 이 페이지에서 로그인 계정을 변경해주세요.
+                  {t('ui.side_modal.change_account_instruction', { serviceName })}
                 </p>
               </div>
 
@@ -443,7 +454,7 @@ const SideModal: React.FC<SideModalProps> = ({
               }}
               >
                 <span style={{ fontSize: '16px' }}>🔄</span>
-                로그인 상태 다시 확인
+                {t('ui.side_modal.refresh_login_status')}
               </button>
               
               </div>
@@ -463,7 +474,7 @@ const SideModal: React.FC<SideModalProps> = ({
                 margin: '0 0 14px 0',
                 lineHeight: 1.4,
               }}>
-                계속 진행하시려면 "인증" 버튼을 클릭하세요.
+                {t('ui.side_modal.continue_instruction')}
               </p>
 
               {/* 인증 버튼 */}
@@ -491,7 +502,7 @@ const SideModal: React.FC<SideModalProps> = ({
                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.3)';
               }}
               >
-                인증
+                {t('ui.side_modal.authenticate')}
               </button>
             </div>
           </div>

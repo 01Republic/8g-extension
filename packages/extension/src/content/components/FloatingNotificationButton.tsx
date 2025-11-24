@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { getTranslation, getCurrentLocale } from '../../locales';
 
 export type NotificationUrgency = 'low' | 'medium' | 'high';
 
@@ -28,6 +29,16 @@ const FloatingNotificationButton: React.FC<FloatingNotificationButtonProps> = ({
   const [isVisible, setIsVisible] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+
+  // content script용 번역 함수
+  const t = (key: string, replacements?: Record<string, string | number>) => {
+    try {
+      return getTranslation(key, getCurrentLocale(), replacements);
+    } catch (error) {
+      console.warn('Translation failed:', key, error);
+      return key; // 실패시 키를 그대로 반환
+    }
+  };
 
   // Fixed position for CDP auto-click
   const FIXED_POSITION = { x: 60, y: 200 };
@@ -317,7 +328,7 @@ const FloatingNotificationButton: React.FC<FloatingNotificationButtonProps> = ({
           <span style={iconStyle}>{getIcon()}</span>
           {badge > 0 && <div style={badgeStyle}>{badge > 9 ? '9+' : badge}</div>}
           {onDismiss && (
-            <button style={closeButtonStyle} onClick={handleDismiss} title="닫기">
+            <button style={closeButtonStyle} onClick={handleDismiss} title={t('ui.floating_notification.close')}>
               ✕
             </button>
           )}

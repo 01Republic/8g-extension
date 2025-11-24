@@ -7,6 +7,7 @@ import { ExecutionStatusUIContainer } from './components/ExecutionStatusUI';
 import CheckStatusUI from './components/CheckStatusUI';
 import NotificationManager from './components/NotificationManager';
 import { SideModalContainer } from './components/SideModal';
+import { refreshLocaleFromBrowser } from '../locales';
 
 // Prevent multiple injections
 (() => {
@@ -14,6 +15,9 @@ import { SideModalContainer } from './components/SideModal';
   (window as any).is8gExtensionInjected = true;
 
   console.log('[8G Extension] Content script initialized on:', window.location.href);
+
+  // i18n 초기화 (브라우저 언어에서 자동 감지)
+  refreshLocaleFromBrowser();
 
   // 메시지 커널 생성 (중앙 집중식 메시지 처리)
   const messageKernel = new MessageKernel();

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { getTranslation, getCurrentLocale } from '../../locales';
 
 export type ExecutionStatusType = 'loading' | 'success' | 'error';
 export type ExecutionStatusIcon = 'login' | 'download' | 'mail' | 'default';
@@ -19,12 +20,25 @@ interface ExecutionStatusUIProps {
  */
 export function ExecutionStatusUI({
   visible,
-  message = '실행 중',
+  message,
   statusType = 'loading',
   icon = 'default',
   position = 'bottom-right',
 }: ExecutionStatusUIProps) {
   const [isAnimating, setIsAnimating] = useState(false);
+
+  // content script용 번역 함수
+  const t = (key: string, replacements?: Record<string, string | number>) => {
+    try {
+      return getTranslation(key, getCurrentLocale(), replacements);
+    } catch (error) {
+      console.warn('Translation failed:', key, error);
+      return key; // 실패시 키를 그대로 반환
+    }
+  };
+
+  // 기본 메시지 설정
+  const displayMessage = message || t('ui.execution_status.executing');
 
   useEffect(() => {
     if (visible) {
@@ -242,7 +256,7 @@ export function ExecutionStatusUI({
       <div style={containerStyle} onClick={(e) => e.stopPropagation()}>
         <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>{getIcon()}</div>
         <div style={messageStyle}>
-          <p style={{ margin: 0 }}>{message}</p>
+          <p style={{ margin: 0 }}>{displayMessage}</p>
         </div>
         {statusType === 'loading' && (
           <div style={{ flexShrink: 0, display: 'flex', gap: '4px' }}>
@@ -288,6 +302,16 @@ export function ExecutionStatusUI({
  * 커스텀 이벤트를 수신하고 실행 상태 UI를 관리하는 컨테이너 컴포넌트
  */
 export function ExecutionStatusUIContainer() {
+  // content script용 번역 함수
+  const t = (key: string, replacements?: Record<string, string | number>) => {
+    try {
+      return getTranslation(key, getCurrentLocale(), replacements);
+    } catch (error) {
+      console.warn('Translation failed:', key, error);
+      return key; // 실패시 키를 그대로 반환
+    }
+  };
+
   const [uiState, setUiState] = useState<{
     visible: boolean;
     message: string;
@@ -296,7 +320,7 @@ export function ExecutionStatusUIContainer() {
     position: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
   }>({
     visible: false,
-    message: '실행 중',
+    message: t('ui.execution_status.executing'),
     statusType: 'loading',
     icon: 'default',
     position: 'bottom-right',
@@ -321,7 +345,7 @@ export function ExecutionStatusUIContainer() {
 
       setUiState({
         visible: true,
-        message: message || '실행 중',
+        message: message || t('ui.execution_status.executing'),
         statusType,
         icon,
         position,
