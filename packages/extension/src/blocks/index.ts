@@ -33,7 +33,6 @@ export type { NetworkCatchBlock, NetworkCatchResponse } from './NetworkCatchBloc
 export type { MarkBorderBlock } from './MarkBorderBlock';
 export type { ApplyLocaleBlock } from './ApplyLocaleBlock';
 export type { PasteValueBlock } from './PasteValueBlock';
-export type { CheckStatusBlock } from './CheckStatusBlock';
 
 // Export all block schemas
 export { GetTextBlockSchema } from './GetTextBlock';
@@ -59,7 +58,6 @@ export { NetworkCatchBlockSchema } from './NetworkCatchBlock';
 export { MarkBorderBlockSchema } from './MarkBorderBlock';
 export { ApplyLocaleBlockSchema } from './ApplyLocaleBlock';
 export { PasteValueBlockSchema } from './PasteValueBlock';
-export { CheckStatusBlockSchema } from './CheckStatusBlock';
 
 // Import block handlers and types
 import { handlerGetText, GetTextBlock, validateGetTextBlock } from './GetTextBlock';
@@ -127,7 +125,6 @@ import {
 import { handlerMarkBorder, MarkBorderBlock, validateMarkBorderBlock } from './MarkBorderBlock';
 import { handlerApplyLocale, ApplyLocaleBlock, validateApplyLocaleBlock } from './ApplyLocaleBlock';
 import { handlerPasteValue, PasteValueBlock, validatePasteValueBlock } from './PasteValueBlock';
-import { handlerCheckStatus, CheckStatusBlock, validateCheckStatusBlock } from './CheckStatusBlock';
 import { Block, BlockResult } from './types';
 import { GetTextBlockSchema } from './GetTextBlock';
 import { GetAttributeValueBlockSchema } from './GetAttributeValueBlock';
@@ -152,7 +149,6 @@ import { NetworkCatchBlockSchema } from './NetworkCatchBlock';
 import { MarkBorderBlockSchema } from './MarkBorderBlock';
 import { ApplyLocaleBlockSchema } from './ApplyLocaleBlock';
 import { PasteValueBlockSchema } from './PasteValueBlock';
-import { CheckStatusBlockSchema } from './CheckStatusBlock';
 
 // All block schemas mapped by block name
 export const AllBlockSchemas = {
@@ -179,7 +175,6 @@ export const AllBlockSchemas = {
   'mark-border': MarkBorderBlockSchema,
   'apply-locale': ApplyLocaleBlockSchema,
   'paste-value': PasteValueBlockSchema,
-  'check-status': CheckStatusBlockSchema,
 } as const;
 
 export class BlockHandler {
@@ -213,7 +208,6 @@ export class BlockHandler {
   static executeBlock(block: MarkBorderBlock): Promise<BlockResult<boolean>>;
   static executeBlock(block: ApplyLocaleBlock): Promise<BlockResult<any>>;
   static executeBlock(block: PasteValueBlock): Promise<BlockResult<boolean>>;
-  static executeBlock(block: CheckStatusBlock): Promise<BlockResult<any>>;
   static executeBlock(block: Block): Promise<BlockResult>;
 
   // Implementation
@@ -228,7 +222,6 @@ export class BlockHandler {
       | MarkBorderBlock
       | ApplyLocaleBlock
       | PasteValueBlock
-      | CheckStatusBlock
       | KeypressBlock
       | WaitBlock
       | WaitForConditionBlock
@@ -351,10 +344,6 @@ export class BlockHandler {
           return await handlerPasteValue(validatedBlock);
         }
 
-        case 'check-status': {
-          const validatedBlock = validateCheckStatusBlock(block);
-          return await handlerCheckStatus(validatedBlock);
-        }
 
         default:
           return {

@@ -2,10 +2,7 @@ import { createRoot } from 'react-dom/client';
 import { MessageKernel } from './kernel/MessageKernel';
 import { InternalMessageHandler } from './handler/InternalMessageHandler';
 import { ExternalMessageHandler } from './handler/ExternalMessageHandler';
-import { ConfirmationUIContainer } from './components/ConfirmationUI';
 import { ExecutionStatusUIContainer } from './components/ExecutionStatusUI';
-import CheckStatusUI from './components/CheckStatusUI';
-import NotificationManager from './components/NotificationManager';
 import { SideModalContainer } from './components/SideModal';
 import { refreshLocaleFromBrowser } from '../locales';
 
@@ -37,65 +34,13 @@ import { refreshLocaleFromBrowser } from '../locales';
 
   if (isTopFrame) {
     const initUI = () => {
-      // Confirmation UI 마운트
       const confirmationRoot = document.createElement('div');
       confirmationRoot.id = '8g-confirmation-ui-root';
       confirmationRoot.style.cssText = 'all: initial; position: fixed; z-index: 2147483647;';
       document.body.appendChild(confirmationRoot);
 
       const confirmationReactRoot = createRoot(confirmationRoot);
-      confirmationReactRoot.render(<ConfirmationUIContainer />);
-
-      // Execution Status UI 마운트
-      const executionStatusRoot = document.createElement('div');
-      executionStatusRoot.id = '8g-execution-status-ui-root';
-      executionStatusRoot.style.cssText = 'all: initial; position: fixed; z-index: 2147483647;';
-      document.body.appendChild(executionStatusRoot);
-
-      const executionStatusReactRoot = createRoot(executionStatusRoot);
-      executionStatusReactRoot.render(<ExecutionStatusUIContainer />);
-
-      // Check Status UI 마운트
-      const checkStatusRoot = document.createElement('div');
-      checkStatusRoot.id = '8g-check-status-ui-root';
-      checkStatusRoot.style.cssText = 'all: initial; position: fixed; z-index: 2147483647;';
-      document.body.appendChild(checkStatusRoot);
-
-      let checkStatusReactRoot: any = null;
-
-      // Check Status UI 이벤트 리스너
-      window.addEventListener('8g-show-check-status', ((event: CustomEvent) => {
-        const detail = event.detail;
-
-        if (!checkStatusReactRoot) {
-          checkStatusReactRoot = createRoot(checkStatusRoot);
-        }
-
-        checkStatusReactRoot.render(
-          <CheckStatusUI
-            checkType={detail.checkType}
-            title={detail.title}
-            description={detail.description}
-            onConfirm={detail.onConfirm}
-            onCancel={detail.onCancel}
-          />
-        );
-      }) as EventListener);
-
-      window.addEventListener('8g-hide-check-status', () => {
-        if (checkStatusReactRoot) {
-          checkStatusReactRoot.render(<></>);
-        }
-      });
-
-      // Notification Manager 마운트
-      const notificationRoot = document.createElement('div');
-      notificationRoot.id = '8g-notification-manager-root';
-      notificationRoot.style.cssText = 'all: initial; position: fixed; z-index: 2147483645;';
-      document.body.appendChild(notificationRoot);
-
-      const notificationReactRoot = createRoot(notificationRoot);
-      notificationReactRoot.render(<NotificationManager />);
+      confirmationReactRoot.render(<ExecutionStatusUIContainer />);
 
       // Side Modal 마운트
       const sideModalRoot = document.createElement('div');

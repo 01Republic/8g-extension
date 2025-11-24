@@ -137,17 +137,13 @@ export async function handlerWaitForCondition(
         confirmResolve = resolve;
       });
 
-      // Floating UI 표시 이벤트 발생
+      // ExecutionStatusUI 표시 이벤트 발생
       window.dispatchEvent(
-        new CustomEvent('8g-show-confirmation-ui', {
+        new CustomEvent('8g-show-execution-status', {
           detail: {
             message: conditions.message || '작업을 완료하셨나요?',
-            buttonText: conditions.buttonText || '완료',
-            position: normalizedPosition,
-            variant: 'default',
-            icon: 'alert',
-            showClose: true,
-            onConfirm: confirmResolve,
+            statusType: 'loading',
+            icon: 'default',
           },
         })
       );
@@ -243,8 +239,8 @@ export async function handlerWaitForCondition(
           clearInterval(intervalId);
           intervalId = null;
         }
-        // 표시된 경우 확인 UI 숨김
-        window.dispatchEvent(new CustomEvent('8g-hide-confirmation-ui'));
+        // 표시된 경우 ExecutionStatusUI 숨김
+        window.dispatchEvent(new CustomEvent('8g-hide-execution-status'));
       };
 
       const resolveWith = (result: WaitForConditionResult) => {

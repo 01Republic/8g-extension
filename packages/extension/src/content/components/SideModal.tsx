@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getTranslation, getCurrentLocale } from '../../locales';
-import type { WorkspaceItemDto } from '../../sdk/EightGClient';
+import { WorkspaceItemDto } from '@/sdk';
 
 export interface SideModalProps {
   defaultOpen?: boolean;

@@ -8,7 +8,6 @@ import {
   isTriggerConfirmationMessage,
 } from '@/types/internal-messages';
 import { MessageKernel } from '../kernel/MessageKernel';
-import { performStatusCheck } from '@/blocks/CheckStatusBlock';
 
 /**
  * Chrome Extension 내부 메시지 핸들러
@@ -38,7 +37,6 @@ export class InternalMessageHandler {
               message: message.data.message || '워크플로우 실행 중',
               statusType: message.data.statusType || 'loading',
               icon: message.data.icon || 'default',
-              position: message.data.position || 'bottom-right',
             },
           })
         );
@@ -50,7 +48,7 @@ export class InternalMessageHandler {
         console.log('[InternalMessageHandler] Hide execution status');
         window.dispatchEvent(new CustomEvent('8g-hide-execution-status'));
         // 워크플로우 실행 종료 시 초록색 ConfirmationUI도 함께 숨김
-        window.dispatchEvent(new CustomEvent('8g-hide-confirmation-ui'));
+        window.dispatchEvent(new CustomEvent('8g-hide-execution-status'));
         sendResponse({ success: true });
         return false;
       }
@@ -60,7 +58,6 @@ export class InternalMessageHandler {
         const {
           message: msg,
           buttonText,
-          position = 'top',
           variant = 'default',
           icon = 'alert',
           showClose = true,
@@ -84,22 +81,21 @@ export class InternalMessageHandler {
                 });
 
                 // UI 숨김
-                window.dispatchEvent(new CustomEvent('8g-hide-confirmation-ui'));
+                window.dispatchEvent(new CustomEvent('8g-hide-execution-status'));
               }
             : undefined;
 
         // 닫기 버튼 클릭 시 콜백
         const onClose = () => {
           console.log('[InternalMessageHandler] User closed confirmation UI');
-          window.dispatchEvent(new CustomEvent('8g-hide-confirmation-ui'));
+          window.dispatchEvent(new CustomEvent('8g-hide-execution-status'));
         };
 
         window.dispatchEvent(
-          new CustomEvent('8g-show-confirmation-ui', {
+          new CustomEvent('8g-show-execution-status', {
             detail: {
               message: msg,
               buttonText,
-              position,
               variant,
               icon,
               showClose,
@@ -132,29 +128,7 @@ export class InternalMessageHandler {
         sendResponse({ success: true });
         return false;
       }
-
-      // Check status message handler
-      if ((message as any).type === 'CHECK_STATUS') {
-        console.log(
-          '[InternalMessageHandler] Check status message received:',
-          (message as any).checkType
-        );
-        const result = performStatusCheck((message as any).checkType);
-        sendResponse(result);
-        return false;
-      }
-
-      // Perform status check from Side Panel
-      if ((message as any).type === 'PERFORM_STATUS_CHECK') {
-        console.log(
-          '[InternalMessageHandler] Perform status check from Side Panel:',
-          (message as any).payload?.checkType
-        );
-        const result = performStatusCheck((message as any).payload?.checkType);
-        sendResponse(result);
-        return false;
-      }
-
+    
       // Check status dismissed handler
       if ((message as any).type === 'CHECK_STATUS_DISMISSED') {
         const { notificationId, message: msg } = (message as any).payload || {};
