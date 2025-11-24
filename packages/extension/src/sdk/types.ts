@@ -4,6 +4,7 @@ import type {
   ForEachContext as WorkflowForEachContext,
   CountLoopContext as WorkflowCountLoopContext,
 } from '../workflow/context/execution-context';
+import { z } from 'zod';
 
 export * from '../blocks';
 
@@ -124,7 +125,7 @@ export class WorkflowStepRunResult<T = any> {
 
 export class CollectWorkflowResult<T = any> {
   success!: boolean;
-  data!: ResDataContainer<T> | ResDataContainer<T>[];
+  data!: ResDataContainer<T>;
   steps!: WorkflowStepRunResult<T>[];
   context!: ExecutionContext;
   targetUrl!: string;
@@ -132,11 +133,7 @@ export class CollectWorkflowResult<T = any> {
   error?: string;
 }
 
-/**
- * addMembers/deleteMembers 전용 응답 타입
- * data 필드가 항상 ResDataContainer 배열임을 보장
- */
-export class CollectMemberOperationResult<T = MemberOperationResult> {
+export class CollectWorkflowArrayResult<T = any> {
   success!: boolean;
   data!: ResDataContainer<T>[]; // 항상 배열
   steps!: WorkflowStepRunResult<T>[];
@@ -264,9 +261,158 @@ export const CurrencyInfoSchema = {
   },
 };
 
-/**
- * 멤버 조작 결과 타입 (addMembers/deleteMembers 전용)
- */
+// =========================
+// Workspace Types & Schemas  
+// =========================
+
+export enum BillingCycleTerm {
+  None = 'None',
+  Monthly = 'Monthly',
+  Yearly = 'Yearly',
+  Onetime = 'Onetime',
+}
+
+// Workspace Item (워크스페이스 목록)
+export const WorkspaceItemSchema = z.object({
+  // 워크스페이스를 구분할 수 있는 구분자
+  id: z.string(),
+  // 워크스페이스 슬러그
+  slug: z.string(),
+  // 워크스페이스 이름
+  name: z.string(),
+  // 워크스페이스의 프로필 이미지
+  image: z.string(),
+  // member 수
+  memberCount: z.number(),
+  // 관리자 여부
+  isAdmin: z.boolean().nullable().optional(),
+});
+
+export type WorkspaceItemDto = z.infer<typeof WorkspaceItemSchema>;
+
+// Workspace Detail (워크스페이스 상세)
+export const WorkspaceDetailItemSchema = z.object({
+  // 워크스페이스를 구분할 수 있는 구분자, ex) slug 같은 것들 01republic
+  slug: z.string(),
+  // 워크스페이스 이름
+  displayName: z.string(),
+  // 워크스페이스의 프로필 이미지
+  profileImageUrl: z.string(),
+  // 설명
+  description: z.string(),
+  // 공개 이메일
+  publicEmail: z.string(),
+  // 결제 이메일
+  billingEmail: z.string(),
+  // 조직 메인 페이지 URL
+  orgPageUrl: z.string(),
+  // 워크스페이스 역할 목록
+  roles: z.array(z.string()),
+});
+
+export type WorkspaceDetailItemDto = z.infer<typeof WorkspaceDetailItemSchema>;
+
+// Currency Amount (통화 정보)
+export const CurrencyAmountSchema = z.object({
+  // 통화 코드
+  code: z.nativeEnum(CurrencyCode),
+  // 통화 기호
+  symbol: z.string(),
+  // 통화 표시 형식
+  format: z.string(),
+  // 실제 금액
+  amount: z.number(),
+  // 표시용 텍스트 (optional, 예: "US$57.75")
+  text: z.string().optional(),
+});
+
+export type CurrencyDto = z.infer<typeof CurrencyAmountSchema>;
+
+// Workspace Billing (워크스페이스 결제 정보)
+export const WorkspaceBillingSchema = z.object({
+  // 플랜 이름
+  planName: z.string(),
+  // 현재 주기 결제 금액
+  currentCycleBillAmount: CurrencyAmountSchema,
+  // 다음 결제 예정일
+  nextPaymentDue: z.string(),
+  // 주기 단위
+  cycleTerm: z.nativeEnum(BillingCycleTerm).nullable(),
+  // 무료 티어 여부
+  isFreeTier: z.boolean(),
+  // 플랜 단위 여부
+  isPerUser: z.boolean(),
+  // 결제 멤버 수
+  paidMemberCount: z.number(),
+  // 사용 멤버 수
+  usedMemberCount: z.number(),
+  // 단위 가격
+  unitPrice: CurrencyAmountSchema.nullable(),
+  // 카드 번호
+  cardNumber: z.string(),
+  // 카드 이름
+  cardName: z.string(),
+});
+
+export type WorkspaceBillingDto = z.infer<typeof WorkspaceBillingSchema>;
+
+// Workspace Billing History (워크스페이스 결제 내역)
+export const WorkspaceBillingHistorySchema = z.object({
+  // 결제 이력 고유 아이디
+  uid: z.string(),
+  // 결제 일자
+  issuedDate: z.coerce.date(),
+  // 결제 완료 일자
+  paidDate: z.coerce.date().nullable().optional(),
+  // 결제 방법
+  paymentMethod: z.string(),
+  // 결제 금액
+  amount: CurrencyAmountSchema,
+  // 결제 성공 여부
+  isSuccessfulPaid: z.boolean(),
+  // 결제 영수증 링크
+  receiptUrl: z.string(),
+});
+
+export type WorkspaceBillingHistoryDto = z.infer<typeof WorkspaceBillingHistorySchema>;
+
+// Workspace Member (워크스페이스 멤버)
+export const WorkspaceMemberSchema = z.object({
+  uid: z.string().nullable(),
+  // 멤버 이름
+  name: z.string(),
+  // 멤버 이메일
+  email: z.string().email(),
+  // 멤버 프로필 이미지 링크
+  profileImageUrl: z.string(),
+  // 멤버 역할
+  role: z.string(),
+  // 멤버 구독 좌석 상태
+  subscriptionSeatStatus: z
+    .enum([
+      'NONE', // 미정
+      'FREE', // 무료
+      'PAID', // 유료
+      'QUIT', // 해지
+    ])
+    .nullable()
+    .optional(),
+  // 멤버 가입 일자
+  startedAt: z.coerce.date().nullable().optional(),
+  // 멤버 해지 일자
+  deletedAt: z.coerce.date().nullable().optional(),
+});
+
+export type WorkspaceMemberDto = z.infer<typeof WorkspaceMemberSchema>;
+
+// Member Operation Result (멤버 조작 결과)
+export const MemberOperationResultSchema = z.object({
+  email: z.string(),
+  operation: z.enum(['add', 'delete']),
+  completed: z.boolean(),
+  reason: z.string().optional(),
+});
+
 export interface MemberOperationResult {
   email: string;
   operation: 'add' | 'delete';
