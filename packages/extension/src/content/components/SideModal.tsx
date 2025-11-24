@@ -1,25 +1,71 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getTranslation, getCurrentLocale } from '../../locales';
+import type { WorkspaceItemDto } from '../../sdk/EightGClient';
 
 export interface SideModalProps {
   defaultOpen?: boolean;
   onToggle?: (isOpen: boolean) => void;
   serviceName?: string;
-  workspaceName?: string;
-  workspaceId?: string;
-  workspaceSlug?: string;
+  workspaces?: WorkspaceItemDto[];
+}
+
+interface SiteInfo {
+  favicon: string;
+  siteName: string;
 }
 
 const SideModal: React.FC<SideModalProps> = ({ 
   defaultOpen = false, 
   onToggle,
-  serviceName = "Slack",
-  workspaceName = "Test Workspace",
-  workspaceId = "ws-1",
-  workspaceSlug = "test-workspace"
+  serviceName,
+  workspaces = []
 }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
+  const [siteInfo, setSiteInfo] = useState<SiteInfo>({ favicon: '', siteName: serviceName || '' });
   const modalRef = useRef<HTMLDivElement>(null);
+
+  // workspaces 배열이 비어있으면 기본 더미 데이터 사용
+  const displayWorkspaces = workspaces.length > 0 ? workspaces : [{
+    id: 'default-ws',
+    slug: 'default-workspace',
+    name: 'Default Workspace',
+    image: '',
+    memberCount: 1,
+    isAdmin: null
+  }];
+
+  // 현재 사이트 정보 가져오기
+  useEffect(() => {
+    const getCurrentSiteInfo = () => {
+      // 파비콘 가져오기
+      const faviconLink = document.querySelector('link[rel*="icon"]') as HTMLLinkElement;
+      let favicon = '/favicon.ico'; // 기본값
+      
+      if (faviconLink && faviconLink.href) {
+        favicon = faviconLink.href;
+      } else {
+        // 기본 파비콘 경로 시도
+        favicon = `${window.location.origin}/favicon.ico`;
+      }
+
+      // 사이트 이름 가져오기 (og:site_name 우선, 없으면 title)
+      const ogSiteName = document.querySelector('meta[property="og:site_name"]') as HTMLMetaElement;
+      const title = document.title;
+      
+      let siteName = serviceName || '';
+      if (ogSiteName && ogSiteName.content) {
+        siteName = ogSiteName.content;
+      } else if (title) {
+        siteName = title.split(' | ')[0].split(' - ')[0]; // 파이프나 하이픈으로 구분된 첫 부분만
+      } else {
+        siteName = window.location.hostname;
+      }
+
+      setSiteInfo({ favicon, siteName });
+    };
+
+    getCurrentSiteInfo();
+  }, [serviceName]);
 
   // content script용 번역 함수
   const t = (key: string, replacements?: Record<string, string | number>) => {
@@ -103,18 +149,10 @@ const SideModal: React.FC<SideModalProps> = ({
     willChange: 'transform',
     display: 'flex',
     flexDirection: 'column',
+    overflow: 'hidden',
+    fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
   };
 
-  const headerStyle: React.CSSProperties = {
-    padding: '16px 20px',
-    borderBottom: '1px solid #e5e7eb',
-    background: 'white',
-    color: '#1d1c1d',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    minHeight: '60px',
-  };
 
   const titleStyle: React.CSSProperties = {
     fontSize: '18px',
@@ -172,7 +210,7 @@ const SideModal: React.FC<SideModalProps> = ({
     color: 'white',
     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
     userSelect: 'none',
-    fontFamily: 'system-ui, -apple-system, sans-serif',
+    fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
   };
 
   const triggerButtonHoverStyle = {
@@ -209,70 +247,6 @@ const SideModal: React.FC<SideModalProps> = ({
       {/* 사이드 모달 */}
       <div ref={modalRef} style={backdropStyle} onClick={handleBackdropClick}>
         <div style={panelStyle}>
-          {/* 헤더 */}
-          <div style={headerStyle}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                background: '#6366f1',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '16px',
-                color: 'white',
-                fontWeight: '600',
-              }}>
-                S
-              </div>
-              <div>
-                <h3 style={{
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  margin: '0',
-                  color: '#1f2937',
-                }}>
-                  {t('ui.side_modal.title')}
-                </h3>
-                <p style={{
-                  fontSize: '12px',
-                  color: '#6b7280',
-                  margin: '0',
-                }}>
-                  {t('ui.side_modal.service_integration', { serviceName })}
-                </p>
-              </div>
-            </div>
-            <button
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: '#9ca3af',
-                width: '24px',
-                height: '24px',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '18px',
-                transition: 'all 0.2s ease',
-                marginLeft: 'auto',
-              }}
-              onClick={closeModal}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#f3f4f6';
-                e.currentTarget.style.color = '#374151';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'transparent';
-                e.currentTarget.style.color = '#9ca3af';
-              }}
-            >
-              ×
-            </button>
-          </div>
 
           {/* 콘텐츠 */}
           <div style={{
@@ -315,17 +289,35 @@ const SideModal: React.FC<SideModalProps> = ({
                   fontSize: '18px',
                   color: '#6b7280',
                   marginTop: '2px',
+                  overflow: 'hidden',
                 }}>
-                  💬
+                  {siteInfo.favicon ? (
+                    <img 
+                      src={siteInfo.favicon} 
+                      alt="favicon" 
+                      style={{
+                        width: '24px',
+                        height: '24px',
+                        objectFit: 'contain'
+                      }}
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.parentElement!.innerHTML = '💬';
+                      }}
+                    />
+                  ) : '💬'}
                 </div>
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <h2 style={{
                     fontSize: '18px',
                     fontWeight: '600',
                     margin: '0',
                     color: '#1f2937',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
                   }}>
-                    {serviceName}
+                    {siteInfo.siteName}
                   </h2>
                   <p style={{
                     fontSize: '14px',
@@ -335,16 +327,27 @@ const SideModal: React.FC<SideModalProps> = ({
                     {t('ui.side_modal.service_in_progress')}
                   </p>
                 </div>
-                <button style={{
-                  background: 'transparent',
-                  border: 'none',
-                  fontSize: '18px',
-                  color: '#9ca3af',
-                  cursor: 'pointer',
-                  padding: '4px',
-                  marginTop: '2px',
-                }}>
-                  ⋯
+                <button 
+                  onClick={closeModal}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    fontSize: '18px',
+                    color: '#9ca3af',
+                    cursor: 'pointer',
+                    padding: '4px',
+                    marginTop: '2px',
+                    flexShrink: 0,
+                    transition: 'color 0.2s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = '#374151';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = '#9ca3af';
+                  }}
+                >
+                  ×
                 </button>
               </div>
 
@@ -382,29 +385,120 @@ const SideModal: React.FC<SideModalProps> = ({
                 </span>
               </div>
 
-              {/* 워크스페이스 정보 */}
-              <div style={{ 
-                marginBottom: '16px',
-                background: '#f9fafb',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                border: '1px solid #e5e7eb',
-              }}>
+              {/* 워크스페이스 목록 */}
+              <div style={{ marginBottom: '16px' }}>
                 <p style={{
                   fontSize: '13px',
                   color: '#6b7280',
-                  margin: '0 0 8px 0',
+                  margin: '0 0 12px 0',
                 }}>
-                  {t('ui.side_modal.current_workspace')}
+                  {displayWorkspaces.length === 1 
+                    ? t('ui.side_modal.current_workspace')
+                    : `Available Workspaces (${displayWorkspaces.length})`
+                  }
                 </p>
-                <p style={{
-                  fontSize: '14px',
-                  color: '#1f2937',
-                  fontWeight: '600',
-                  margin: '0',
-                }}>
-                  {workspaceName}
-                </p>
+                
+                {displayWorkspaces.map((ws: WorkspaceItemDto, index: number) => (
+                  <div key={ws.id || index} style={{
+                    background: '#f9fafb',
+                    padding: '12px 16px',
+                    borderRadius: '8px',
+                    border: '1px solid #e5e7eb',
+                    marginBottom: index < displayWorkspaces.length - 1 ? '8px' : '0',
+                  }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                    }}>
+                      {ws.image && (
+                        <img 
+                          src={ws.image} 
+                          alt="workspace" 
+                          style={{
+                            width: '20px',
+                            height: '20px',
+                            borderRadius: '4px',
+                            objectFit: 'cover',
+                            flexShrink: 0,
+                          }}
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      )}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{
+                          fontSize: '14px',
+                          color: '#1f2937',
+                          fontWeight: '600',
+                          margin: '0 0 2px 0',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}>
+                          {ws.name}
+                        </p>
+                        {ws.slug && (
+                          <p style={{
+                            fontSize: '12px',
+                            color: '#6b7280',
+                            margin: '0',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}>
+                            @{ws.slug}
+                          </p>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                        {ws.memberCount !== undefined && ws.memberCount > 0 && (
+                          <span style={{
+                            fontSize: '12px',
+                            color: '#6b7280',
+                            background: '#f3f4f6',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                          }}>
+                            {ws.memberCount}
+                          </span>
+                        )}
+                        {ws.isAdmin && (
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '3px',
+                            background: '#dcfce7',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                          }}>
+                            <div style={{
+                              width: '10px',
+                              height: '10px',
+                              background: '#059669',
+                              borderRadius: '50%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '7px',
+                              color: 'white',
+                            }}>
+                              ✓
+                            </div>
+                            <span style={{
+                              fontSize: '10px',
+                              color: '#059669',
+                              fontWeight: '500',
+                            }}>
+                              Admin
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
 
               {/* 설명 텍스트 */}
@@ -423,7 +517,7 @@ const SideModal: React.FC<SideModalProps> = ({
                   lineHeight: 1.5,
                   margin: '0',
                 }}>
-                  {t('ui.side_modal.change_account_instruction', { serviceName })}
+                  {t('ui.side_modal.change_account_instruction', { serviceName: siteInfo.siteName || 'Service' })}
                 </p>
               </div>
 
@@ -443,6 +537,11 @@ const SideModal: React.FC<SideModalProps> = ({
                 cursor: 'pointer',
                 marginBottom: '0',
                 transition: 'all 0.2s ease',
+                wordWrap: 'break-word',
+                whiteSpace: 'normal',
+                lineHeight: '1.3',
+                maxWidth: '100%',
+                boxSizing: 'border-box',
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = '#f9fafb';
@@ -453,8 +552,10 @@ const SideModal: React.FC<SideModalProps> = ({
                 e.currentTarget.style.borderColor = '#d1d5db';
               }}
               >
-                <span style={{ fontSize: '16px' }}>🔄</span>
-                {t('ui.side_modal.refresh_login_status')}
+                <span style={{ fontSize: '16px', flexShrink: 0 }}>🔄</span>
+                <span style={{ wordWrap: 'break-word' }}>
+                  {t('ui.side_modal.refresh_login_status')}
+                </span>
               </button>
               
               </div>
@@ -465,6 +566,7 @@ const SideModal: React.FC<SideModalProps> = ({
               padding: '20px',
               borderTop: '1px solid #f3f4f6',
               background: 'white',
+              flexShrink: 0,
             }}>
               {/* 하단 텍스트 */}
               <p style={{
@@ -473,6 +575,8 @@ const SideModal: React.FC<SideModalProps> = ({
                 textAlign: 'center',
                 margin: '0 0 14px 0',
                 lineHeight: 1.4,
+                wordWrap: 'break-word',
+                overflow: 'hidden',
               }}>
                 {t('ui.side_modal.continue_instruction')}
               </p>
@@ -480,16 +584,21 @@ const SideModal: React.FC<SideModalProps> = ({
               {/* 인증 버튼 */}
               <button style={{
                 width: '100%',
-                padding: '14px',
+                padding: '12px 16px',
                 background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
                 color: 'white',
                 border: 'none',
                 borderRadius: '8px',
-                fontSize: '15px',
+                fontSize: '14px',
                 fontWeight: '600',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
                 boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
+                wordWrap: 'break-word',
+                whiteSpace: 'normal',
+                lineHeight: '1.3',
+                maxWidth: '100%',
+                boxSizing: 'border-box',
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)';
@@ -514,7 +623,28 @@ const SideModal: React.FC<SideModalProps> = ({
 
 export const SideModalContainer: React.FC = () => {
   console.log('[8G SideModal] Rendering SideModalContainer');
-  return <SideModal />;
+  
+  // 더미 데이터 (테스트용)
+  const dummyWorkspaces: WorkspaceItemDto[] = [
+    {
+      id: "ws-1",
+      slug: "slack-workspace",
+      name: "Slack Workspace",
+      image: "https://avatars.slack-edge.com/2023-09-18/5909002618259_7d2d9705b28fbbc4a832_88.png",
+      memberCount: 25,
+      isAdmin: true
+    },
+    {
+      id: "ws-2",
+      slug: "dev-team",
+      name: "Development Team",
+      image: "",
+      memberCount: 12,
+      isAdmin: false
+    }
+  ];
+  
+  return <SideModal workspaces={dummyWorkspaces} />;
 };
 
 export default SideModal;
