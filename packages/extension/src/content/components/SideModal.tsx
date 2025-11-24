@@ -25,12 +25,13 @@ const WorkspaceCard: React.FC<WorkspaceCardProps> = ({ workspace: ws, isLast }) 
   return (
     <div style={{
       background: 'white',
-      padding: '1rem',
+      padding: '0.7rem 1rem',
       borderRadius: '0.5rem',
       border: isNotAdmin ? '1px solid #f87171' : '1px solid #10b981',
       marginBottom: isLast ? '0' : '0.5rem',
-      opacity: isNotAdmin ? 0.9 : 1,
+      opacity: isNotAdmin ? 0.4 : 1,
       boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+      cursor: 'default',
     }}>
       <div style={{
         display: 'flex',
@@ -84,13 +85,14 @@ const WorkspaceCard: React.FC<WorkspaceCardProps> = ({ workspace: ws, isLast }) 
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{
-            fontSize: '17px',
+            fontSize: '16px',
             color: '#1f2937',
             fontWeight: '600',
-            margin: '0 0 4px 0',
+            margin: '0px 0px 2px',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
+            lineHeight: 1,
           }}>
             {ws.name}
           </p>
@@ -102,6 +104,7 @@ const WorkspaceCard: React.FC<WorkspaceCardProps> = ({ workspace: ws, isLast }) 
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
+              lineHeight: 1,
             }}>
               @{ws.slug}
             </p>
@@ -303,7 +306,7 @@ const SideModal: React.FC<SideModalProps> = ({
     right: 0,
     top: 0,
     bottom: 0,
-    width: 'min(90vw, 350px)',
+    width: 'min(90vw, 400px)',
     maxHeight: '100vh',
     background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
     boxShadow: '-2px 0 30px rgba(0, 0, 0, 0.15)',
@@ -374,12 +377,12 @@ const SideModal: React.FC<SideModalProps> = ({
             display: 'flex',
             flexDirection: 'column',
             background: 'white',
+            height: '100%',
           }}>
             {/* 메인 콘텐츠 */}
             <div style={{
               flex: 1,
-              padding: '1rem 1.25rem',
-              overflowY: 'auto', // 필요시 스크롤 허용
+              padding: '1.5rem',
               fontSize: '15px',
               lineHeight: 1.5,
               color: '#1d1c1d',
@@ -516,8 +519,9 @@ const SideModal: React.FC<SideModalProps> = ({
                 marginBottom: '1rem',
                 display: 'flex',
                 flexDirection: 'column',
-                maxHeight: '40vh', // 화면 높이의 40%로 조금 증가
-                minHeight: '220px', // 최소 높이도 조금 증가
+                overflowY: 'auto', // 필요시 스크롤 허용
+                // maxHeight: '40vh', // 화면 높이의 40%로 조금 증가
+                // minHeight: '220px', // 최소 높이도 조금 증가
               }}>
                 {(() => {
                   const adminWorkspaces = displayWorkspaces.filter(ws => ws.isAdmin === true);
@@ -532,15 +536,20 @@ const SideModal: React.FC<SideModalProps> = ({
                           marginBottom: nonAdminWorkspaces.length > 0 ? '1rem' : '0.5rem',
                           display: 'flex',
                           flexDirection: 'column',
-                          minHeight: nonAdminWorkspaces.length > 0 ? '80px' : 'auto', // 최소 높이 줄임
-                          maxHeight: nonAdminWorkspaces.length > 0 ? '45%' : 'none', // 최대 높이 제한
+                          // minHeight: nonAdminWorkspaces.length > 0 ? '80px' : 'auto', // 최소 높이 줄임
+                          // maxHeight: nonAdminWorkspaces.length > 0 ? '45%' : 'none', // 최대 높이 제한
                         }}>
                           <p style={{
                             fontSize: '15px',
                             color: '#059669',
-                            margin: '0 0 0.75rem 0',
+                            margin: 0,
                             fontWeight: '600',
                             flexShrink: 0,
+                            position: 'sticky',
+                            top: 0,
+                            backgroundColor: 'white',
+                            paddingBottom: '0.75rem',
+                            zIndex: 1,
                           }}>
                             Available Workspaces ({adminWorkspaces.length})
                           </p>
@@ -567,15 +576,20 @@ const SideModal: React.FC<SideModalProps> = ({
                           marginBottom: '0.5rem',
                           display: 'flex',
                           flexDirection: 'column',
-                          minHeight: adminWorkspaces.length > 0 ? '80px' : 'auto', // 최소 높이 줄임
-                          maxHeight: adminWorkspaces.length > 0 ? '45%' : 'none', // 최대 높이 제한
+                          // minHeight: adminWorkspaces.length > 0 ? '80px' : 'auto', // 최소 높이 줄임
+                          // maxHeight: adminWorkspaces.length > 0 ? '45%' : 'none', // 최대 높이 제한
                         }}>
                           <p style={{
                             fontSize: '15px',
                             color: '#dc2626',
-                            margin: '0 0 0.75rem 0',
+                            margin: 0,
                             fontWeight: '600',
                             flexShrink: 0,
+                            position: 'sticky',
+                            top: 0,
+                            backgroundColor: 'white',
+                            paddingBottom: '0.75rem',
+                            zIndex: 1,
                           }}>
                             No Access Workspaces ({nonAdminWorkspaces.length})
                           </p>
@@ -676,7 +690,7 @@ const SideModal: React.FC<SideModalProps> = ({
 
             {/* 푸터 - 인증 버튼 영역 */}
             <div style={{
-              padding: '1rem 1.25rem',
+              padding: '1.5rem',
               borderTop: '1px solid #f3f4f6',
               background: 'white',
               flexShrink: 0,
