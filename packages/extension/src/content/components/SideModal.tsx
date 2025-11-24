@@ -398,35 +398,68 @@ const SideModal: React.FC<SideModalProps> = ({
                   }
                 </p>
                 
-                {displayWorkspaces.map((ws: WorkspaceItemDto, index: number) => (
+                {displayWorkspaces.map((ws: WorkspaceItemDto, index: number) => {
+                  const isNotAdmin = ws.isAdmin === false;
+                  
+                  return (
                   <div key={ws.id || index} style={{
-                    background: '#f9fafb',
+                    background: isNotAdmin ? '#fef2f2' : '#f9fafb',
                     padding: '12px 16px',
                     borderRadius: '8px',
-                    border: '1px solid #e5e7eb',
+                    border: isNotAdmin ? '1px solid #fecaca' : '1px solid #e5e7eb',
                     marginBottom: index < displayWorkspaces.length - 1 ? '8px' : '0',
+                    opacity: isNotAdmin ? 0.8 : 1,
                   }}>
                     <div style={{
                       display: 'flex',
                       alignItems: 'center',
                       gap: '8px',
                     }}>
-                      {ws.image && (
-                        <img 
-                          src={ws.image} 
-                          alt="workspace" 
-                          style={{
-                            width: '20px',
-                            height: '20px',
-                            borderRadius: '4px',
-                            objectFit: 'cover',
-                            flexShrink: 0,
-                          }}
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                          }}
-                        />
-                      )}
+                      <div style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '6px',
+                        flexShrink: 0,
+                        overflow: 'hidden',
+                        background: ws.image ? 'transparent' : '#f3f4f6',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        border: '1px solid #e5e7eb',
+                      }}>
+                        {ws.image ? (
+                          <img 
+                            src={ws.image} 
+                            alt="workspace" 
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                            }}
+                            onError={(e) => {
+                              const parent = e.currentTarget.parentElement!;
+                              parent.style.background = '#f3f4f6';
+                              parent.innerHTML = `
+                                <div style="
+                                  font-size: 14px;
+                                  color: #6b7280;
+                                  font-weight: 600;
+                                ">
+                                  ${ws.name.charAt(0).toUpperCase()}
+                                </div>
+                              `;
+                            }}
+                          />
+                        ) : (
+                          <div style={{
+                            fontSize: '14px',
+                            color: '#6b7280',
+                            fontWeight: '600',
+                          }}>
+                            {ws.name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{
                           fontSize: '14px',
@@ -464,30 +497,30 @@ const SideModal: React.FC<SideModalProps> = ({
                             {ws.memberCount}
                           </span>
                         )}
-                        {ws.isAdmin && (
+                        {ws.isAdmin === true && (
                           <div style={{
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '3px',
+                            gap: '4px',
                             background: '#dcfce7',
-                            padding: '2px 6px',
+                            padding: '3px 8px',
                             borderRadius: '4px',
                           }}>
                             <div style={{
-                              width: '10px',
-                              height: '10px',
+                              width: '14px',
+                              height: '14px',
                               background: '#059669',
                               borderRadius: '50%',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              fontSize: '7px',
+                              fontSize: '9px',
                               color: 'white',
                             }}>
                               ✓
                             </div>
                             <span style={{
-                              fontSize: '10px',
+                              fontSize: '11px',
                               color: '#059669',
                               fontWeight: '500',
                             }}>
@@ -495,10 +528,42 @@ const SideModal: React.FC<SideModalProps> = ({
                             </span>
                           </div>
                         )}
+                        {isNotAdmin && (
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            background: '#fee2e2',
+                            padding: '3px 8px',
+                            borderRadius: '4px',
+                          }}>
+                            <div style={{
+                              width: '14px',
+                              height: '14px',
+                              background: '#dc2626',
+                              borderRadius: '50%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '10px',
+                              color: 'white',
+                            }}>
+                              ⚠
+                            </div>
+                            <span style={{
+                              fontSize: '11px',
+                              color: '#dc2626',
+                              fontWeight: '500',
+                            }}>
+                              No Access
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* 설명 텍스트 */}
