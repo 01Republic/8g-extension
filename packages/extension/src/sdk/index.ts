@@ -1,21 +1,4 @@
-export {
-  EightGClient,
-  // Types
-  type WorkspaceItemDto,
-  type WorkspaceDetailItemDto,
-  type CurrencyDto,
-  type WorkspaceBillingDto,
-  type WorkspaceBillingHistoryDto,
-  type WorkspaceMemberDto,
-  // Enums
-  BillingCycleTerm,
-  // Schemas
-  WorkspaceItemSchema,
-  WorkspaceDetailItemSchema,
-  WorkspaceBillingSchema,
-  WorkspaceBillingHistorySchema,
-  WorkspaceMemberSchema,
-} from './EightGClient';
+export { EightGClient } from './EightGClient';
 export * from './types';
 export { EightGError } from './errors';
 
