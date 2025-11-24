@@ -7,6 +7,8 @@ export interface SideModalProps {
   onToggle?: (isOpen: boolean) => void;
   serviceName?: string;
   workspaces?: WorkspaceItemDto[];
+  onAuthenticate?: () => void;
+  onRefresh?: () => void;
 }
 
 interface SiteInfo {
@@ -17,6 +19,8 @@ interface SiteInfo {
 interface WorkspaceCardProps {
   workspace: WorkspaceItemDto;
   isLast: boolean;
+  isSelected?: boolean;
+  onSelectionChange?: (selected: boolean) => void;
 }
 
 const WorkspaceCard: React.FC<WorkspaceCardProps> = ({ workspace: ws, isLast }) => {
@@ -183,7 +187,9 @@ const SideModal: React.FC<SideModalProps> = ({
   defaultOpen = false, 
   onToggle,
   serviceName,
-  workspaces = []
+  workspaces = [],
+  onAuthenticate,
+  onRefresh
 }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
@@ -191,6 +197,7 @@ const SideModal: React.FC<SideModalProps> = ({
   useEffect(() => {
     setIsOpen(defaultOpen);
   }, [defaultOpen]);
+  
   const [siteInfo, setSiteInfo] = useState<SiteInfo>({ favicon: '', siteName: serviceName || '' });
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -587,7 +594,11 @@ const SideModal: React.FC<SideModalProps> = ({
                             padding: '0.5rem',
                           }}>
                             {adminWorkspaces.map((ws: WorkspaceItemDto, index: number) => (
-                              <WorkspaceCard key={ws.id || `admin-${index}`} workspace={ws} isLast={index === adminWorkspaces.length - 1} />
+                              <WorkspaceCard 
+                                key={ws.id || `admin-${index}`} 
+                                workspace={ws} 
+                                isLast={index === adminWorkspaces.length - 1}
+                              />
                             ))}
                           </div>
                         </div>
@@ -694,6 +705,11 @@ const SideModal: React.FC<SideModalProps> = ({
                 maxWidth: '100%',
                 boxSizing: 'border-box',
               }}
+              onClick={() => {
+                if (onRefresh) {
+                  onRefresh();
+                }
+              }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = '#f9fafb';
                 e.currentTarget.style.borderColor = '#9ca3af';
@@ -752,6 +768,11 @@ const SideModal: React.FC<SideModalProps> = ({
                 maxWidth: '100%',
                 boxSizing: 'border-box',
               }}
+              onClick={() => {
+                if (onAuthenticate) {
+                  onAuthenticate(); // 그냥 완료 신호만
+                }
+              }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)';
                 e.currentTarget.style.transform = 'translateY(-1px)';
@@ -792,9 +813,12 @@ export const SideModalContainer: React.FC = () => {
 
   useEffect(() => {
     const handleShow = (event: CustomEvent) => {
+      console.log('[SideModalContainer] handleShow event:', event.detail);
       if (event.detail?.workspaces) {
+        console.log('[SideModalContainer] Setting workspaces:', event.detail.workspaces);
         setState(prev => ({ ...prev, isOpen: true, workspaces: event.detail.workspaces }));
       } else {
+        console.log('[SideModalContainer] No workspaces in event detail');
         setState(prev => ({ ...prev, isOpen: true }));
       }
     };
@@ -831,30 +855,6 @@ export const SideModalContainer: React.FC = () => {
     window.addEventListener('8g-update-side-modal-login-status', handleUpdateLoginStatus as EventListener);
     window.addEventListener('8g-get-side-modal-status', handleGetStatus as EventListener);
 
-    // 초기 더미 데이터 설정
-    const dummyWorkspaces: WorkspaceItemDto[] = [
-      // Available Workspaces (Admin = true) - 20개
-      ...Array.from({ length: 20 }, (_, i) => ({
-        id: `admin-ws-${i + 1}`,
-        slug: `admin-workspace-${i + 1}`,
-        name: `Admin Workspace ${i + 1}`,
-        image: i % 3 === 0 ? "https://avatars.slack-edge.com/2023-09-18/5909002618259_7d2d9705b28fbbc4a832_88.png" : "",
-        memberCount: Math.floor(Math.random() * 50) + 5,
-        isAdmin: true
-      })),
-      // No Access Workspaces (Admin = false) - 20개
-      ...Array.from({ length: 20 }, (_, i) => ({
-        id: `noaccess-ws-${i + 1}`,
-        slug: `noaccess-workspace-${i + 1}`,
-        name: `No Access Workspace ${i + 1}`,
-        image: i % 4 === 0 ? "https://avatars.slack-edge.com/2023-09-18/5909002618259_7d2d9705b28fbbc4a832_88.png" : "",
-        memberCount: Math.floor(Math.random() * 100) + 10,
-        isAdmin: false
-      }))
-    ];
-    
-    setState(prev => ({ ...prev, workspaces: dummyWorkspaces }));
-
     return () => {
       window.removeEventListener('8g-show-side-modal', handleShow as EventListener);
       window.removeEventListener('8g-hide-side-modal', handleHide);
@@ -871,6 +871,27 @@ export const SideModalContainer: React.FC = () => {
       workspaces={state.workspaces}
       serviceName={state.siteName}
       onToggle={(isOpen) => setState(prev => ({ ...prev, isOpen }))}
+      onAuthenticate={() => {
+        // Background에 완료 신호만 전송
+        chrome.runtime.sendMessage({
+          type: 'COMPLETE_WORKSPACE_SELECTION',
+          data: {}
+        }).then(() => {
+          console.log('[SideModal] Authentication complete signal sent to background');
+        }).catch(error => {
+          console.error('[SideModal] Failed to send complete signal:', error);
+        });
+      }}
+      onRefresh={() => {
+        // Background에 새로고침 요청
+        chrome.runtime.sendMessage({
+          type: 'REFRESH_WORKSPACE_WORKFLOW'
+        }).then(() => {
+          console.log('[SideModal] Refresh request sent to background');
+        }).catch(error => {
+          console.error('[SideModal] Failed to send refresh request:', error);
+        });
+      }}
     />
   );
 };

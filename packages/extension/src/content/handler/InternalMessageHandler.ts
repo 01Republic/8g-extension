@@ -131,12 +131,17 @@ export class InternalMessageHandler {
 
       // SideModal 메시지 핸들러들
       if ((message as any).type === 'SHOW_SIDE_MODAL') {
-        console.log('[InternalMessageHandler] Show side modal:', (message as any).data);
-        window.dispatchEvent(
-          new CustomEvent('8g-show-side-modal', {
-            detail: (message as any).data,
-          })
-        );
+        console.log('[InternalMessageHandler] Show side modal with data:', (message as any).data);
+        // 먼저 SideModal 마운트
+        window.dispatchEvent(new CustomEvent('8g-mount-side-modal'));
+        // 약간의 지연 후 show 이벤트 발생
+        setTimeout(() => {
+          window.dispatchEvent(
+            new CustomEvent('8g-show-side-modal', {
+              detail: (message as any).data,
+            })
+          );
+        }, 50);
         sendResponse({ success: true });
         return false;
       }

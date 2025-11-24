@@ -139,6 +139,29 @@ export class BackgroundManager {
         return true;
       }
 
+      if ((message as any).type === 'COMPLETE_WORKSPACE_SELECTION') {
+        const tabId = sender.tab?.id;
+        if (!tabId) {
+          sendResponse({ success: false });
+          return false;
+        }
+        
+        const selectedWorkspaces = (message as any).data?.selectedWorkspaces || [];
+        this.handleAsyncCompleteWorkspaceSelection(tabId, selectedWorkspaces, sendResponse);
+        return true;
+      }
+
+      if ((message as any).type === 'REFRESH_WORKSPACE_WORKFLOW') {
+        const tabId = sender.tab?.id;
+        if (!tabId) {
+          sendResponse({ success: false });
+          return false;
+        }
+        
+        this.handleAsyncRefreshWorkspaceWorkflow(tabId, sendResponse);
+        return true;
+      }
+
       sendResponse({ $isError: true, message: 'Invalid message type', data: {} } as ErrorResponse);
       return false;
     });
@@ -210,6 +233,35 @@ export class BackgroundManager {
     } catch (error) {
       console.error('[BackgroundManager] Failed to get side modal data:', error);
       sendResponse({ workspaces: [] });
+    }
+  }
+
+  // 워크스페이스 선택 완료 처리
+  private async handleAsyncCompleteWorkspaceSelection(
+    tabId: number,
+    selectedWorkspaces: any[],
+    sendResponse: (response: any) => void
+  ) {
+    try {
+      await this.workflowService.completeWorkspaceSelection(tabId);
+      sendResponse({ success: true });
+    } catch (error) {
+      console.error('[BackgroundManager] Failed to complete workspace selection:', error);
+      sendResponse({ success: false });
+    }
+  }
+
+  // 워크스페이스 워크플로우 재실행 처리
+  private async handleAsyncRefreshWorkspaceWorkflow(
+    tabId: number,
+    sendResponse: (response: any) => void
+  ) {
+    try {
+      await this.workflowService.refreshWorkspaceWorkflow(tabId);
+      sendResponse({ success: true });
+    } catch (error) {
+      console.error('[BackgroundManager] Failed to refresh workspace workflow:', error);
+      sendResponse({ success: false });
     }
   }
 

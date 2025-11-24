@@ -839,8 +839,14 @@ export class TabManager {
       return;
     }
 
+    const workspaces = this.workspaces.get(tabId) || [];
+    console.log('[TabManager] Showing side modal with workspaces:', workspaces);
+    
     try {
-      await chrome.tabs.sendMessage(tabId, { type: 'SHOW_SIDE_MODAL', data: { workspaces: this.workspaces.get(tabId) || [] } });
+      await chrome.tabs.sendMessage(tabId, { 
+        type: 'SHOW_SIDE_MODAL', 
+        data: { workspaces } 
+      });
       console.log('[TabManager] Side modal shown for tab:', tabId);
     } catch (error) {
       console.warn('[TabManager] Failed to show side modal:', error);
@@ -870,23 +876,21 @@ export class TabManager {
   }
 
   async setWorkspaces(tabId: number, workspaces: WorkspaceItemDto[]): Promise<void> {
+    console.log('[TabManager] Setting workspaces for tab:', tabId, workspaces);
     this.workspaces.set(tabId, workspaces);
-    // 모든 활성 탭에 워크스페이스 데이터 전송
-    const promises = Array.from(this.activeTabs.keys()).map(async (tabId) => {
-      if (this.isTabClosed(tabId)) return;
-      
+    
+    // 해당 탭에 워크스페이스 데이터 전송
+    if (!this.isTabClosed(tabId)) {
       try {
         await chrome.tabs.sendMessage(tabId, { 
           type: 'UPDATE_SIDE_MODAL_WORKSPACES', 
           data: { workspaces } 
         });
+        console.log('[TabManager] Sent workspaces to tab:', tabId);
       } catch (error) {
         console.warn(`[TabManager] Failed to update workspaces for tab ${tabId}:`, error);
       }
-    });
-    
-    await Promise.allSettled(promises);
-    console.log('[TabManager] Workspaces updated for all tabs');
+    }
   }
 
   async updateSideModalSiteInfo(tabId: number, siteName: string, favicon?: string): Promise<void> {
@@ -941,6 +945,20 @@ export class TabManager {
     const workspaces = this.workspaces.get(tabId) || [];
     console.log('[TabManager] Getting side modal data for tab:', tabId, workspaces);
     return { workspaces };
+  }
+
+  async reloadTab(tabId: number): Promise<void> {
+    if (this.isTabClosed(tabId)) {
+      console.log('[TabManager] Cannot reload tab - tab was closed:', tabId);
+      return;
+    }
+    
+    try {
+      await chrome.tabs.reload(tabId);
+      console.log('[TabManager] Tab reloaded:', tabId);
+    } catch (error) {
+      console.warn('[TabManager] Failed to reload tab:', error);
+    }
   }
 
   /**

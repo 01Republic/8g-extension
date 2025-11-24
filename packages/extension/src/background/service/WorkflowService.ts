@@ -31,6 +31,9 @@ export class WorkflowService {
   private workflowRunner: WorkflowRunner;
   private statusController!: ExecutionStatusController;
   private sideModalController!: SideModalController;
+  private lastWorkflowResults: Map<number, any> = new Map(); // tabId -> last workflow result
+  private lastWorkflowRequests: Map<number, CollectWorkflowNewTabMessage['data']> = new Map(); // tabId -> last request
+  private workspacePromises: Map<number, {resolve: (value: any) => void, reject: (error: any) => void}> = new Map(); // tabId -> promise handlers
 
   constructor(private tabManager: TabManager) {
     // TabManager의 executeBlock 메서드를 executor 함수로 주입
@@ -73,18 +76,79 @@ export class WorkflowService {
       isOpen: (tabId: number) => this.tabManager.isSideModalOpen(tabId),
     };
 
-    const executeWithHooks = async (tabId: number, run: () => Promise<{steps: WorkflowStepRunResult<any>[], tabId: number, context: ExecutionContext}>) => {
+    const executeWithHooks = async (
+      tabId: number, 
+      run: () => Promise<{steps: WorkflowStepRunResult<any>[], tabId: number, context: ExecutionContext}>,
+      workflowType?: string,
+      workflowRequest?: CollectWorkflowNewTabMessage['data']
+    ) => {
       try {
-        // 실행 상태 UI 표시
-        // await this.statusController?.show(tabId, '워크플로우 실행 중');
-        await this.sideModalController.show(tabId);
-        const result = await run();
-        console.log('result', result.steps[result.steps.length - 1].result.data);
-        await this.sideModalController.setWorkspaces(tabId, result.steps[result.steps.length - 1].result.data);
-        await new Promise((resolve) => setTimeout(resolve, 10000000000000));
-        return result;
+        // getWorkspaces 타입일 때만 SideModal 표시
+        if (workflowType === 'getWorkspaces') {
+          const result = await run();
+          console.log('=== WORKFLOW RESULT ===');
+          console.log('Full result:', result);
+          console.log('Last step:', result.steps[result.steps.length - 1]);
+          console.log('Last step result:', result.steps[result.steps.length - 1].result);
+          
+          // 마지막 성공한 스텝에서 워크스페이스 데이터 추출
+          let workspacesData = [];
+          
+          // 마지막부터 거꾸로 탐색하여 실제 데이터가 있는 스텝 찾기
+          for (let i = result.steps.length - 1; i >= 0; i--) {
+            const step = result.steps[i];
+            if (step.success && step.result) {
+              // result가 배열인 경우 직접 사용
+              if (Array.isArray(step.result)) {
+                workspacesData = step.result;
+                console.log(`Found workspaces in step ${i} (array):`, workspacesData);
+                break;
+              }
+              // result.data가 배열인 경우
+              else if (step.result.data && Array.isArray(step.result.data)) {
+                workspacesData = step.result.data;
+                console.log(`Found workspaces in step ${i} (result.data):`, workspacesData);
+                break;
+              }
+              // result가 객체이고 workspace 관련 속성이 있는 경우
+              else if (typeof step.result === 'object' && step.result !== null) {
+                // workspaces 속성 확인
+                if (step.result.workspaces && Array.isArray(step.result.workspaces)) {
+                  workspacesData = step.result.workspaces;
+                  console.log(`Found workspaces in step ${i} (result.workspaces):`, workspacesData);
+                  break;
+                }
+              }
+            }
+          }
+          
+          console.log('Final extracted workspaces:', workspacesData);
+          
+          // 결과 저장 (refresh를 위해)
+          this.lastWorkflowResults.set(tabId, result);
+          this.lastWorkflowRequests.set(tabId, workflowRequest || {} as any);
+          
+          await this.sideModalController.setWorkspaces(tabId, workspacesData);
+          await this.sideModalController.show(tabId);
+          
+          // Promise로 블로킹 - authenticate 버튼을 기다림
+          return new Promise<typeof result>((resolve, reject) => {
+            this.workspacePromises.set(tabId, {
+              resolve: () => resolve(result), // 워크스페이스 데이터 반환
+              reject
+            });
+          });
+        } else {
+          // 일반 워크플로우는 기존 ExecutionStatus UI 사용
+          await this.statusController.show(tabId, '워크플로우 실행 중');
+          const result = await run();
+          return result;
+        }
       } finally {
-        await this.sideModalController.hide(tabId);
+        // getWorkspaces가 아닌 경우에만 UI 숨기기
+        if (workflowType !== 'getWorkspaces') {
+          await this.statusController.hide(tabId);
+        }
       }
     };
     this.workflowRunner = new WorkflowRunner(executeBlock, createTab, executeWithHooks);
@@ -119,7 +183,8 @@ export class WorkflowService {
         requestData.workflow,
         requestData.targetUrl,
         requestData.activateTab === true,
-        requestData.originTabId
+        requestData.originTabId,
+        requestData
       );
 
       tabId = result.tabId;
@@ -138,7 +203,7 @@ export class WorkflowService {
         tabId: result.tabId,
         result: { steps: result.steps, context: plainContext },
         timestamp: new Date().toISOString(),
-        closeTabAfterCollection: false,
+        closeTabAfterCollection: requestData.closeTabAfterCollection !== false,
       });
     } catch (error) {
       console.error('[WorkflowService] Workflow execution error:', error);
@@ -149,7 +214,7 @@ export class WorkflowService {
       } as ErrorResponse);
     } finally {
       // 4) 정리 작업 (탭 닫기) - 명시적으로 false인 경우에만 탭을 유지
-      const shouldCloseTab = false;
+      const shouldCloseTab = requestData.closeTabAfterCollection !== false;
       if (tabId !== undefined && shouldCloseTab) {
         await this.cleanup(tabId);
       }
@@ -192,5 +257,90 @@ export class WorkflowService {
     console.log('[WorkflowService] Cleanup - closing tab:', tabId);
     await new Promise((resolve) => setTimeout(resolve, 1000));
     await this.tabManager.closeTab(tabId);
+  }
+
+  /**
+   * 워크스페이스 선택 완료 처리 (authenticate 버튼)
+   */
+  async completeWorkspaceSelection(tabId: number): Promise<void> {
+    console.log('[WorkflowService] Completing workspace selection for tab:', tabId);
+    
+    // Promise resolve - 워크스페이스 데이터 반환
+    const promise = this.workspacePromises.get(tabId);
+    if (promise) {
+      promise.resolve();
+      this.workspacePromises.delete(tabId);
+    }
+    
+    // SideModal 숨기기
+    await this.sideModalController.hide(tabId);
+    
+    // 저장된 데이터 정리
+    this.lastWorkflowResults.delete(tabId);
+    this.lastWorkflowRequests.delete(tabId);
+  }
+
+  /**
+   * 워크플로우 재실행 (refresh 버튼)
+   */
+  async refreshWorkspaceWorkflow(tabId: number): Promise<void> {
+    const lastRequest = this.lastWorkflowRequests.get(tabId);
+    if (lastRequest) {
+      console.log('[WorkflowService] Refreshing workspace workflow for tab:', tabId);
+      
+      try {
+        // 같은 탭에서 워크플로우 재실행
+        const result = await this.workflowRunner.runInExistingTab(
+          lastRequest.workflow,
+          tabId,
+          lastRequest
+        );
+        
+        // 새로운 결과로 업데이트
+        this.lastWorkflowResults.set(tabId, result);
+        
+        console.log('[WorkflowService] Refresh complete, new result:', result);
+        
+        // 마지막 성공한 스텝에서 워크스페이스 데이터 추출
+        let workspacesData = [];
+        
+        // 마지막부터 거꾸로 탐색하여 실제 데이터가 있는 스텝 찾기
+        for (let i = result.steps.length - 1; i >= 0; i--) {
+          const step = result.steps[i];
+          if (step.success && step.result) {
+            // result가 배열인 경우 직접 사용
+            if (Array.isArray(step.result)) {
+              workspacesData = step.result;
+              console.log(`[Refresh] Found workspaces in step ${i} (array):`, workspacesData);
+              break;
+            }
+            // result.data가 배열인 경우
+            else if (step.result.data && Array.isArray(step.result.data)) {
+              workspacesData = step.result.data;
+              console.log(`[Refresh] Found workspaces in step ${i} (result.data):`, workspacesData);
+              break;
+            }
+            // result가 객체이고 workspace 관련 속성이 있는 경우
+            else if (typeof step.result === 'object' && step.result !== null) {
+              // workspaces 속성 확인
+              if (step.result.workspaces && Array.isArray(step.result.workspaces)) {
+                workspacesData = step.result.workspaces;
+                console.log(`[Refresh] Found workspaces in step ${i} (result.workspaces):`, workspacesData);
+                break;
+              }
+            }
+          }
+        }
+        
+        console.log('[Refresh] Final extracted workspaces:', workspacesData);
+        
+        await this.sideModalController.setWorkspaces(tabId, workspacesData);
+        
+        // 모달은 이미 열려있으니 데이터만 업데이트
+        console.log('[WorkflowService] Updated workspaces after refresh');
+      } catch (error) {
+        console.error('[WorkflowService] Failed to refresh workflow:', error);
+      }
+    }
   }
 }
