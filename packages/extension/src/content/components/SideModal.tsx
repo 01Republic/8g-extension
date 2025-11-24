@@ -186,6 +186,11 @@ const SideModal: React.FC<SideModalProps> = ({
   workspaces = []
 }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  // defaultOpen prop이 변경되면 내부 상태도 동기화
+  useEffect(() => {
+    setIsOpen(defaultOpen);
+  }, [defaultOpen]);
   const [siteInfo, setSiteInfo] = useState<SiteInfo>({ favicon: '', siteName: serviceName || '' });
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -246,6 +251,25 @@ const SideModal: React.FC<SideModalProps> = ({
     const newState = !isOpen;
     setIsOpen(newState);
     onToggle?.(newState);
+    
+    // 모달을 열 때 background에서 최신 워크스페이스 데이터 요청
+    if (newState) {
+      // background에게 현재 탭의 저장된 데이터를 요청
+      chrome.runtime.sendMessage({ 
+        type: 'GET_SIDE_MODAL_DATA' 
+      }).then((response) => {
+        if (response?.workspaces) {
+          // 워크스페이스 업데이트 이벤트 발생
+          window.dispatchEvent(
+            new CustomEvent('8g-update-side-modal-workspaces', {
+              detail: { workspaces: response.workspaces },
+            })
+          );
+        }
+      }).catch(error => {
+        console.warn('Failed to get side modal data:', error);
+      });
+    }
   };
 
   const closeModal = () => {
@@ -749,32 +773,106 @@ const SideModal: React.FC<SideModalProps> = ({
   );
 };
 
+interface SideModalState {
+  isOpen: boolean;
+  workspaces: WorkspaceItemDto[];
+  siteName?: string;
+  favicon?: string;
+  isLoggedIn: boolean;
+}
+
 export const SideModalContainer: React.FC = () => {
   console.log('[8G SideModal] Rendering SideModalContainer');
   
-  // 더미 데이터 (테스트용 - 각각 20개씩)
-  const dummyWorkspaces: WorkspaceItemDto[] = [
-    // Available Workspaces (Admin = true) - 20개
-    ...Array.from({ length: 20 }, (_, i) => ({
-      id: `admin-ws-${i + 1}`,
-      slug: `admin-workspace-${i + 1}`,
-      name: `Admin Workspace ${i + 1}`,
-      image: i % 3 === 0 ? "https://avatars.slack-edge.com/2023-09-18/5909002618259_7d2d9705b28fbbc4a832_88.png" : "",
-      memberCount: Math.floor(Math.random() * 50) + 5,
-      isAdmin: true
-    })),
-    // No Access Workspaces (Admin = false) - 20개
-    ...Array.from({ length: 20 }, (_, i) => ({
-      id: `noaccess-ws-${i + 1}`,
-      slug: `noaccess-workspace-${i + 1}`,
-      name: `No Access Workspace ${i + 1}`,
-      image: i % 4 === 0 ? "https://avatars.slack-edge.com/2023-09-18/5909002618259_7d2d9705b28fbbc4a832_88.png" : "",
-      memberCount: Math.floor(Math.random() * 100) + 10,
-      isAdmin: false
-    }))
-  ];
-  
-  return <SideModal workspaces={dummyWorkspaces} />;
+  const [state, setState] = useState<SideModalState>({
+    isOpen: false,
+    workspaces: [],
+    isLoggedIn: true,
+  });
+
+  useEffect(() => {
+    const handleShow = (event: CustomEvent) => {
+      if (event.detail?.workspaces) {
+        setState(prev => ({ ...prev, isOpen: true, workspaces: event.detail.workspaces }));
+      } else {
+        setState(prev => ({ ...prev, isOpen: true }));
+      }
+    };
+    const handleHide = () => setState(prev => ({ ...prev, isOpen: false }));
+    
+    const handleUpdateWorkspaces = (event: CustomEvent) => {
+      if (event.detail?.workspaces) { 
+        setState(prev => ({ ...prev, workspaces: event.detail.workspaces }));
+      }
+    };
+
+    const handleUpdateSiteInfo = (event: CustomEvent) => {
+      const { siteName, favicon } = event.detail || {};
+      setState(prev => ({ ...prev, siteName, favicon }));
+    };
+
+    const handleUpdateLoginStatus = (event: CustomEvent) => {
+      const { isLoggedIn } = event.detail || {};
+      setState(prev => ({ ...prev, isLoggedIn: isLoggedIn !== undefined ? isLoggedIn : prev.isLoggedIn }));
+    };
+
+    const handleGetStatus = (event: CustomEvent) => {
+      // Background에서 상태 요청 시 응답
+      if (event.detail?.callback) {
+        event.detail.callback({ isOpen: state.isOpen });
+      }
+    };
+
+    // 이벤트 리스너 등록
+    window.addEventListener('8g-show-side-modal', handleShow as EventListener);
+    window.addEventListener('8g-hide-side-modal', handleHide);
+    window.addEventListener('8g-update-side-modal-workspaces', handleUpdateWorkspaces as EventListener);
+    window.addEventListener('8g-update-side-modal-site-info', handleUpdateSiteInfo as EventListener);
+    window.addEventListener('8g-update-side-modal-login-status', handleUpdateLoginStatus as EventListener);
+    window.addEventListener('8g-get-side-modal-status', handleGetStatus as EventListener);
+
+    // 초기 더미 데이터 설정
+    const dummyWorkspaces: WorkspaceItemDto[] = [
+      // Available Workspaces (Admin = true) - 20개
+      ...Array.from({ length: 20 }, (_, i) => ({
+        id: `admin-ws-${i + 1}`,
+        slug: `admin-workspace-${i + 1}`,
+        name: `Admin Workspace ${i + 1}`,
+        image: i % 3 === 0 ? "https://avatars.slack-edge.com/2023-09-18/5909002618259_7d2d9705b28fbbc4a832_88.png" : "",
+        memberCount: Math.floor(Math.random() * 50) + 5,
+        isAdmin: true
+      })),
+      // No Access Workspaces (Admin = false) - 20개
+      ...Array.from({ length: 20 }, (_, i) => ({
+        id: `noaccess-ws-${i + 1}`,
+        slug: `noaccess-workspace-${i + 1}`,
+        name: `No Access Workspace ${i + 1}`,
+        image: i % 4 === 0 ? "https://avatars.slack-edge.com/2023-09-18/5909002618259_7d2d9705b28fbbc4a832_88.png" : "",
+        memberCount: Math.floor(Math.random() * 100) + 10,
+        isAdmin: false
+      }))
+    ];
+    
+    setState(prev => ({ ...prev, workspaces: dummyWorkspaces }));
+
+    return () => {
+      window.removeEventListener('8g-show-side-modal', handleShow as EventListener);
+      window.removeEventListener('8g-hide-side-modal', handleHide);
+      window.removeEventListener('8g-update-side-modal-workspaces', handleUpdateWorkspaces as EventListener);
+      window.removeEventListener('8g-update-side-modal-site-info', handleUpdateSiteInfo as EventListener);
+      window.removeEventListener('8g-update-side-modal-login-status', handleUpdateLoginStatus as EventListener);
+      window.removeEventListener('8g-get-side-modal-status', handleGetStatus as EventListener);
+    };
+  }, [state.isOpen]); // state.isOpen을 의존성에 추가해서 상태 응답이 최신 값을 반영하도록
+
+  return (
+    <SideModal 
+      defaultOpen={state.isOpen} 
+      workspaces={state.workspaces}
+      serviceName={state.siteName}
+      onToggle={(isOpen) => setState(prev => ({ ...prev, isOpen }))}
+    />
+  );
 };
 
 export default SideModal;

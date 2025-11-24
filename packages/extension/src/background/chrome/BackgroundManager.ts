@@ -128,6 +128,17 @@ export class BackgroundManager {
         return true;
       }
 
+      if ((message as any).type === 'GET_SIDE_MODAL_DATA') {
+        const tabId = sender.tab?.id;
+        if (!tabId) {
+          sendResponse({ workspaces: [] });
+          return false;
+        }
+        
+        this.handleAsyncGetSideModalData(tabId, sendResponse);
+        return true;
+      }
+
       sendResponse({ $isError: true, message: 'Invalid message type', data: {} } as ErrorResponse);
       return false;
     });
@@ -185,6 +196,20 @@ export class BackgroundManager {
         message: error instanceof Error ? error.message : 'Unknown error in export data',
         data: null,
       } as ErrorResponse);
+    }
+  }
+
+  // SideModal 데이터 가져오기 요청 처리
+  private async handleAsyncGetSideModalData(
+    tabId: number,
+    sendResponse: (response: any) => void
+  ) {
+    try {
+      const data = await this.tabManager.getSideModalData(tabId);
+      sendResponse(data);
+    } catch (error) {
+      console.error('[BackgroundManager] Failed to get side modal data:', error);
+      sendResponse({ workspaces: [] });
     }
   }
 

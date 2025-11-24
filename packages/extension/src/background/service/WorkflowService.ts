@@ -1,7 +1,26 @@
 import { Block } from '@/blocks';
 import { TabManager } from '../chrome/TabManager';
 import { CollectWorkflowNewTabMessage, ErrorResponse } from '@/types/internal-messages';
-import { WorkflowRunner } from '@/workflow';
+import { ExecutionContext, WorkflowRunner } from '@/workflow';
+import { WorkflowStepRunResult, WorkspaceItemDto } from '@/sdk/types';
+
+export type ExecutionStatusController = {
+  show: (tabId: number, message?: string) => Promise<void>;
+  hide: (tabId: number) => Promise<void>;
+};
+
+export type SideModalController = {
+  show: (tabId: number) => Promise<void>;
+  open: (tabId: number) => Promise<void>;
+  setWorkspaces: (tabId: number, workspaces: WorkspaceItemDto[]) => Promise<void>;
+  updateSiteInfo: (tabId: number, siteName: string, favicon?: string) => Promise<void>;
+  setLoginStatus: (tabId: number, isLoggedIn: boolean) => Promise<void>;
+  isOpen: (tabId: number) => Promise<boolean>;
+  hide: (tabId: number) => Promise<void>;
+  close: (tabId: number) => Promise<void>;
+};
+
+
 
 /**
  * Workflow Service
@@ -10,6 +29,8 @@ import { WorkflowRunner } from '@/workflow';
  */
 export class WorkflowService {
   private workflowRunner: WorkflowRunner;
+  private statusController!: ExecutionStatusController;
+  private sideModalController!: SideModalController;
 
   constructor(private tabManager: TabManager) {
     // TabManager의 executeBlock 메서드를 executor 함수로 주입
@@ -30,15 +51,44 @@ export class WorkflowService {
     };
 
     // ExecutionStatus UI 컨트롤러
-    const statusController = {
+    this.statusController = {
       show: (tabId: number, message?: string) =>
         this.tabManager.showExecutionStatus(tabId, message),
       hide: (tabId: number) => this.tabManager.hideExecutionStatus(tabId),
     };
 
-    this.workflowRunner = new WorkflowRunner(executeBlock, createTab, statusController);
-  }
+    this.sideModalController = {
+      // 기본 상태 제어
+      show: (tabId: number) => this.tabManager.showSideModal(tabId),
+      hide: (tabId: number) => this.tabManager.hideSideModal(tabId),
+      open: (tabId: number) => this.tabManager.openSideModal(tabId), // show와 동일하게 처리
+      close: (tabId: number) => this.tabManager.closeSideModal(tabId),
 
+      // 데이터 업데이트
+      setWorkspaces: (tabId: number, workspaces: WorkspaceItemDto[]) => this.tabManager.setWorkspaces(tabId, workspaces),
+      updateSiteInfo: (tabId: number, siteName: string, favicon?: string) => this.tabManager.updateSideModalSiteInfo(tabId, siteName, favicon),
+      setLoginStatus: (tabId: number, isLoggedIn: boolean) => this.tabManager.setSideModalLoginStatus(tabId, isLoggedIn),
+
+      // 상태 조회
+      isOpen: (tabId: number) => this.tabManager.isSideModalOpen(tabId),
+    };
+
+    const executeWithHooks = async (tabId: number, run: () => Promise<{steps: WorkflowStepRunResult<any>[], tabId: number, context: ExecutionContext}>) => {
+      try {
+        // 실행 상태 UI 표시
+        // await this.statusController?.show(tabId, '워크플로우 실행 중');
+        await this.sideModalController.show(tabId);
+        const result = await run();
+        console.log('result', result.steps[result.steps.length - 1].result.data);
+        await this.sideModalController.setWorkspaces(tabId, result.steps[result.steps.length - 1].result.data);
+        await new Promise((resolve) => setTimeout(resolve, 10000000000000));
+        return result;
+      } finally {
+        await this.sideModalController.hide(tabId);
+      }
+    };
+    this.workflowRunner = new WorkflowRunner(executeBlock, createTab, executeWithHooks);
+  }
   /**
    * 워크플로우 실행 요청을 처리하고 응답을 전송합니다.
    *
@@ -88,7 +138,7 @@ export class WorkflowService {
         tabId: result.tabId,
         result: { steps: result.steps, context: plainContext },
         timestamp: new Date().toISOString(),
-        closeTabAfterCollection: requestData.closeTabAfterCollection !== false,
+        closeTabAfterCollection: false,
       });
     } catch (error) {
       console.error('[WorkflowService] Workflow execution error:', error);
@@ -98,8 +148,9 @@ export class WorkflowService {
         data: {},
       } as ErrorResponse);
     } finally {
-      // 4) 정리 작업 (탭 닫기)
-      if (tabId !== undefined && requestData.closeTabAfterCollection !== false) {
+      // 4) 정리 작업 (탭 닫기) - 명시적으로 false인 경우에만 탭을 유지
+      const shouldCloseTab = false;
+      if (tabId !== undefined && shouldCloseTab) {
         await this.cleanup(tabId);
       }
     }
