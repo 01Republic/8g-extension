@@ -584,7 +584,66 @@ const SideModal: React.FC<SideModalProps> = ({
                 // maxHeight: '40vh', // 화면 높이의 40%로 조금 증가
                 // minHeight: '220px', // 최소 높이도 조금 증가
               }}>
-                {displayWorkspaces.length > 0 ? (() => {
+                {isLoading ? (
+                  // 로딩 중일 때 스켈레톤 UI
+                  <div style={{
+                    padding: '1rem',
+                    textAlign: 'center',
+                  }}>
+                    {/* 스켈레톤 카드들 */}
+                    <div style={{ marginTop: '1.5rem' }}>
+                      {[1, 2, 3, 4, 5, 6].map(i => (
+                        <div key={i} style={{
+                          background: '#f3f4f6',
+                          borderRadius: '0.5rem',
+                          padding: '0.7rem 1rem',
+                          marginBottom: i === 6 ? '0' : '0.5rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.75rem',
+                          animation: `pulse 1.5s ease-in-out ${i * 0.2}s infinite`,
+                        }}>
+                          <style>{`
+                            @keyframes pulse {
+                              0%, 100% { opacity: 0.4; }
+                              50% { opacity: 0.8; }
+                            }
+                          `}</style>
+                          {/* 아바타 스켈레톤 */}
+                          <div style={{
+                            width: '2rem',
+                            height: '2rem',
+                            borderRadius: '0.375rem',
+                            background: '#d1d5db',
+                          }} />
+                          {/* 텍스트 스켈레톤 */}
+                          <div style={{ flex: 1 }}>
+                            <div style={{
+                              height: '16px',
+                              width: `${60 + i * 20}%`,
+                              background: '#d1d5db',
+                              borderRadius: '4px',
+                              marginBottom: '6px',
+                            }} />
+                            <div style={{
+                              height: '12px',
+                              width: `${40 + i * 15}%`,
+                              background: '#e5e7eb',
+                              borderRadius: '4px',
+                            }} />
+                          </div>
+                          {/* 배지 스켈레톤 */}
+                          <div style={{
+                            width: '60px',
+                            height: '20px',
+                            background: '#d1d5db',
+                            borderRadius: '0.25rem',
+                          }} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : displayWorkspaces.length > 0 ? (() => {
                   const adminWorkspaces = displayWorkspaces.filter(ws => ws.isAdmin === true);
                   const nonAdminWorkspaces = displayWorkspaces.filter(ws => ws.isAdmin === false);
                   
@@ -701,28 +760,31 @@ const SideModal: React.FC<SideModalProps> = ({
                 )}
               </div>
 
-              {/* 설명 텍스트 */}
-              <div style={{ marginBottom: '0.75rem' }}>
-                <p style={{
-                  fontSize: '15px',
-                  color: '#4b5563',
-                  lineHeight: 1.5,
-                  margin: '0 0 10px 0',
-                }}>
-                  {t('ui.side_modal.admin_permission_required')}
-                </p>
-                <p style={{
-                  fontSize: '15px',
-                  color: '#4b5563',
-                  lineHeight: 1.5,
-                  margin: '0',
-                }}>
-                  {t('ui.side_modal.change_account_instruction', { serviceName: siteInfo.siteName || 'Service' })}
-                </p>
-              </div>
+              {/* 설명 텍스트 - 로딩 중이 아닐 때만 표시 */}
+              {!isLoading && (
+                <div style={{ marginBottom: '0.75rem' }}>
+                  <p style={{
+                    fontSize: '15px',
+                    color: '#4b5563',
+                    lineHeight: 1.5,
+                    margin: '0 0 10px 0',
+                  }}>
+                    {t('ui.side_modal.admin_permission_required')}
+                  </p>
+                  <p style={{
+                    fontSize: '15px',
+                    color: '#4b5563',
+                    lineHeight: 1.5,
+                    margin: '0',
+                  }}>
+                    {t('ui.side_modal.change_account_instruction', { serviceName: siteInfo.siteName || 'Service' })}
+                  </p>
+                </div>
+              )}
 
-              {/* 새로고침 버튼 */}
-              <button style={{
+              {/* 새로고침 버튼 - 로딩 중이 아닐 때만 표시 */}
+              {!isLoading && (
+                <button style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -773,9 +835,6 @@ const SideModal: React.FC<SideModalProps> = ({
                       `}</style>
                       🔄
                     </span>
-                    <span style={{ wordWrap: 'break-word' }}>
-                      로딩 중...
-                    </span>
                   </>
                 ) : (
                   <>
@@ -786,6 +845,7 @@ const SideModal: React.FC<SideModalProps> = ({
                   </>
                 )}
               </button>
+              )}
               
               </div>
             </div>
@@ -891,6 +951,7 @@ export const SideModalContainer: React.FC = () => {
     const handleUpdateWorkspaces = (event: CustomEvent) => {
       if (event.detail?.workspaces) { 
         // 워크스페이스 업데이트 시 로딩 종료
+        console.log('[SideModal] Setting isLoading: false (workspace update)');
         setState(prev => ({ ...prev, workspaces: event.detail.workspaces, isLoading: false }));
       }
     };
@@ -950,16 +1011,18 @@ export const SideModalContainer: React.FC = () => {
       }}
       onRefresh={() => {
         // 로딩 상태 시작
+        console.log('[SideModal] Setting isLoading: true');
         setState(prev => ({ ...prev, isLoading: true }));
         
         // Background에 새로고침 요청
         chrome.runtime.sendMessage({
           type: 'REFRESH_WORKSPACE_WORKFLOW'
         }).then(() => {
-          console.log('[SideModal] Refresh request sent to background');
+          console.log('[SideModal] Refresh request completed by background (after await)');
         }).catch(error => {
           console.error('[SideModal] Failed to send refresh request:', error);
           // 에러 시 로딩 종료
+          console.log('[SideModal] Setting isLoading: false (error)');
           setState(prev => ({ ...prev, isLoading: false }));
         });
       }}

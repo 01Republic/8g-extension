@@ -146,15 +146,16 @@ export class WorkflowService {
           this.lastWorkflowResults.set(tabId, result);
           this.lastWorkflowRequests.set(tabId, workflowRequest || {} as any);
           
-          await this.sideModalController.setWorkspaces(tabId, workspacesData);
-          await this.sideModalController.show(tabId);
-          
           // 기존 Promise가 있으면 바로 결과 반환 (refresh인 경우)
           const existingPromise = this.workspacePromises.get(tabId);
           if (existingPromise) {
             // refresh인 경우 - Promise를 새로 만들지 않고 결과만 업데이트
             return result;
           }
+          
+          // 첫 실행인 경우에만 워크스페이스 업데이트
+          await this.sideModalController.setWorkspaces(tabId, workspacesData);
+          await this.sideModalController.show(tabId);
           
           // 첫 실행인 경우 - Promise로 블로킹 (authenticate 버튼을 기다림)
           return new Promise<typeof result>((resolve, reject) => {
@@ -299,7 +300,7 @@ export class WorkflowService {
     console.log('[WorkflowService] Promise:', promise);
     console.log('[WorkflowService] Last workflow results:', this.lastWorkflowResults.get(tabId));
     if (promise) {
-      promise.resolve(this.lastWorkflowResults.get(tabId)); // resolve 함수 내부에서 최신 데이터를 가져옴
+      promise.resolve(this.lastWorkflowResults.get(tabId) || {} as any); // resolve 함수 내부에서 최신 데이터를 가져옴
       this.workspacePromises.delete(tabId);
     }
     
@@ -320,31 +321,26 @@ export class WorkflowService {
       console.log('[WorkflowService] Refreshing workspace workflow for tab:', tabId);
       
       try {
-        // 1. 탭 강력 새로고침 (캐시 무시)
-        await chrome.tabs.reload(tabId, { bypassCache: true });
-        
-        // 2. 페이지 로드 대기
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // 3. targetUrl로 이동
-        await chrome.tabs.update(tabId, { url: lastRequest.targetUrl });
-        
-        // 4. 페이지 완전히 로드될 때까지 대기
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // 5. 같은 탭에서 워크플로우 재실행
-        const result = await this.workflowRunner.runInExistingTab(
-          lastRequest.workflow,
-          tabId,
-          lastRequest
-        );
+        const [result] = await Promise.all([
+          this.workflowRunner.runInExistingTab(
+            lastRequest.workflow,
+            tabId,
+            lastRequest
+          ),
+          new Promise(resolve => {
+            setTimeout(() => {
+              resolve(void 0);
+            }, 2000);
+          })
+        ]);
         
         // 새로운 결과로 업데이트
         this.lastWorkflowResults.set(tabId, result);
         
         console.log('[WorkflowService] Refresh complete, new result:', result);
+        console.log('[WorkflowService] Refresh result.steps:', result.steps);
         
-        // 마지막 성공한 스텝에서 워크스페이스 데이터 추출
+        // 2초 대기가 완료된 후에 워크스페이스 데이터 추출 및 업데이트
         let workspacesData = [];
         
         // 유효한 워크스페이스 데이터인지 검증하는 함수 (동일한 로직)

@@ -23,16 +23,6 @@ export default function App() {
             <span>{t('ui.popup.extension_active')}</span>
           </div>
         </div>
-        <div className="language-info" style={{ 
-          marginTop: '16px', 
-          textAlign: 'center',
-          borderTop: '1px solid #e5e7eb',
-          paddingTop: '16px',
-          fontSize: '12px',
-          color: '#6b7280'
-        }}>
-          🌍 {locale === 'ko' ? '한국어' : 'English'} (자동 감지)
-        </div>
       </div>
     </div>
   );
