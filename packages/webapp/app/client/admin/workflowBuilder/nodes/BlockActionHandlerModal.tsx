@@ -22,6 +22,7 @@ import { SchemaDefinitionFieldBlock } from "./fieldBlock/SchemaDefinitionFieldBl
 import { SourceDataFieldBlock } from "./fieldBlock/SourceDataFieldBlock";
 import { RecordFieldBlock } from "./fieldBlock/RecordFieldBlock";
 import { CodeFieldBlock } from "./fieldBlock/CodeFieldBlock";
+import { JavaScriptFieldBlock } from "./fieldBlock/JavaScriptFieldBlock";
 import { ExpressionFieldBlock } from "./fieldBlock/ExpressionFieldBlock";
 import { RepeatFieldBlock } from "./fieldBlock/RepeatFieldBlock";
 import { ConditionsFieldBlock } from "./fieldBlock/ConditionsFieldBlock";
@@ -242,8 +243,20 @@ export const BlockActionHandlerModal = (
                   />
                 );
               }
-              // code 필드는 코드 입력 textarea로
+              // code 필드는 블록 타입에 따라 다른 컴포넌트 사용
               if (field.name === "code") {
+                // execute-javascript 블록은 JavaScript 전용 필드
+                if (blockName === "execute-javascript") {
+                  return (
+                    <JavaScriptFieldBlock
+                      key={field.name}
+                      field={field}
+                      formData={formData}
+                      updateFormField={updateFormField}
+                    />
+                  );
+                }
+                // 기타 블록은 JSONata 코드 필드 (transform-data 등)
                 return (
                   <CodeFieldBlock
                     key={field.name}

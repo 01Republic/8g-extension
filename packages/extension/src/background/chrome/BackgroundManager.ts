@@ -4,11 +4,13 @@ import {
   CollectWorkflowNewTabMessage,
   CdpClickMessage,
   CdpKeypressMessage,
+  CdpExecuteJavaScriptMessage,
   FetchApiMessage,
   ExportDataMessage,
   NetworkCatchMessage,
   isCdpClickMessage,
   isCdpKeypressMessage,
+  isCdpExecuteJavaScriptMessage,
   isFetchApiMessage,
   isExportDataMessage,
   isNetworkCatchMessage,
@@ -79,6 +81,21 @@ export class BackgroundManager {
           return false;
         }
         this.handleAsyncCdpKeypress({ ...message.data, tabId }, sendResponse);
+        return true;
+      }
+
+      if ((message as any).type === 'CDP_EXECUTE_JAVASCRIPT' && isCdpExecuteJavaScriptMessage(message)) {
+        // Get tabId from sender
+        const tabId = sender.tab?.id;
+        if (!tabId) {
+          sendResponse({
+            $isError: true,
+            message: 'Tab ID not found in sender',
+            data: null,
+          } as ErrorResponse);
+          return false;
+        }
+        this.handleAsyncCdpExecuteJavaScript({ ...message.data, tabId }, sendResponse);
         return true;
       }
 
@@ -155,6 +172,14 @@ export class BackgroundManager {
     sendResponse: (response: any) => void
   ) {
     await this.cdpService.handleKeypress(requestData, sendResponse);
+  }
+
+  // CDP JavaScript 실행 요청 처리
+  private async handleAsyncCdpExecuteJavaScript(
+    requestData: CdpExecuteJavaScriptMessage['data'] & { tabId: number },
+    sendResponse: (response: any) => void
+  ) {
+    await this.cdpService.handleExecuteJavaScript(requestData, sendResponse);
   }
 
   // AI 파싱 요청 처리

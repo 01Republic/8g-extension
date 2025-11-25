@@ -115,6 +115,37 @@ export class CdpService {
       } as ErrorResponse);
     }
   }
+
+  /**
+   * CDP JavaScript 실행 요청을 처리하고 응답을 전송합니다.
+   *
+   * @param requestData - JavaScript 실행 요청 데이터
+   * @param sendResponse - 응답 전송 함수
+   */
+  async handleExecuteJavaScript(
+    requestData: {
+      tabId: number;
+      code: string;
+      returnResult: boolean;
+      timeout: number;
+    },
+    sendResponse: (response: any) => void
+  ): Promise<void> {
+    try {
+      const { tabId, code, returnResult, timeout } = requestData;
+
+      const result = await this.executeJavaScript(tabId, code, returnResult, timeout);
+
+      sendResponse({ success: true, data: result });
+    } catch (error) {
+      console.error('[CdpService] ExecuteJavaScript error:', error);
+      sendResponse({
+        $isError: true,
+        message: error instanceof Error ? error.message : 'CDP JavaScript execution failed',
+        data: null,
+      } as ErrorResponse);
+    }
+  }
   /**
    * CDP를 사용하여 지정된 좌표에 마우스 클릭을 실행합니다.
    *
@@ -195,6 +226,55 @@ export class CdpService {
       nativeVirtualKeyCode: keyCode,
       modifiers: cdpModifiers,
     });
+  }
+
+  /**
+   * CDP를 사용하여 JavaScript 코드를 실행합니다.
+   *
+   * @param tabId - 대상 탭 ID
+   * @param code - 실행할 JavaScript 코드
+   * @param returnResult - 결과를 반환할지 여부
+   * @param timeout - 실행 타임아웃 (ms)
+   * @returns 실행 결과 (returnResult가 true일 때)
+   */
+  async executeJavaScript(
+    tabId: number,
+    code: string,
+    returnResult: boolean = true,
+    timeout: number = 5000
+  ): Promise<any> {
+    // Debugger 연결
+    await this.ensureAttached(tabId);
+
+    // Runtime.evaluate를 사용하여 JavaScript 실행
+    const result = await Promise.race([
+      chrome.debugger.sendCommand({ tabId }, 'Runtime.evaluate', {
+        expression: code,
+        returnByValue: returnResult,
+        awaitPromise: true, // Promise를 자동으로 기다림
+        userGesture: true, // 사용자 제스처로 처리 (일부 API 호출에 필요)
+      }),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error(`Execution timeout after ${timeout}ms`)), timeout)
+      ),
+    ]);
+
+    const evalResult = result as any;
+
+    // 실행 중 예외 발생 확인
+    if (evalResult.exceptionDetails) {
+      const exceptionText = evalResult.exceptionDetails.exception?.description ||
+                           evalResult.exceptionDetails.text ||
+                           'Unknown JavaScript error';
+      throw new Error(`JavaScript execution error: ${exceptionText}`);
+    }
+
+    // 결과 반환
+    if (returnResult && evalResult.result) {
+      return evalResult.result.value;
+    }
+
+    return null;
   }
 
   /**
