@@ -84,7 +84,10 @@ export class BackgroundManager {
         return true;
       }
 
-      if ((message as any).type === 'CDP_EXECUTE_JAVASCRIPT' && isCdpExecuteJavaScriptMessage(message)) {
+      if (
+        (message as any).type === 'CDP_EXECUTE_JAVASCRIPT' &&
+        isCdpExecuteJavaScriptMessage(message)
+      ) {
         // Get tabId from sender
         const tabId = sender.tab?.id;
         if (!tabId) {
