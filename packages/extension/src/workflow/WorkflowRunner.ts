@@ -1,4 +1,4 @@
-import type { Workflow, WorkflowStepRunResult, WorkspaceItemDto } from '@/sdk/types';
+import type { Workflow, WorkflowStepRunResult } from '@/sdk/types';
 import { createExecutionContext, setVarsInContext, resolveBindings, ExecutionContext } from './context';
 import type { BlockExecutor } from './step-executor';
 import { executeWorkflowSegment } from './step-executor/subtree-executor';

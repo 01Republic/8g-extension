@@ -166,8 +166,7 @@ export class BackgroundManager {
           return false;
         }
         
-        const selectedWorkspaces = (message as any).data?.selectedWorkspaces || [];
-        this.handleAsyncCompleteWorkspaceSelection(tabId, selectedWorkspaces, sendResponse);
+        this.handleAsyncCompleteWorkspaceSelection(tabId, sendResponse);
         return true;
       }
 
@@ -267,7 +266,6 @@ export class BackgroundManager {
   // 워크스페이스 선택 완료 처리
   private async handleAsyncCompleteWorkspaceSelection(
     tabId: number,
-    selectedWorkspaces: any[],
     sendResponse: (response: any) => void
   ) {
     try {

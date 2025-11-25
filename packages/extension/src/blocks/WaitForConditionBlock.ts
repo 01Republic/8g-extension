@@ -110,15 +110,10 @@ export async function handlerWaitForCondition(
       mode = 'auto-or-manual',
       pollingIntervalMs = 1000,
       timeoutMs = 300000,
-      position = 'top-right', // 기본값을 상단으로 변경 (ActionPrompt 스타일)
     } = data;
 
     console.log('[WaitForCondition] Starting wait with conditions:', conditions);
     console.log('[WaitForCondition] Mode:', mode, 'Timeout:', timeoutMs);
-
-    // 기존 position 값('bottom-right' 등)을 새로운 형식('top' | 'bottom')으로 변환
-    const normalizedPosition: 'top' | 'bottom' =
-      position === 'top-left' || position === 'top-right' ? 'top' : 'bottom';
 
     const hasAutoConditions = !!(
       conditions.urlPattern ||
