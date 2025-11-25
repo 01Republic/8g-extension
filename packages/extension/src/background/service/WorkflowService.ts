@@ -94,18 +94,36 @@ export class WorkflowService {
           // 마지막 성공한 스텝에서 워크스페이스 데이터 추출
           let workspacesData = [];
           
+          // 유효한 워크스페이스 데이터인지 검증하는 함수
+          const isValidWorkspaceArray = (arr: any[]): boolean => {
+            if (!Array.isArray(arr) || arr.length === 0) return true; // 빈 배열은 유효함 (로그인 안됨 상태)
+            
+            // 배열의 첫 번째 요소가 워크스페이스 객체인지 확인
+            const firstItem = arr[0];
+            return (
+              typeof firstItem === 'object' &&
+              firstItem !== null &&
+              'id' in firstItem &&
+              'name' in firstItem &&
+              typeof firstItem.id === 'string' &&
+              typeof firstItem.name === 'string' &&
+              // 네트워크 요청 객체가 아닌지 확인 (url, method, status 속성이 있으면 네트워크 객체)
+              !('url' in firstItem && 'method' in firstItem && 'status' in firstItem)
+            );
+          };
+          
           // 마지막부터 거꾸로 탐색하여 실제 데이터가 있는 스텝 찾기
           for (let i = result.steps.length - 1; i >= 0; i--) {
             const step = result.steps[i];
             if (step.success && step.result) {
-              // result가 배열인 경우 직접 사용
-              if (Array.isArray(step.result)) {
+              // result가 배열인 경우 - 워크스페이스 데이터인지 검증 후 사용
+              if (Array.isArray(step.result) && isValidWorkspaceArray(step.result)) {
                 workspacesData = step.result;
                 console.log(`Found workspaces in step ${i} (array):`, workspacesData);
                 break;
               }
-              // result.data가 배열인 경우
-              else if (step.result.data && Array.isArray(step.result.data)) {
+              // result.data가 배열인 경우 - 워크스페이스 데이터인지 검증 후 사용
+              else if (step.result.data && Array.isArray(step.result.data) && isValidWorkspaceArray(step.result.data)) {
                 workspacesData = step.result.data;
                 console.log(`Found workspaces in step ${i} (result.data):`, workspacesData);
                 break;
@@ -113,7 +131,7 @@ export class WorkflowService {
               // result가 객체이고 workspace 관련 속성이 있는 경우
               else if (typeof step.result === 'object' && step.result !== null) {
                 // workspaces 속성 확인
-                if (step.result.workspaces && Array.isArray(step.result.workspaces)) {
+                if (step.result.workspaces && Array.isArray(step.result.workspaces) && isValidWorkspaceArray(step.result.workspaces)) {
                   workspacesData = step.result.workspaces;
                   console.log(`Found workspaces in step ${i} (result.workspaces):`, workspacesData);
                   break;
@@ -329,18 +347,36 @@ export class WorkflowService {
         // 마지막 성공한 스텝에서 워크스페이스 데이터 추출
         let workspacesData = [];
         
+        // 유효한 워크스페이스 데이터인지 검증하는 함수 (동일한 로직)
+        const isValidWorkspaceArray = (arr: any[]): boolean => {
+          if (!Array.isArray(arr) || arr.length === 0) return true; // 빈 배열은 유효함 (로그인 안됨 상태)
+          
+          // 배열의 첫 번째 요소가 워크스페이스 객체인지 확인
+          const firstItem = arr[0];
+          return (
+            typeof firstItem === 'object' &&
+            firstItem !== null &&
+            'id' in firstItem &&
+            'name' in firstItem &&
+            typeof firstItem.id === 'string' &&
+            typeof firstItem.name === 'string' &&
+            // 네트워크 요청 객체가 아닌지 확인 (url, method, status 속성이 있으면 네트워크 객체)
+            !('url' in firstItem && 'method' in firstItem && 'status' in firstItem)
+          );
+        };
+        
         // 마지막부터 거꾸로 탐색하여 실제 데이터가 있는 스텝 찾기
         for (let i = result.steps.length - 1; i >= 0; i--) {
           const step = result.steps[i];
           if (step.success && step.result) {
-            // result가 배열인 경우 직접 사용
-            if (Array.isArray(step.result)) {
+            // result가 배열인 경우 - 워크스페이스 데이터인지 검증 후 사용
+            if (Array.isArray(step.result) && isValidWorkspaceArray(step.result)) {
               workspacesData = step.result;
               console.log(`[Refresh] Found workspaces in step ${i} (array):`, workspacesData);
               break;
             }
-            // result.data가 배열인 경우
-            else if (step.result.data && Array.isArray(step.result.data)) {
+            // result.data가 배열인 경우 - 워크스페이스 데이터인지 검증 후 사용
+            else if (step.result.data && Array.isArray(step.result.data) && isValidWorkspaceArray(step.result.data)) {
               workspacesData = step.result.data;
               console.log(`[Refresh] Found workspaces in step ${i} (result.data):`, workspacesData);
               break;
@@ -348,7 +384,7 @@ export class WorkflowService {
             // result가 객체이고 workspace 관련 속성이 있는 경우
             else if (typeof step.result === 'object' && step.result !== null) {
               // workspaces 속성 확인
-              if (step.result.workspaces && Array.isArray(step.result.workspaces)) {
+              if (step.result.workspaces && Array.isArray(step.result.workspaces) && isValidWorkspaceArray(step.result.workspaces)) {
                 workspacesData = step.result.workspaces;
                 console.log(`[Refresh] Found workspaces in step ${i} (result.workspaces):`, workspacesData);
                 break;

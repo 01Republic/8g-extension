@@ -203,15 +203,8 @@ const SideModal: React.FC<SideModalProps> = ({
   const [siteInfo, setSiteInfo] = useState<SiteInfo>({ favicon: '', siteName: serviceName || '' });
   const modalRef = useRef<HTMLDivElement>(null);
 
-  // workspaces 배열이 비어있으면 기본 더미 데이터 사용
-  const displayWorkspaces = workspaces.length > 0 ? workspaces : [{
-    id: 'default-ws',
-    slug: 'default-workspace',
-    name: 'Default Workspace',
-    image: '',
-    memberCount: 1,
-    isAdmin: null
-  }];
+  // workspaces 배열 그대로 사용 (빈 배열이면 로그인 필요 상태로 처리)
+  const displayWorkspaces = workspaces;
 
   // 현재 사이트 정보 가져오기
   useEffect(() => {
@@ -513,39 +506,74 @@ const SideModal: React.FC<SideModalProps> = ({
                 </button>
               </div>
 
-              {/* 녹색 상태 인디케이터 */}
-              <div style={{
-                background: '#ecfdf5',
-                border: '1px solid #a7f3d0',
-                borderRadius: '8px',
-                padding: '10px 12px',
-                marginBottom: '1rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-              }}>
+              {/* 상태 인디케이터 */}
+              {workspaces.length > 0 ? (
                 <div style={{
-                  width: '20px',
-                  height: '20px',
-                  borderRadius: '50%',
-                  background: '#10b981',
+                  background: '#ecfdf5',
+                  border: '1px solid #a7f3d0',
+                  borderRadius: '8px',
+                  padding: '10px 12px',
+                  marginBottom: '1rem',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'white',
-                  fontSize: '12px',
-                  fontWeight: 'bold',
+                  gap: '8px',
                 }}>
-                  ✓
+                  <div style={{
+                    width: '20px',
+                    height: '20px',
+                    borderRadius: '50%',
+                    background: '#10b981',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                  }}>
+                    ✓
+                  </div>
+                  <span style={{
+                    fontSize: '15px',
+                    color: '#065f46',
+                    fontWeight: '500',
+                  }}>
+                    {t('ui.side_modal.already_logged_in')}
+                  </span>
                 </div>
-                <span style={{
-                  fontSize: '15px',
-                  color: '#065f46',
-                  fontWeight: '500',
+              ) : (
+                <div style={{
+                  background: '#fef2f2',
+                  border: '1px solid #fecaca',
+                  borderRadius: '8px',
+                  padding: '10px 12px',
+                  marginBottom: '1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
                 }}>
-                  {t('ui.side_modal.already_logged_in')}
-                </span>
-              </div>
+                  <div style={{
+                    width: '20px',
+                    height: '20px',
+                    borderRadius: '50%',
+                    background: '#dc2626',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                  }}>
+                    ⚠
+                  </div>
+                  <span style={{
+                    fontSize: '15px',
+                    color: '#dc2626',
+                    fontWeight: '500',
+                  }}>
+                    {t('ui.side_modal.login_required')}
+                  </span>
+                </div>
+              )}
 
               {/* 워크스페이스 목록 */}
               <div style={{ 
@@ -556,7 +584,7 @@ const SideModal: React.FC<SideModalProps> = ({
                 // maxHeight: '40vh', // 화면 높이의 40%로 조금 증가
                 // minHeight: '220px', // 최소 높이도 조금 증가
               }}>
-                {(() => {
+                {displayWorkspaces.length > 0 ? (() => {
                   const adminWorkspaces = displayWorkspaces.filter(ws => ws.isAdmin === true);
                   const nonAdminWorkspaces = displayWorkspaces.filter(ws => ws.isAdmin === false);
                   
@@ -662,7 +690,15 @@ const SideModal: React.FC<SideModalProps> = ({
                       )}
                     </>
                   );
-                })()}
+                })() : (
+                  // 워크스페이스가 없는 경우 (로그인 필요 상태)
+                  <div style={{
+                    textAlign: 'center',
+                    color: '#6b7280',
+                    fontSize: '15px',
+                    lineHeight: 1.5,
+                  }} />
+                )}
               </div>
 
               {/* 설명 텍스트 */}

@@ -84,6 +84,7 @@
   "ui.side_modal.close_panel": "스코디 패널 닫기",
   "ui.side_modal.service_in_progress": "서비스 연동 진행 중",
   "ui.side_modal.already_logged_in": "이미 로그인이 되어 있는 것 같아요",
+  "ui.side_modal.login_required": "로그인이 필요합니다",
   "ui.side_modal.current_workspace": "현재 연결된 워크스페이스",
   "ui.side_modal.admin_permission_required": "관리자 권한이 있는 곳만 연결 할 수 있어요.",
   "ui.side_modal.change_account_instruction": "다른 {{serviceName}} 계정으로 연동하시려면 이 페이지에서 로그인 계정을 변경해주세요.",

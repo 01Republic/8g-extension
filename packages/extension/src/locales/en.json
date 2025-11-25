@@ -84,6 +84,7 @@
   "ui.side_modal.close_panel": "Close Scordi Panel",
   "ui.side_modal.service_in_progress": "Service integration in progress",
   "ui.side_modal.already_logged_in": "It looks like you're already logged in",
+  "ui.side_modal.login_required": "Login required",
   "ui.side_modal.current_workspace": "Currently connected workspace",
   "ui.side_modal.admin_permission_required": "Admin access required to connect.",
   "ui.side_modal.change_account_instruction": "To connect with a different {{serviceName}} account, please change the login account on this page.",
