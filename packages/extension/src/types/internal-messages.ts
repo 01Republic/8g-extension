@@ -38,6 +38,15 @@ export interface CdpKeypressMessage {
   };
 }
 
+export interface CdpExecuteJavaScriptMessage {
+  type: 'CDP_EXECUTE_JAVASCRIPT';
+  data: {
+    code: string;
+    returnResult: boolean;
+    timeout: number;
+  };
+}
+
 export interface FetchApiMessage {
   type: 'FETCH_API';
   data: {
@@ -125,6 +134,7 @@ export type BackgroundMessage =
   | CollectWorkflowNewTabMessage
   | CdpClickMessage
   | CdpKeypressMessage
+  | CdpExecuteJavaScriptMessage
   | FetchApiMessage
   | ExportDataMessage
   | NetworkCatchMessage;
@@ -157,6 +167,10 @@ export function isCdpClickMessage(message: any): message is CdpClickMessage {
 
 export function isCdpKeypressMessage(message: any): message is CdpKeypressMessage {
   return message && message.type === 'CDP_KEYPRESS';
+}
+
+export function isCdpExecuteJavaScriptMessage(message: any): message is CdpExecuteJavaScriptMessage {
+  return message && message.type === 'CDP_EXECUTE_JAVASCRIPT';
 }
 
 export function isFetchApiMessage(message: any): message is FetchApiMessage {
