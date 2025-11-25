@@ -102,6 +102,7 @@ export class Workflow {
   steps!: WorkflowStep[];
   vars?: Record<string, any>; // 워크플로우 초기 변수
   defaultDelayMs?: number;
+  workflowType?: string; // 워크플로우 타입 (예: 'getWorkspaces')
 }
 
 export type CollectWorkflowRequest = {

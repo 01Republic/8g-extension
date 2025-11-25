@@ -8,7 +8,6 @@ import {
   isTriggerConfirmationMessage,
 } from '@/types/internal-messages';
 import { MessageKernel } from '../kernel/MessageKernel';
-import { performStatusCheck } from '@/blocks/CheckStatusBlock';
 
 /**
  * Chrome Extension 내부 메시지 핸들러
@@ -38,7 +37,6 @@ export class InternalMessageHandler {
               message: message.data.message || '워크플로우 실행 중',
               statusType: message.data.statusType || 'loading',
               icon: message.data.icon || 'default',
-              position: message.data.position || 'bottom-right',
             },
           })
         );
@@ -50,7 +48,7 @@ export class InternalMessageHandler {
         console.log('[InternalMessageHandler] Hide execution status');
         window.dispatchEvent(new CustomEvent('8g-hide-execution-status'));
         // 워크플로우 실행 종료 시 초록색 ConfirmationUI도 함께 숨김
-        window.dispatchEvent(new CustomEvent('8g-hide-confirmation-ui'));
+        window.dispatchEvent(new CustomEvent('8g-hide-execution-status'));
         sendResponse({ success: true });
         return false;
       }
@@ -60,7 +58,6 @@ export class InternalMessageHandler {
         const {
           message: msg,
           buttonText,
-          position = 'top',
           variant = 'default',
           icon = 'alert',
           showClose = true,
@@ -84,22 +81,21 @@ export class InternalMessageHandler {
                 });
 
                 // UI 숨김
-                window.dispatchEvent(new CustomEvent('8g-hide-confirmation-ui'));
+                window.dispatchEvent(new CustomEvent('8g-hide-execution-status'));
               }
             : undefined;
 
         // 닫기 버튼 클릭 시 콜백
         const onClose = () => {
           console.log('[InternalMessageHandler] User closed confirmation UI');
-          window.dispatchEvent(new CustomEvent('8g-hide-confirmation-ui'));
+          window.dispatchEvent(new CustomEvent('8g-hide-execution-status'));
         };
 
         window.dispatchEvent(
-          new CustomEvent('8g-show-confirmation-ui', {
+          new CustomEvent('8g-show-execution-status', {
             detail: {
               message: msg,
               buttonText,
-              position,
               variant,
               icon,
               showClose,
@@ -133,28 +129,103 @@ export class InternalMessageHandler {
         return false;
       }
 
-      // Check status message handler
-      if ((message as any).type === 'CHECK_STATUS') {
-        console.log(
-          '[InternalMessageHandler] Check status message received:',
-          (message as any).checkType
-        );
-        const result = performStatusCheck((message as any).checkType);
-        sendResponse(result);
+      // SideModal 메시지 핸들러들
+      if ((message as any).type === 'SHOW_SIDE_MODAL') {
+        console.log('[InternalMessageHandler] Show side modal with data:', (message as any).data);
+        // 먼저 SideModal 마운트
+        window.dispatchEvent(new CustomEvent('8g-mount-side-modal'));
+        // 약간의 지연 후 show 이벤트 발생
+        setTimeout(() => {
+          window.dispatchEvent(
+            new CustomEvent('8g-show-side-modal', {
+              detail: (message as any).data,
+            })
+          );
+        }, 50);
+        sendResponse({ success: true });
         return false;
       }
 
-      // Perform status check from Side Panel
-      if ((message as any).type === 'PERFORM_STATUS_CHECK') {
-        console.log(
-          '[InternalMessageHandler] Perform status check from Side Panel:',
-          (message as any).payload?.checkType
-        );
-        const result = performStatusCheck((message as any).payload?.checkType);
-        sendResponse(result);
+      if ((message as any).type === 'HIDE_SIDE_MODAL') {
+        console.log('[InternalMessageHandler] Hide side modal');
+        window.dispatchEvent(new CustomEvent('8g-hide-side-modal'));
+        sendResponse({ success: true });
         return false;
       }
 
+      if ((message as any).type === 'UPDATE_SIDE_MODAL_WORKSPACES') {
+        console.log('[InternalMessageHandler] Update side modal workspaces:', (message as any).data);
+        window.dispatchEvent(
+          new CustomEvent('8g-update-side-modal-workspaces', {
+            detail: (message as any).data,
+          })
+        );
+        sendResponse({ success: true });
+        return false;
+      }
+
+      if ((message as any).type === 'UPDATE_SIDE_MODAL_SITE_INFO') {
+        console.log('[InternalMessageHandler] Update side modal site info:', (message as any).data);
+        window.dispatchEvent(
+          new CustomEvent('8g-update-side-modal-site-info', {
+            detail: (message as any).data,
+          })
+        );
+        sendResponse({ success: true });
+        return false;
+      }
+
+      if ((message as any).type === 'UPDATE_SIDE_MODAL_LOGIN_STATUS') {
+        console.log('[InternalMessageHandler] Update side modal login status:', (message as any).data);
+        window.dispatchEvent(
+          new CustomEvent('8g-update-side-modal-login-status', {
+            detail: (message as any).data,
+          })
+        );
+        sendResponse({ success: true });
+        return false;
+      }
+
+      if ((message as any).type === 'GET_SIDE_MODAL_STATUS') {
+        console.log('[InternalMessageHandler] Get side modal status');
+        // 상태 요청에 대한 응답을 위해 콜백 방식 사용
+        let responseReceived = false;
+        const callback = (response: any) => {
+          if (!responseReceived) {
+            responseReceived = true;
+            sendResponse(response);
+          }
+        };
+        
+        window.dispatchEvent(
+          new CustomEvent('8g-get-side-modal-status', {
+            detail: { callback },
+          })
+        );
+        
+        // 타임아웃 설정 (2초 후 기본값 응답)
+        setTimeout(() => {
+          if (!responseReceived) {
+            responseReceived = true;
+            sendResponse({ isOpen: false });
+          }
+        }, 2000);
+        
+        return true; // 비동기 응답을 위해 true 반환
+      }
+
+      if ((message as any).type === 'GET_SIDE_MODAL_DATA') {
+        console.log('[InternalMessageHandler] Get side modal data');
+        // background에서 현재 탭의 저장된 데이터를 가져오는 요청
+        chrome.runtime.sendMessage({ type: 'GET_SIDE_MODAL_DATA' })
+          .then(response => sendResponse(response))
+          .catch(error => {
+            console.warn('Failed to get side modal data from background:', error);
+            sendResponse({ workspaces: [] });
+          });
+        return true; // 비동기 응답
+      }
+    
       // Check status dismissed handler
       if ((message as any).type === 'CHECK_STATUS_DISMISSED') {
         const { notificationId, message: msg } = (message as any).payload || {};

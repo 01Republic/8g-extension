@@ -1,15 +1,6 @@
-import type { NodeTypes } from "@xyflow/react";
-import GenericBlockNode from "./GenericBlockNode";
-import { AllBlockSchemas } from "scordi-extension";
-// 모든 블록 타입을 GenericBlockNode로 자동 등록
-export const workflowNodeTypes: NodeTypes = Object.keys(AllBlockSchemas).reduce(
-  (acc, blockName) => {
-    acc[blockName] = GenericBlockNode;
-    return acc;
-  },
-  {} as NodeTypes,
-);
-
+/**
+ * Block 메타데이터 (제목, 설명, 필드 라벨)
+ */
 
 /**
  * Block 이름에 따른 한글 라벨 매핑
@@ -113,10 +104,6 @@ export const blockLabels: Record<
   "check-status": {
     title: "로그인 상태 확인",
     description: "로그인 상태 확인",
-  },
-  "execute-javascript": {
-    title: "JavaScript 실행",
-    description: "JavaScript 코드 실행",
   }
 };
 

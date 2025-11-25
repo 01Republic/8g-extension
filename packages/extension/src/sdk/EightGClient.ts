@@ -122,6 +122,9 @@ export class EightGClient {
   async getWorkspaces(
     request: CollectWorkflowRequest
   ): Promise<CollectWorkflowResult<WorkspaceItemDto[]>> {
+    // 워크플로우 타입을 getWorkspaces로 설정
+    request.workflow.workflowType = 'getWorkspaces';
+    
     return this.executeWorkflowAndValidateSingleContainer(
       request,
       WorkspaceItemSchema,

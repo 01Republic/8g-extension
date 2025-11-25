@@ -2,10 +2,9 @@ import { createRoot } from 'react-dom/client';
 import { MessageKernel } from './kernel/MessageKernel';
 import { InternalMessageHandler } from './handler/InternalMessageHandler';
 import { ExternalMessageHandler } from './handler/ExternalMessageHandler';
-import { ConfirmationUIContainer } from './components/ConfirmationUI';
 import { ExecutionStatusUIContainer } from './components/ExecutionStatusUI';
-import CheckStatusUI from './components/CheckStatusUI';
-import NotificationManager from './components/NotificationManager';
+import { SideModalContainer } from './components/SideModal';
+import { refreshLocaleFromBrowser } from '../locales';
 
 // Prevent multiple injections
 (() => {
@@ -13,6 +12,9 @@ import NotificationManager from './components/NotificationManager';
   (window as any).is8gExtensionInjected = true;
 
   console.log('[8G Extension] Content script initialized on:', window.location.href);
+
+  // i18n 초기화 (브라우저 언어에서 자동 감지)
+  refreshLocaleFromBrowser();
 
   // 메시지 커널 생성 (중앙 집중식 메시지 처리)
   const messageKernel = new MessageKernel();
@@ -32,68 +34,42 @@ import NotificationManager from './components/NotificationManager';
 
   if (isTopFrame) {
     const initUI = () => {
-      // Confirmation UI 마운트
       const confirmationRoot = document.createElement('div');
       confirmationRoot.id = '8g-confirmation-ui-root';
       confirmationRoot.style.cssText = 'all: initial; position: fixed; z-index: 2147483647;';
       document.body.appendChild(confirmationRoot);
 
       const confirmationReactRoot = createRoot(confirmationRoot);
-      confirmationReactRoot.render(<ConfirmationUIContainer />);
+      confirmationReactRoot.render(<ExecutionStatusUIContainer />);
 
-      // Execution Status UI 마운트
-      const executionStatusRoot = document.createElement('div');
-      executionStatusRoot.id = '8g-execution-status-ui-root';
-      executionStatusRoot.style.cssText = 'all: initial; position: fixed; z-index: 2147483647;';
-      document.body.appendChild(executionStatusRoot);
-
-      const executionStatusReactRoot = createRoot(executionStatusRoot);
-      executionStatusReactRoot.render(<ExecutionStatusUIContainer />);
-
-      // Check Status UI 마운트
-      const checkStatusRoot = document.createElement('div');
-      checkStatusRoot.id = '8g-check-status-ui-root';
-      checkStatusRoot.style.cssText = 'all: initial; position: fixed; z-index: 2147483647;';
-      document.body.appendChild(checkStatusRoot);
-
-      let checkStatusReactRoot: any = null;
-
-      // Check Status UI 이벤트 리스너
-      window.addEventListener('8g-show-check-status', ((event: CustomEvent) => {
-        const detail = event.detail;
-
-        if (!checkStatusReactRoot) {
-          checkStatusReactRoot = createRoot(checkStatusRoot);
-        }
-
-        checkStatusReactRoot.render(
-          <CheckStatusUI
-            checkType={detail.checkType}
-            title={detail.title}
-            description={detail.description}
-            onConfirm={detail.onConfirm}
-            onCancel={detail.onCancel}
-          />
-        );
-      }) as EventListener);
-
-      window.addEventListener('8g-hide-check-status', () => {
-        if (checkStatusReactRoot) {
-          checkStatusReactRoot.render(<></>);
-        }
-      });
-
-      // Notification Manager 마운트
-      const notificationRoot = document.createElement('div');
-      notificationRoot.id = '8g-notification-manager-root';
-      notificationRoot.style.cssText = 'all: initial; position: fixed; z-index: 2147483645;';
-      document.body.appendChild(notificationRoot);
-
-      const notificationReactRoot = createRoot(notificationRoot);
-      notificationReactRoot.render(<NotificationManager />);
-
-      console.log('[8G Extension] UI Components mounted (top frame only)');
+      console.log('[8G Extension] ExecutionStatusUI mounted (top frame only)');
     };
+    
+    // SideModal은 필요할 때만 동적으로 마운트
+    const mountSideModal = () => {
+      if (document.getElementById('8g-side-modal-root')) {
+        return; // 이미 마운트됨
+      }
+      
+      const sideModalRoot = document.createElement('div');
+      sideModalRoot.id = '8g-side-modal-root';
+      sideModalRoot.style.cssText = 'all: initial; position: fixed; z-index: 2147483647;';
+      document.body.appendChild(sideModalRoot);
+
+      const sideModalReactRoot = createRoot(sideModalRoot);
+      sideModalReactRoot.render(<SideModalContainer />);
+      
+      console.log('[8G Extension] SideModal mounted');
+    };
+    
+    // 이벤트 리스너로 SideModal 마운트 제어
+    window.addEventListener('8g-mount-side-modal', () => {
+      if (document.body) {
+        mountSideModal();
+      } else {
+        document.addEventListener('DOMContentLoaded', mountSideModal);
+      }
+    });
 
     // document.body가 준비되면 UI 초기화
     if (document.body) {

@@ -1,5 +1,5 @@
-import type { Workflow } from '@/sdk/types';
-import { createExecutionContext, setVarsInContext, resolveBindings } from './context';
+import type { Workflow, WorkflowStepRunResult, WorkspaceItemDto } from '@/sdk/types';
+import { createExecutionContext, setVarsInContext, resolveBindings, ExecutionContext } from './context';
 import type { BlockExecutor } from './step-executor';
 import { executeWorkflowSegment } from './step-executor/subtree-executor';
 
@@ -8,23 +8,20 @@ export type TabCreator = (
   activateTab: boolean,
   originTabId?: number
 ) => Promise<number>;
-export type ExecutionStatusController = {
-  show: (tabId: number, message?: string) => Promise<void>;
-  hide: (tabId: number) => Promise<void>;
-};
 
 export class WorkflowRunner {
   constructor(
     private executeBlock: BlockExecutor,
     private createTab: TabCreator,
-    private statusController?: ExecutionStatusController
+    private executeWithHooks: (tabId: number, run: () => Promise<{steps: WorkflowStepRunResult<any>[], tabId: number, context: ExecutionContext}>, workflowType?: string, workflowRequest?: any) => Promise<{steps: WorkflowStepRunResult<any>[], tabId: number, context: ExecutionContext}>,
   ) {}
 
   async run(
     workflow: Workflow,
     targetUrl: string,
     activateTab: boolean = false,
-    originTabId?: number
+    originTabId?: number,
+    workflowRequest?: any
   ) {
     let context = createExecutionContext();
 
@@ -44,10 +41,7 @@ export class WorkflowRunner {
     // 탭 생성
     const tabId = await this.createTab(resolvedTargetUrl, activateTab, originTabId);
 
-    try {
-      // 실행 상태 UI 표시
-      await this.statusController?.show(tabId, '워크플로우 실행 중');
-
+    return this.executeWithHooks(tabId, async () => {
       const stepsById = new Map(workflow.steps.map((s) => [s.id, s]));
       const { results, context: finalContext } = await executeWorkflowSegment({
         currentId: workflow.start,
@@ -58,9 +52,32 @@ export class WorkflowRunner {
       });
 
       return { steps: results, tabId, context: finalContext };
-    } finally {
-      // 실행 상태 UI 숨김
-      await this.statusController?.hide(tabId);
+    }, workflow.workflowType, workflowRequest);
+  }
+
+  async runInExistingTab(
+    workflow: Workflow,
+    tabId: number,
+    workflowRequest?: any
+  ) {
+    let context = createExecutionContext();
+
+    // workflow.vars가 있으면 초기 변수 설정
+    if (workflow.vars) {
+      context = setVarsInContext(context, workflow.vars);
     }
+
+    return this.executeWithHooks(tabId, async () => {
+      const stepsById = new Map(workflow.steps.map((s) => [s.id, s]));
+      const { results, context: finalContext } = await executeWorkflowSegment({
+        currentId: workflow.start,
+        context,
+        stepsById,
+        tabId,
+        executeBlock: this.executeBlock,
+      });
+
+      return { steps: results, tabId, context: finalContext };
+    }, workflow.workflowType, workflowRequest);
   }
 }
