@@ -1,5 +1,5 @@
 import { WorkflowStep } from '@/sdk/types';
-import type { Condition, ExecutionContext } from '../context';
+import type { ExecutionContext } from '../context';
 import { evaluateCondition } from '../context';
 
 /**
