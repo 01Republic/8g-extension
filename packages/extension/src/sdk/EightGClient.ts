@@ -19,6 +19,7 @@ import {
 } from './types';
 import { EightGError } from './errors';
 import { ExtensionResponseMessage, isExtensionResponseMessage } from '@/types/external-messages';
+import { THROW_ERROR_MESSAGES } from '@/blocks/ThrowErrorBlock';
 import { z } from 'zod';
 
 /**
@@ -233,6 +234,24 @@ export class EightGClient {
 
     const result = await this.collectWorkflow(request);
 
+    // ThrowErrorBlock이 있는 경우 스키마 검증을 건너뛰고 에러 데이터 그대로 전달
+    if (result.data && typeof result.data === 'object' && result.steps) {
+      const throwErrorMessages = Object.keys(THROW_ERROR_MESSAGES);
+      const hasThrowError = result.steps.some(step => 
+        !step.success && 
+        step.message && 
+        throwErrorMessages.includes(step.message)
+      );
+      
+      if (hasThrowError) {
+        // ThrowErrorBlock의 데이터를 그대로 반환 (스키마 검증 건너뛰기)
+        return {
+          ...result,
+          data: [result.data] // 배열로 래핑
+        } as CollectWorkflowArrayResult<MemberOperationResult>;
+      }
+    }
+
     // 워크플로우 자체가 실패한 경우에만 에러 throw
     // 개별 멤버 실패는 data 배열에서 처리
     if (!result.success && result.error) {
@@ -261,6 +280,24 @@ export class EightGClient {
     };
 
     const result = await this.collectWorkflow(request);
+
+    // ThrowErrorBlock이 있는 경우 스키마 검증을 건너뛰고 에러 데이터 그대로 전달
+    if (result.data && typeof result.data === 'object' && result.steps) {
+      const throwErrorMessages = Object.keys(THROW_ERROR_MESSAGES);
+      const hasThrowError = result.steps.some(step => 
+        !step.success && 
+        step.message && 
+        throwErrorMessages.includes(step.message)
+      );
+      
+      if (hasThrowError) {
+        // ThrowErrorBlock의 데이터를 그대로 반환 (스키마 검증 건너뛰기)
+        return {
+          ...result,
+          data: [result.data] // 배열로 래핑
+        } as CollectWorkflowArrayResult<MemberOperationResult>;
+      }
+    }
 
     // 워크플로우 자체가 실패한 경우에만 에러 throw
     // 개별 멤버 실패는 data 배열에서 처리
@@ -392,6 +429,23 @@ export class EightGClient {
     isArray: boolean = false
   ): Promise<CollectWorkflowResult<T | T[]>> {
     const result = await this.collectWorkflow(request);
+    
+    if (result.data && typeof result.data === 'object' && result.steps) {
+      const throwErrorMessages = Object.keys(THROW_ERROR_MESSAGES);
+      
+      const hasThrowError = result.steps.some(step => {
+        const isThrowError = !step.success && step.message && throwErrorMessages.includes(step.message);
+        return isThrowError;
+      });
+      
+      if (hasThrowError) {
+        return {
+          ...result,
+          data: result.data
+        } as CollectWorkflowResult<T | T[]>;
+      }
+    }
+    
     if (!result.success) {
       throw new EightGError(errorMessage, errorCode);
     }
