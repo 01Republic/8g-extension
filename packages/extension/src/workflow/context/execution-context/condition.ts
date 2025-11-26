@@ -36,11 +36,29 @@ export const evaluateJsonCondition = (
   }
 
   if ('equals' in condition) {
-    return getByPath(context, condition.equals.left) === condition.equals.right;
+    const leftValue = getByPath(context, condition.equals.left);
+    const rightValue = condition.equals.right;
+    
+    // Deep equality for objects and arrays
+    if (typeof leftValue === 'object' && typeof rightValue === 'object' && 
+        leftValue !== null && rightValue !== null) {
+      return JSON.stringify(leftValue) === JSON.stringify(rightValue);
+    }
+    
+    return leftValue === rightValue;
   }
 
   if ('notEquals' in condition) {
-    return getByPath(context, condition.notEquals.left) !== condition.notEquals.right;
+    const leftValue = getByPath(context, condition.notEquals.left);
+    const rightValue = condition.notEquals.right;
+    
+    // Deep equality for objects and arrays
+    if (typeof leftValue === 'object' && typeof rightValue === 'object' && 
+        leftValue !== null && rightValue !== null) {
+      return JSON.stringify(leftValue) !== JSON.stringify(rightValue);
+    }
+    
+    return leftValue !== rightValue;
   }
 
   if ('contains' in condition) {
