@@ -270,10 +270,13 @@ export class CdpService {
     }
 
     // 결과 반환
+    console.log('[CdpService] executeJavaScript result:', evalResult);
     if (returnResult && evalResult.result) {
+      console.log('[CdpService] returning value:', evalResult.result.value);
       return evalResult.result.value;
     }
 
+    console.log('[CdpService] returning null - returnResult:', returnResult, 'evalResult.result:', evalResult.result);
     return null;
   }
 

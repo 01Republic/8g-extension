@@ -82,7 +82,7 @@ export class EightGClient {
           const failedStep = steps.find((step: any) => !step.success && !step.skipped);
           console.log('failedStep', failedStep);
 
-          const data = failedStep ? failedStep.result : steps[steps.length - 1]?.result?.data;
+          const data = failedStep ? failedStep.result?.data : steps[steps.length - 1]?.result?.data;
           console.log('data', data);
 
           const resContainer = {

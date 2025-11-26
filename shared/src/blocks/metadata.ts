@@ -104,6 +104,14 @@ export const blockLabels: Record<
   "check-status": {
     title: "로그인 상태 확인",
     description: "로그인 상태 확인",
+  },
+  "execute-javascript": {
+    title: "JavaScript 실행",
+    description: "JavaScript 코드 실행",
+  },
+  "throw-error": {
+    title: "오류 발생",
+    description: "의도적으로 결과를 실패로 설정",
   }
 };
 

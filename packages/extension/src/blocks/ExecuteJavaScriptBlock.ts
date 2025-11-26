@@ -45,7 +45,7 @@ export async function handlerExecuteJavaScript(
     if (response && !response.$isError) {
       console.log('[ExecuteJavaScript] CDP execution successful:', response);
       return {
-        data: response.data || null,
+        data: response.data !== undefined ? response.data : null,
       };
     } else {
       throw new Error(response?.message || 'CDP JavaScript execution failed');

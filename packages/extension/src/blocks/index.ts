@@ -34,6 +34,7 @@ export type { MarkBorderBlock } from './MarkBorderBlock';
 export type { ApplyLocaleBlock } from './ApplyLocaleBlock';
 export type { PasteValueBlock } from './PasteValueBlock';
 export type { ExecuteJavaScriptBlock } from './ExecuteJavaScriptBlock';
+export type { ThrowErrorBlock } from './ThrowErrorBlock';
 
 // Export all block schemas
 export { GetTextBlockSchema } from './GetTextBlock';
@@ -60,6 +61,7 @@ export { MarkBorderBlockSchema } from './MarkBorderBlock';
 export { ApplyLocaleBlockSchema } from './ApplyLocaleBlock';
 export { PasteValueBlockSchema } from './PasteValueBlock';
 export { ExecuteJavaScriptBlockSchema } from './ExecuteJavaScriptBlock';
+export { ThrowErrorBlockSchema } from './ThrowErrorBlock';
 
 // Import block handlers and types
 import { handlerGetText, GetTextBlock, validateGetTextBlock } from './GetTextBlock';
@@ -132,6 +134,11 @@ import {
   ExecuteJavaScriptBlock,
   validateExecuteJavaScriptBlock,
 } from './ExecuteJavaScriptBlock';
+import {
+  handlerThrowError,
+  ThrowErrorBlock,
+  validateThrowErrorBlock,
+} from './ThrowErrorBlock';
 import { Block, BlockResult } from './types';
 import { GetTextBlockSchema } from './GetTextBlock';
 import { GetAttributeValueBlockSchema } from './GetAttributeValueBlock';
@@ -157,6 +164,7 @@ import { MarkBorderBlockSchema } from './MarkBorderBlock';
 import { ApplyLocaleBlockSchema } from './ApplyLocaleBlock';
 import { PasteValueBlockSchema } from './PasteValueBlock';
 import { ExecuteJavaScriptBlockSchema } from './ExecuteJavaScriptBlock';
+import { ThrowErrorBlockSchema } from './ThrowErrorBlock';
 
 // All block schemas mapped by block name
 export const AllBlockSchemas = {
@@ -184,6 +192,7 @@ export const AllBlockSchemas = {
   'apply-locale': ApplyLocaleBlockSchema,
   'paste-value': PasteValueBlockSchema,
   'execute-javascript': ExecuteJavaScriptBlockSchema,
+  'throw-error': ThrowErrorBlockSchema,
 } as const;
 
 export class BlockHandler {
@@ -218,6 +227,7 @@ export class BlockHandler {
   static executeBlock(block: ApplyLocaleBlock): Promise<BlockResult<any>>;
   static executeBlock(block: PasteValueBlock): Promise<BlockResult<boolean>>;
   static executeBlock(block: ExecuteJavaScriptBlock): Promise<BlockResult<any>>;
+  static executeBlock(block: ThrowErrorBlock): Promise<BlockResult<any>>;
   static executeBlock(block: Block): Promise<BlockResult>;
 
   // Implementation
@@ -233,6 +243,7 @@ export class BlockHandler {
       | ApplyLocaleBlock
       | PasteValueBlock
       | ExecuteJavaScriptBlock
+      | ThrowErrorBlock
       | KeypressBlock
       | WaitBlock
       | WaitForConditionBlock
@@ -358,6 +369,11 @@ export class BlockHandler {
         case 'execute-javascript': {
           const validatedBlock = validateExecuteJavaScriptBlock(block);
           return await handlerExecuteJavaScript(validatedBlock);
+        }
+
+        case 'throw-error': {
+          const validatedBlock = validateThrowErrorBlock(block);
+          return await handlerThrowError(validatedBlock);
         }
 
         default:

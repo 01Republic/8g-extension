@@ -295,6 +295,49 @@ export const BlockActionHandlerModal = (
                   />
                 );
               }
+              // message 필드 (throw-error 블록)는 미리 정의된 에러 메시지 드롭다운으로
+              if (field.name === "message" && blockName === "throw-error") {
+                const errorMessages = {
+                  "LOGIN_FAILED": "로그인 실패",
+                  "NETWORK_ERROR": "네트워크 오류", 
+                  "VALIDATION_ERROR": "입력값 검증 실패",
+                  "UNAUTHORIZED": "권한 없음",
+                  "FORBIDDEN": "접근 금지",
+                  "NOT_FOUND": "리소스를 찾을 수 없음",
+                  "SERVER_ERROR": "서버 오류",
+                  "TIMEOUT": "요청 시간 초과",
+                  "CONNECTION_ERROR": "연결 오류",
+                  "UNKNOWN_ERROR": "알 수 없는 오류"
+                };
+                
+                return (
+                  <div key={field.name} className="flex flex-col gap-2">
+                    <label className="text-sm font-medium">
+                      {field.name}
+                      {field.optional && " (선택)"}
+                    </label>
+                    {field.description && (
+                      <p className="text-xs text-gray-500">
+                        {field.description}
+                      </p>
+                    )}
+                    <select
+                      value={formData[field.name] || ""}
+                      onChange={(e) => {
+                        updateFormField(field.name, e.target.value || undefined);
+                      }}
+                      className="rounded-md border border-gray-200 px-3 py-2 text-sm"
+                    >
+                      <option value="">에러 메시지를 선택하세요</option>
+                      {Object.entries(errorMessages).map(([key, value]) => (
+                        <option key={key} value={key}>
+                          {key} - {value}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                );
+              }
               return (
                 <StringFieldBlock
                   key={field.name}
@@ -497,6 +540,64 @@ export const BlockActionHandlerModal = (
                     formData={formData}
                     updateFormField={updateFormField}
                   />
+                );
+              }
+              // For data in ThrowErrorBlock
+              if (field.name === "data" && blockName === "throw-error") {
+                const currentData = formData[field.name] || {};
+                return (
+                  <div key={field.name} className="flex flex-col gap-2">
+                    <label className="text-sm font-medium">
+                      {field.name}
+                      {field.optional && " (선택)"}
+                    </label>
+                    {field.description && (
+                      <p className="text-xs text-gray-500">
+                        {field.description}
+                      </p>
+                    )}
+                    <div className="border rounded-lg p-3 space-y-3">
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-medium text-gray-700">
+                          message
+                        </label>
+                        <input
+                          type="text"
+                          value={currentData.message || ""}
+                          onChange={(e) => {
+                            const newData = {
+                              ...currentData,
+                              message: e.target.value,
+                            };
+                            updateFormField(field.name, Object.keys(newData).length > 0 ? newData : undefined);
+                          }}
+                          placeholder="에러 메시지를 입력하세요"
+                          className="rounded-md border border-gray-200 px-3 py-2 text-sm"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id={`${field.name}_hasError`}
+                          checked={currentData.hasError || false}
+                          onChange={(e) => {
+                            const newData = {
+                              ...currentData,
+                              hasError: e.target.checked,
+                            };
+                            updateFormField(field.name, Object.keys(newData).length > 0 ? newData : undefined);
+                          }}
+                          className="rounded border-gray-300"
+                        />
+                        <label
+                          htmlFor={`${field.name}_hasError`}
+                          className="text-xs font-medium text-gray-700"
+                        >
+                          hasError (에러 상태)
+                        </label>
+                      </div>
+                    </div>
+                  </div>
                 );
               }
             }

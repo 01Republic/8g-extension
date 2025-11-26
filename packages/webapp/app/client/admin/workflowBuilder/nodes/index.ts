@@ -1,6 +1,8 @@
 import type { NodeTypes } from "@xyflow/react";
 import GenericBlockNode from "./GenericBlockNode";
 import { AllBlockSchemas } from "scordi-extension";
+import { blockLabels } from "8g-shared";
+
 // 모든 블록 타입을 GenericBlockNode로 자동 등록
 export const workflowNodeTypes: NodeTypes = Object.keys(AllBlockSchemas).reduce(
   (acc, blockName) => {
@@ -10,115 +12,8 @@ export const workflowNodeTypes: NodeTypes = Object.keys(AllBlockSchemas).reduce(
   {} as NodeTypes,
 );
 
-
-/**
- * Block 이름에 따른 한글 라벨 매핑
- */
-export const blockLabels: Record<
-  string,
-  { title: string; description: string }
-> = {
-  "get-text": {
-    title: "텍스트 추출",
-    description: "요소의 텍스트 추출",
-  },
-  "attribute-value": {
-    title: "속성 값 추출",
-    description: "요소의 속성 값 추출",
-  },
-  "get-value-form": {
-    title: "폼 값 가져오기",
-    description: "입력 필드 값 추출",
-  },
-  "set-value-form": {
-    title: "폼 값 설정",
-    description: "입력 필드 값 설정",
-  },
-  "clear-value-form": {
-    title: "폼 값 초기화",
-    description: "입력 필드 초기화",
-  },
-  "element-exists": {
-    title: "요소 존재 확인",
-    description: "요소 존재 여부 확인",
-  },
-  "event-click": {
-    title: "클릭 이벤트",
-    description: "요소 클릭",
-  },
-  "save-assets": {
-    title: "에셋 저장",
-    description: "이미지/미디어 URL 추출",
-  },
-  "get-element-data": {
-    title: "요소 데이터 추출",
-    description: "텍스트/속성/셀렉터 추출",
-  },
-  scroll: {
-    title: "스크롤",
-    description: "스크롤",
-  },
-  "ai-parse-data": {
-    title: "AI 데이터 파싱",
-    description: "AI 데이터 파싱",
-  },
-  keypress: {
-    title: "키 입력",
-    description: "키 입력",
-  },
-  wait: {
-    title: "대기",
-    description: "대기",
-  },
-  "fetch-api": {
-    title: "API 호출",
-    description: "API 호출",
-  },
-  "wait-for-condition": {
-    title: "조건 대기",
-    description: "조건 대기",
-  },
-  navigate: {
-    title: "페이지 이동",
-    description: "페이지 이동",
-  },
-  "transform-data": {
-    title: "데이터 변환",
-    description: "데이터 변환",
-  },
-  "export-data": {
-    title: "데이터 내보내기",
-    description: "데이터 내보내기",
-  },
-  "network-catch": {
-    title: "네트워크 응답 캐치",
-    description: "네트워크 응답 캐치",
-  },
-  "set-contenteditable": {
-    title: "ContentEditable 설정",
-    description: "ContentEditable 설정",
-  },
-  "mark-border": {
-    title: "강조 표시",
-    description: "강조 표시",
-  },
-  "apply-locale": {
-    title: "로케일 적용",
-    description: "로케일 적용",
-  },
-  "paste-value": {
-    title: "값 붙여넣기",
-    description: "값 붙여넣기",
-  },
-  "check-status": {
-    title: "로그인 상태 확인",
-    description: "로그인 상태 확인",
-  },
-  "execute-javascript": {
-    title: "JavaScript 실행",
-    description: "JavaScript 코드 실행",
-  }
-};
+// blockLabels는 8g-shared에서 import
+export { blockLabels };
 
 /**
  * 필드 이름에 따른 한글 라벨
