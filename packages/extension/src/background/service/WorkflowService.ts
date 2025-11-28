@@ -2,7 +2,7 @@ import { Block } from '@/blocks';
 import { TabManager } from '../chrome/TabManager';
 import { CollectWorkflowNewTabMessage, ErrorResponse } from '@/types/internal-messages';
 import { ExecutionContext, WorkflowRunner } from '@/workflow';
-import { WorkflowStepRunResult, WorkspaceItemDto } from '@/sdk/types';
+import { WorkflowStepRunResult } from '@/sdk/types';
 
 export type ExecutionStatusController = {
   show: (tabId: number, message?: string) => Promise<void>;

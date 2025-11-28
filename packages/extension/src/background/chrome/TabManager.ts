@@ -8,7 +8,6 @@ import {
   ShowConfirmationMessage,
 } from '@/types/internal-messages';
 import { CdpService, NetworkRequest } from '../service/CdpService';
-import { WorkspaceItemDto } from '@/sdk/types';
 
 export class TabManager {
   private activeTabs: Map<number, { url: string; createdAt: number }> = new Map();
