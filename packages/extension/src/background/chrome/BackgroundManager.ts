@@ -148,38 +148,6 @@ export class BackgroundManager {
         return true;
       }
 
-      if ((message as any).type === 'GET_SIDE_MODAL_DATA') {
-        const tabId = sender.tab?.id;
-        if (!tabId) {
-          sendResponse({ workspaces: [] });
-          return false;
-        }
-        
-        this.handleAsyncGetSideModalData(tabId, sendResponse);
-        return true;
-      }
-
-      if ((message as any).type === 'COMPLETE_WORKSPACE_SELECTION') {
-        const tabId = sender.tab?.id;
-        if (!tabId) {
-          sendResponse({ success: false });
-          return false;
-        }
-        
-        this.handleAsyncCompleteWorkspaceSelection(tabId, sendResponse);
-        return true;
-      }
-
-      if ((message as any).type === 'REFRESH_WORKSPACE_WORKFLOW') {
-        const tabId = sender.tab?.id;
-        if (!tabId) {
-          sendResponse({ success: false });
-          return false;
-        }
-        
-        this.handleAsyncRefreshWorkspaceWorkflow(tabId, sendResponse);
-        return true;
-      }
 
       sendResponse({ $isError: true, message: 'Invalid message type', data: {} } as ErrorResponse);
       return false;
@@ -249,47 +217,6 @@ export class BackgroundManager {
     }
   }
 
-  // SideModal 데이터 가져오기 요청 처리
-  private async handleAsyncGetSideModalData(
-    tabId: number,
-    sendResponse: (response: any) => void
-  ) {
-    try {
-      const data = await this.tabManager.getSideModalData(tabId);
-      sendResponse(data);
-    } catch (error) {
-      console.error('[BackgroundManager] Failed to get side modal data:', error);
-      sendResponse({ workspaces: [] });
-    }
-  }
-
-  // 워크스페이스 선택 완료 처리
-  private async handleAsyncCompleteWorkspaceSelection(
-    tabId: number,
-    sendResponse: (response: any) => void
-  ) {
-    try {
-      await this.workflowService.completeWorkspaceSelection(tabId);
-      sendResponse({ success: true });
-    } catch (error) {
-      console.error('[BackgroundManager] Failed to complete workspace selection:', error);
-      sendResponse({ success: false });
-    }
-  }
-
-  // 워크스페이스 워크플로우 재실행 처리
-  private async handleAsyncRefreshWorkspaceWorkflow(
-    tabId: number,
-    sendResponse: (response: any) => void
-  ) {
-    try {
-      await this.workflowService.refreshWorkspaceWorkflow(tabId);
-      sendResponse({ success: true });
-    } catch (error) {
-      console.error('[BackgroundManager] Failed to refresh workspace workflow:', error);
-      sendResponse({ success: false });
-    }
-  }
 
   // 탭 닫기 및 부모 탭 포커스 처리 (단계적으로 올라가면서 정리)
   private async handleAsyncCloseTabAndFocusParent(

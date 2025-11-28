@@ -3,7 +3,6 @@ import { MessageKernel } from './kernel/MessageKernel';
 import { InternalMessageHandler } from './handler/InternalMessageHandler';
 import { ExternalMessageHandler } from './handler/ExternalMessageHandler';
 import { ExecutionStatusUIContainer } from './components/ExecutionStatusUI';
-import { SideModalContainer } from './components/SideModal';
 import { refreshLocaleFromBrowser } from '../locales';
 
 // Prevent multiple injections
@@ -45,31 +44,6 @@ import { refreshLocaleFromBrowser } from '../locales';
       console.log('[8G Extension] ExecutionStatusUI mounted (top frame only)');
     };
     
-    // SideModal은 필요할 때만 동적으로 마운트
-    const mountSideModal = () => {
-      if (document.getElementById('8g-side-modal-root')) {
-        return; // 이미 마운트됨
-      }
-      
-      const sideModalRoot = document.createElement('div');
-      sideModalRoot.id = '8g-side-modal-root';
-      sideModalRoot.style.cssText = 'all: initial; position: fixed; z-index: 2147483647;';
-      document.body.appendChild(sideModalRoot);
-
-      const sideModalReactRoot = createRoot(sideModalRoot);
-      sideModalReactRoot.render(<SideModalContainer />);
-      
-      console.log('[8G Extension] SideModal mounted');
-    };
-    
-    // 이벤트 리스너로 SideModal 마운트 제어
-    window.addEventListener('8g-mount-side-modal', () => {
-      if (document.body) {
-        mountSideModal();
-      } else {
-        document.addEventListener('DOMContentLoaded', mountSideModal);
-      }
-    });
 
     // document.body가 준비되면 UI 초기화
     if (document.body) {

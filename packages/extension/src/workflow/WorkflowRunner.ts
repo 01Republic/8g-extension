@@ -13,15 +13,14 @@ export class WorkflowRunner {
   constructor(
     private executeBlock: BlockExecutor,
     private createTab: TabCreator,
-    private executeWithHooks: (tabId: number, run: () => Promise<{steps: WorkflowStepRunResult<any>[], tabId: number, context: ExecutionContext}>, workflowType?: string, workflowRequest?: any) => Promise<{steps: WorkflowStepRunResult<any>[], tabId: number, context: ExecutionContext}>,
+    private executeWithHooks: (tabId: number, run: () => Promise<{steps: WorkflowStepRunResult<any>[], tabId: number, context: ExecutionContext}>) => Promise<{steps: WorkflowStepRunResult<any>[], tabId: number, context: ExecutionContext}>,
   ) {}
 
   async run(
     workflow: Workflow,
     targetUrl: string,
     activateTab: boolean = false,
-    originTabId?: number,
-    workflowRequest?: any
+    originTabId?: number
   ) {
     let context = createExecutionContext();
 
@@ -52,32 +51,7 @@ export class WorkflowRunner {
       });
 
       return { steps: results, tabId, context: finalContext };
-    }, workflow.workflowType, workflowRequest);
+    });
   }
 
-  async runInExistingTab(
-    workflow: Workflow,
-    tabId: number,
-    workflowRequest?: any
-  ) {
-    let context = createExecutionContext();
-
-    // workflow.vars가 있으면 초기 변수 설정
-    if (workflow.vars) {
-      context = setVarsInContext(context, workflow.vars);
-    }
-
-    return this.executeWithHooks(tabId, async () => {
-      const stepsById = new Map(workflow.steps.map((s) => [s.id, s]));
-      const { results, context: finalContext } = await executeWorkflowSegment({
-        currentId: workflow.start,
-        context,
-        stepsById,
-        tabId,
-        executeBlock: this.executeBlock,
-      });
-
-      return { steps: results, tabId, context: finalContext };
-    }, workflow.workflowType, workflowRequest);
-  }
 }

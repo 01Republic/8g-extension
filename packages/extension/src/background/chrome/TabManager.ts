@@ -18,8 +18,6 @@ export class TabManager {
   private tabOrigins: Map<number, number> = new Map();
   // 워크플로우 실행 중인 탭에서 열린 새 탭 추적 (Map<childTabId, parentTabId>)
   private trackedChildTabs: Map<number, number> = new Map();
-  // getworkspaces를 저장하기 위한 Map<tabId, workspaces>
-  private workspaces: Map<number, WorkspaceItemDto[]> = new Map();
 
   constructor(cdpService: CdpService) {
     this.cdpService = cdpService;
@@ -832,120 +830,6 @@ export class TabManager {
     return this.findRootParentTab(tabId);
   }
 
-  // SideModal 관련 메소드들
-  async showSideModal(tabId: number): Promise<void> {
-    if (this.isTabClosed(tabId)) {
-      console.log('[TabManager] Cannot show side modal - tab was closed:', tabId);
-      return;
-    }
-
-    const workspaces = this.workspaces.get(tabId) || [];
-    console.log('[TabManager] Showing side modal with workspaces:', workspaces);
-    
-    try {
-      await chrome.tabs.sendMessage(tabId, { 
-        type: 'SHOW_SIDE_MODAL', 
-        data: { workspaces } 
-      });
-      console.log('[TabManager] Side modal shown for tab:', tabId);
-    } catch (error) {
-      console.warn('[TabManager] Failed to show side modal:', error);
-    }
-  }
-
-  async hideSideModal(tabId: number): Promise<void> {
-    if (this.isTabClosed(tabId)) {
-      console.log('[TabManager] Cannot hide side modal - tab was closed:', tabId);
-      return;
-    }
-
-    try {
-      await chrome.tabs.sendMessage(tabId, { type: 'HIDE_SIDE_MODAL' });
-      console.log('[TabManager] Side modal hidden for tab:', tabId);
-    } catch (error) {
-      console.warn('[TabManager] Failed to hide side modal:', error);
-    }
-  }
-
-  async openSideModal(tabId: number): Promise<void> {
-    await this.showSideModal(tabId);
-  }
-
-  async closeSideModal(tabId: number): Promise<void> {
-    await this.hideSideModal(tabId);
-  }
-
-  async setWorkspaces(tabId: number, workspaces: WorkspaceItemDto[]): Promise<void> {
-    console.log('[TabManager] Setting workspaces for tab:', tabId, workspaces);
-    this.workspaces.set(tabId, workspaces);
-    
-    // 해당 탭에 워크스페이스 데이터 전송
-    if (!this.isTabClosed(tabId)) {
-      try {
-        await chrome.tabs.sendMessage(tabId, { 
-          type: 'UPDATE_SIDE_MODAL_WORKSPACES', 
-          data: { workspaces } 
-        });
-        console.log('[TabManager] Sent workspaces to tab:', tabId);
-      } catch (error) {
-        console.warn(`[TabManager] Failed to update workspaces for tab ${tabId}:`, error);
-      }
-    }
-  }
-
-  async updateSideModalSiteInfo(tabId: number, siteName: string, favicon?: string): Promise<void> {
-    if (this.isTabClosed(tabId)) {
-      console.log('[TabManager] Cannot update site info - tab was closed:', tabId);
-      return;
-    }
-
-    try {
-      await chrome.tabs.sendMessage(tabId, { 
-        type: 'UPDATE_SIDE_MODAL_SITE_INFO', 
-        data: { siteName, favicon } 
-      });
-      console.log('[TabManager] Site info updated for tab:', tabId);
-    } catch (error) {
-      console.warn('[TabManager] Failed to update site info:', error);
-    }
-  }
-
-  async setSideModalLoginStatus(tabId: number, isLoggedIn: boolean): Promise<void> {
-    if (this.isTabClosed(tabId)) {
-      console.log('[TabManager] Cannot set login status - tab was closed:', tabId);
-      return;
-    }
-
-    try {
-      await chrome.tabs.sendMessage(tabId, { 
-        type: 'UPDATE_SIDE_MODAL_LOGIN_STATUS', 
-        data: { isLoggedIn } 
-      });
-      console.log('[TabManager] Login status updated for tab:', tabId);
-    } catch (error) {
-      console.warn('[TabManager] Failed to update login status:', error);
-    }
-  }
-
-  async isSideModalOpen(tabId: number): Promise<boolean> {
-    if (this.isTabClosed(tabId)) {
-      return false;
-    }
-
-    try {
-      const response = await chrome.tabs.sendMessage(tabId, { type: 'GET_SIDE_MODAL_STATUS' });
-      return response?.isOpen || false;
-    } catch (error) {
-      console.warn('[TabManager] Failed to get side modal status:', error);
-      return false;
-    }
-  }
-
-  async getSideModalData(tabId: number): Promise<{ workspaces: WorkspaceItemDto[] }> {
-    const workspaces = this.workspaces.get(tabId) || [];
-    console.log('[TabManager] Getting side modal data for tab:', tabId, workspaces);
-    return { workspaces };
-  }
 
   async reloadTab(tabId: number): Promise<void> {
     if (this.isTabClosed(tabId)) {
