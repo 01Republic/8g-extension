@@ -9,7 +9,6 @@ import {
 } from '@/types/internal-messages';
 import { MESSAGE_TYPES } from '@/content/dom/ChromeDOMProvider';
 import { CdpService, NetworkRequest } from '../service/CdpService';
-import { WorkspaceItemDto } from '@/sdk/types';
 
 export class TabManager {
   private activeTabs: Map<number, { url: string; createdAt: number }> = new Map();
