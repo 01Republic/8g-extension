@@ -1,4 +1,4 @@
-import type { Block } from '@/blocks';
+import type { Block } from '@8g/workflow-engine';
 import type { RepeatConfig } from '@/sdk/types';
 import type { ExecutionContext } from '../context';
 import {

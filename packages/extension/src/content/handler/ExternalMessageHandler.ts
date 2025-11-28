@@ -4,6 +4,7 @@ import {
   CollectWorkflowMessage,
 } from '@/types/external-messages';
 import { CollectWorkflowNewTabMessage } from '@/types/internal-messages';
+import { MESSAGE_TYPES } from '@/content/dom/ChromeDOMProvider';
 import { MessageKernel } from '../kernel/MessageKernel';
 
 /**
@@ -62,7 +63,7 @@ export class ExternalMessageHandler {
       this.validateCollectWorkflowMessage(message);
 
       const backgroundMessage: CollectWorkflowNewTabMessage = {
-        type: 'COLLECT_WORKFLOW_NEW_TAB',
+        type: MESSAGE_TYPES.COLLECT_WORKFLOW_NEW_TAB,
         data: {
           targetUrl: message.targetUrl,
           workflow: message.workflow,

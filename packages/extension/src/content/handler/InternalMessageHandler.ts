@@ -7,6 +7,7 @@ import {
   isCloseTabMessage,
   isTriggerConfirmationMessage,
 } from '@/types/internal-messages';
+import { MESSAGE_TYPES } from '@/content/dom/ChromeDOMProvider';
 import { MessageKernel } from '../kernel/MessageKernel';
 
 /**
@@ -76,7 +77,7 @@ export class InternalMessageHandler {
 
                 // Background에 탭 닫기 요청
                 chrome.runtime.sendMessage({
-                  type: 'CLOSE_TAB_AND_FOCUS_PARENT',
+                  type: MESSAGE_TYPES.CLOSE_TAB_AND_FOCUS_PARENT,
                   data: { parentTabId },
                 });
 
@@ -113,7 +114,7 @@ export class InternalMessageHandler {
         // Content script에서는 직접 탭을 닫을 수 없으므로 background로 요청
         const { parentTabId } = message.data;
         chrome.runtime.sendMessage({
-          type: 'CLOSE_TAB_AND_FOCUS_PARENT',
+          type: MESSAGE_TYPES.CLOSE_TAB_AND_FOCUS_PARENT,
           data: { parentTabId },
         });
         sendResponse({ success: true });

@@ -1,7 +1,7 @@
-import { Block } from '@/blocks';
+import type { Block } from '@8g/workflow-engine';
 import { TabManager } from '../chrome/TabManager';
 import { CollectWorkflowNewTabMessage, ErrorResponse } from '@/types/internal-messages';
-import { ExecutionContext, WorkflowRunner } from '@/workflow';
+import { ExecutionContext, WorkflowRunner } from '@8g/workflow-engine';
 import { WorkflowStepRunResult, WorkspaceItemDto } from '@/sdk/types';
 
 export type ExecutionStatusController = {

@@ -11,6 +11,7 @@ export default defineConfig({
     emptyOutDir: false, // SDK 디렉토리를 보존
   },
   resolve: {
+    conditions: ['development', 'import'],
     alias: {
       '@': `${path.resolve(__dirname, 'src')}`,
     },

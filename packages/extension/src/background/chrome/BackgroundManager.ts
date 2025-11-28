@@ -16,6 +16,7 @@ import {
   isNetworkCatchMessage,
   ErrorResponse,
 } from '@/types/internal-messages';
+import { MESSAGE_TYPES } from '@/content/dom/ChromeDOMProvider';
 import { AiParsingService } from '../service/AiParsingService';
 import { CdpService } from '../service/CdpService';
 import { WorkflowService } from '../service/WorkflowService';
@@ -44,7 +45,7 @@ export class BackgroundManager {
   initHandler() {
     // Chrome runtime message handler (internal communication)
     chrome.runtime.onMessage.addListener((message: BackgroundMessage, sender, sendResponse) => {
-      if ((message as any).type === 'COLLECT_WORKFLOW_NEW_TAB') {
+      if ((message as any).type === MESSAGE_TYPES.COLLECT_WORKFLOW_NEW_TAB) {
         const workflowMessage = message as CollectWorkflowNewTabMessage;
         const requestData = {
           ...workflowMessage.data,
@@ -54,7 +55,7 @@ export class BackgroundManager {
         return true;
       }
 
-      if ((message as any).type === 'CDP_CLICK' && isCdpClickMessage(message)) {
+      if ((message as any).type === MESSAGE_TYPES.CDP_CLICK && isCdpClickMessage(message)) {
         // Get tabId from sender
         const tabId = sender.tab?.id;
         if (!tabId) {
@@ -69,7 +70,7 @@ export class BackgroundManager {
         return true;
       }
 
-      if ((message as any).type === 'CDP_KEYPRESS' && isCdpKeypressMessage(message)) {
+      if ((message as any).type === MESSAGE_TYPES.CDP_KEYPRESS && isCdpKeypressMessage(message)) {
         // Get tabId from sender
         const tabId = sender.tab?.id;
         if (!tabId) {
@@ -85,7 +86,7 @@ export class BackgroundManager {
       }
 
       if (
-        (message as any).type === 'CDP_EXECUTE_JAVASCRIPT' &&
+        (message as any).type === MESSAGE_TYPES.CDP_EXECUTE_JAVASCRIPT &&
         isCdpExecuteJavaScriptMessage(message)
       ) {
         // Get tabId from sender
@@ -102,22 +103,22 @@ export class BackgroundManager {
         return true;
       }
 
-      if ((message as any).type === 'AI_PARSE_DATA') {
+      if ((message as any).type === MESSAGE_TYPES.AI_PARSE_DATA) {
         this.handleAsyncAiParseData((message as any).data, sendResponse);
         return true;
       }
 
-      if ((message as any).type === 'FETCH_API' && isFetchApiMessage(message)) {
+      if ((message as any).type === MESSAGE_TYPES.FETCH_API && isFetchApiMessage(message)) {
         this.handleAsyncFetchApi(message.data, sendResponse);
         return true;
       }
 
-      if ((message as any).type === 'EXPORT_DATA' && isExportDataMessage(message)) {
+      if ((message as any).type === MESSAGE_TYPES.EXPORT_DATA && isExportDataMessage(message)) {
         this.handleAsyncExportData(message.data, sendResponse);
         return true;
       }
 
-      if ((message as any).type === 'NETWORK_CATCH' && isNetworkCatchMessage(message)) {
+      if ((message as any).type === MESSAGE_TYPES.NETWORK_CATCH && isNetworkCatchMessage(message)) {
         const tabId = message.data.tabId || sender.tab?.id;
         if (!tabId) {
           sendResponse({
@@ -131,7 +132,7 @@ export class BackgroundManager {
         return true;
       }
 
-      if ((message as any).type === 'CLOSE_TAB_AND_FOCUS_PARENT') {
+      if ((message as any).type === MESSAGE_TYPES.CLOSE_TAB_AND_FOCUS_PARENT) {
         const tabId = sender.tab?.id;
         const parentTabId = (message as any).data?.parentTabId;
 
@@ -147,7 +148,6 @@ export class BackgroundManager {
         this.handleAsyncCloseTabAndFocusParent(tabId, parentTabId, sendResponse);
         return true;
       }
-
 
       sendResponse({ $isError: true, message: 'Invalid message type', data: {} } as ErrorResponse);
       return false;
@@ -289,7 +289,7 @@ export class BackgroundManager {
         try {
           // wait-for-condition 블록에서 대기 중인 확인 이벤트 트리거
           await chrome.tabs.sendMessage(executingWorkflowTabId, {
-            type: 'TRIGGER_CONFIRMATION',
+            type: MESSAGE_TYPES.TRIGGER_CONFIRMATION,
             data: {},
           });
         } catch (error) {

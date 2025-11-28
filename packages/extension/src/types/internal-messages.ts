@@ -1,16 +1,17 @@
-import { Block, BlockResult } from '@/blocks';
+import type { Block, BlockResult } from '@8g/workflow-engine';
 import type { Workflow } from '@/sdk/types';
+import { MESSAGE_TYPES } from '@/content/dom/ChromeDOMProvider';
 
 // Background -> Content Script Messages
 export interface ExecuteBlockMessage {
   isBlock: true;
-  type: 'EXECUTE_BLOCK';
+  type: typeof MESSAGE_TYPES.EXECUTE_BLOCK;
   data: Block;
 }
 
 // Content Script -> Background Messages
 export interface CollectWorkflowNewTabMessage {
-  type: 'COLLECT_WORKFLOW_NEW_TAB';
+  type: typeof MESSAGE_TYPES.COLLECT_WORKFLOW_NEW_TAB;
   data: {
     targetUrl: string;
     workflow: Workflow;
@@ -21,7 +22,7 @@ export interface CollectWorkflowNewTabMessage {
 }
 
 export interface CdpClickMessage {
-  type: 'CDP_CLICK';
+  type: typeof MESSAGE_TYPES.CDP_CLICK;
   data: {
     x: number;
     y: number;
@@ -29,7 +30,7 @@ export interface CdpClickMessage {
 }
 
 export interface CdpKeypressMessage {
-  type: 'CDP_KEYPRESS';
+  type: typeof MESSAGE_TYPES.CDP_KEYPRESS;
   data: {
     key: string;
     code: string;
@@ -39,7 +40,7 @@ export interface CdpKeypressMessage {
 }
 
 export interface CdpExecuteJavaScriptMessage {
-  type: 'CDP_EXECUTE_JAVASCRIPT';
+  type: typeof MESSAGE_TYPES.CDP_EXECUTE_JAVASCRIPT;
   data: {
     code: string;
     returnResult: boolean;
@@ -48,7 +49,7 @@ export interface CdpExecuteJavaScriptMessage {
 }
 
 export interface FetchApiMessage {
-  type: 'FETCH_API';
+  type: typeof MESSAGE_TYPES.FETCH_API;
   data: {
     url: string;
     method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS';
@@ -61,7 +62,7 @@ export interface FetchApiMessage {
 }
 
 export interface ExportDataMessage {
-  type: 'EXPORT_DATA';
+  type: typeof MESSAGE_TYPES.EXPORT_DATA;
   data: {
     data: any;
     format: 'json' | 'csv' | 'xlsx';
@@ -74,7 +75,7 @@ export interface ExportDataMessage {
 }
 
 export interface NetworkCatchMessage {
-  type: 'NETWORK_CATCH';
+  type: typeof MESSAGE_TYPES.NETWORK_CATCH;
   data: {
     tabId?: number; // Optional tabId, will use sender tab if not provided
     urlPattern?: string;
@@ -91,7 +92,7 @@ export interface NetworkCatchMessage {
 
 // UI Control Messages
 export interface ShowExecutionStatusMessage {
-  type: 'SHOW_EXECUTION_STATUS';
+  type: typeof MESSAGE_TYPES.SHOW_EXECUTION_STATUS;
   data: {
     message?: string;
     statusType?: 'loading' | 'success' | 'error';
@@ -101,11 +102,11 @@ export interface ShowExecutionStatusMessage {
 }
 
 export interface HideExecutionStatusMessage {
-  type: 'HIDE_EXECUTION_STATUS';
+  type: typeof MESSAGE_TYPES.HIDE_EXECUTION_STATUS;
 }
 
 export interface ShowConfirmationMessage {
-  type: 'SHOW_CONFIRMATION';
+  type: typeof MESSAGE_TYPES.SHOW_CONFIRMATION;
   data: {
     message: string;
     buttonText?: string; // 워크플로우 실행 중에는 버튼 없이 정보만 표시
@@ -118,14 +119,14 @@ export interface ShowConfirmationMessage {
 }
 
 export interface CloseTabMessage {
-  type: 'CLOSE_TAB';
+  type: typeof MESSAGE_TYPES.CLOSE_TAB;
   data: {
     parentTabId?: number; // 닫은 후 포커스할 부모 탭 ID
   };
 }
 
 export interface TriggerConfirmationMessage {
-  type: 'TRIGGER_CONFIRMATION';
+  type: typeof MESSAGE_TYPES.TRIGGER_CONFIRMATION;
   data: {};
 }
 
@@ -158,51 +159,51 @@ export type BlockExecutionResponse = BlockResult | ErrorResponse;
 
 // Type guards for internal messages
 export function isExecuteBlockMessage(message: any): message is ExecuteBlockMessage {
-  return message && message.isBlock === true && message.type === 'EXECUTE_BLOCK';
+  return message && message.isBlock === true && message.type === MESSAGE_TYPES.EXECUTE_BLOCK;
 }
 
 export function isCdpClickMessage(message: any): message is CdpClickMessage {
-  return message && message.type === 'CDP_CLICK';
+  return message && message.type === MESSAGE_TYPES.CDP_CLICK;
 }
 
 export function isCdpKeypressMessage(message: any): message is CdpKeypressMessage {
-  return message && message.type === 'CDP_KEYPRESS';
+  return message && message.type === MESSAGE_TYPES.CDP_KEYPRESS;
 }
 
 export function isCdpExecuteJavaScriptMessage(message: any): message is CdpExecuteJavaScriptMessage {
-  return message && message.type === 'CDP_EXECUTE_JAVASCRIPT';
+  return message && message.type === MESSAGE_TYPES.CDP_EXECUTE_JAVASCRIPT;
 }
 
 export function isFetchApiMessage(message: any): message is FetchApiMessage {
-  return message && message.type === 'FETCH_API';
+  return message && message.type === MESSAGE_TYPES.FETCH_API;
 }
 
 export function isExportDataMessage(message: any): message is ExportDataMessage {
-  return message && message.type === 'EXPORT_DATA';
+  return message && message.type === MESSAGE_TYPES.EXPORT_DATA;
 }
 
 export function isNetworkCatchMessage(message: any): message is NetworkCatchMessage {
-  return message && message.type === 'NETWORK_CATCH';
+  return message && message.type === MESSAGE_TYPES.NETWORK_CATCH;
 }
 
 export function isShowExecutionStatusMessage(message: any): message is ShowExecutionStatusMessage {
-  return message && message.type === 'SHOW_EXECUTION_STATUS';
+  return message && message.type === MESSAGE_TYPES.SHOW_EXECUTION_STATUS;
 }
 
 export function isHideExecutionStatusMessage(message: any): message is HideExecutionStatusMessage {
-  return message && message.type === 'HIDE_EXECUTION_STATUS';
+  return message && message.type === MESSAGE_TYPES.HIDE_EXECUTION_STATUS;
 }
 
 export function isShowConfirmationMessage(message: any): message is ShowConfirmationMessage {
-  return message && message.type === 'SHOW_CONFIRMATION';
+  return message && message.type === MESSAGE_TYPES.SHOW_CONFIRMATION;
 }
 
 export function isCloseTabMessage(message: any): message is CloseTabMessage {
-  return message && message.type === 'CLOSE_TAB';
+  return message && message.type === MESSAGE_TYPES.CLOSE_TAB;
 }
 
 export function isTriggerConfirmationMessage(message: any): message is TriggerConfirmationMessage {
-  return message && message.type === 'TRIGGER_CONFIRMATION';
+  return message && message.type === MESSAGE_TYPES.TRIGGER_CONFIRMATION;
 }
 
 export function isErrorResponse(response: any): response is ErrorResponse {

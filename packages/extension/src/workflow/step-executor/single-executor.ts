@@ -1,4 +1,4 @@
-import type { Block } from '@/blocks';
+import type { Block } from '@8g/workflow-engine';
 import type { ExecutionContext } from '../context';
 import { resolveBindings } from '../context';
 import type { BlockExecutor, StepExecutionResult } from './types';

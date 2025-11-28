@@ -1,4 +1,4 @@
-import type { Block, BlockResult } from '@/blocks';
+import type { Block, BlockResult } from '@8g/workflow-engine';
 import type { ExecutionContext } from '../context';
 
 /**

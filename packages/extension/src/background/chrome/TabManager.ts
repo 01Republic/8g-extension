@@ -1,4 +1,4 @@
-import { Block, BlockResult } from '@/blocks';
+import type { Block, BlockResult } from '@8g/workflow-engine';
 import {
   ExecuteBlockMessage,
   BlockExecutionResponse,
@@ -7,6 +7,7 @@ import {
   HideExecutionStatusMessage,
   ShowConfirmationMessage,
 } from '@/types/internal-messages';
+import { MESSAGE_TYPES } from '@/content/dom/ChromeDOMProvider';
 import { CdpService, NetworkRequest } from '../service/CdpService';
 import { WorkspaceItemDto } from '@/sdk/types';
 
@@ -302,7 +303,7 @@ export class TabManager {
     }
 
     const statusMessage: ShowExecutionStatusMessage = {
-      type: 'SHOW_EXECUTION_STATUS',
+      type: MESSAGE_TYPES.SHOW_EXECUTION_STATUS,
       data: {
         message: displayMessage,
         statusType: statusType || 'loading',
@@ -350,7 +351,7 @@ export class TabManager {
     this.executingWorkflowTabs.delete(tabId);
 
     const statusMessage: HideExecutionStatusMessage = {
-      type: 'HIDE_EXECUTION_STATUS',
+      type: MESSAGE_TYPES.HIDE_EXECUTION_STATUS,
     };
 
     try {
@@ -377,7 +378,7 @@ export class TabManager {
     }
 
     const confirmationMessage: ShowConfirmationMessage = {
-      type: 'SHOW_CONFIRMATION',
+      type: MESSAGE_TYPES.SHOW_CONFIRMATION,
       data: {
         message: message || '로그인 완료 후 확인 버튼을 클릭해주세요.',
         buttonText: buttonText, // undefined일 수 있음 (워크플로우 실행 중)
@@ -427,7 +428,7 @@ export class TabManager {
     return new Promise((resolve, reject) => {
       const message: ExecuteBlockMessage = {
         isBlock: true,
-        type: 'EXECUTE_BLOCK',
+        type: MESSAGE_TYPES.EXECUTE_BLOCK,
         data: blockData,
       };
 

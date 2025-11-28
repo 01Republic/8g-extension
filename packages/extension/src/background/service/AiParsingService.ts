@@ -70,7 +70,7 @@ export class AiParsingService {
    */
   async parseData(request: AiParsingRequest): Promise<AiParsingResult> {
     try {
-      const { sourceData, schemaDefinition, prompt, model, apiKey, provider } = request;
+      const { schemaDefinition, prompt, model, apiKey, provider } = request;
 
       // API 키 확인
       if (!apiKey || apiKey.trim() === '') {
@@ -94,11 +94,8 @@ export class AiParsingService {
         temperature: 0, // 일관된 출력을 위해 0으로 설정
       });
 
-      // 프롬프트 구성
-      const systemPrompt = this.buildPrompt(sourceData, schemaDefinition, prompt);
-
-      // AI 호출
-      const result = await aiModel.parseStructuredData(systemPrompt, zodSchema);
+      // AI 호출 (prompt는 workflow-engine에서 이미 구성됨)
+      const result = await aiModel.parseStructuredData(prompt || '', zodSchema);
 
       // 배열 스키마인 경우 wrapper 제거
       const finalResult =
@@ -211,65 +208,4 @@ export class AiParsingService {
     return zodType;
   }
 
-  /**
-   * AI에게 전달할 프롬프트 구성
-   */
-  private buildPrompt(sourceData: any, schemaDefinition: any, customPrompt?: string): string {
-    const dataString =
-      typeof sourceData === 'string' ? sourceData : JSON.stringify(sourceData, null, 2);
-
-    const schemaDescription = this.describeSchema(schemaDefinition);
-    const isArraySchema = schemaDefinition.type === 'array';
-
-    let prompt = `You are a data parsing assistant. Your task is to extract and structure data according to the provided schema.
-
-Source Data:
-\`\`\`
-${dataString}
-\`\`\`
-
-Expected Output Schema:
-${schemaDescription}
-
-${customPrompt ? `\nAdditional Instructions:\n${customPrompt}\n` : ''}
-
-Please parse the source data and return it in the exact format specified by the schema. Extract all relevant information and ensure the data types match the schema.${isArraySchema ? '\n\nIMPORTANT: Return the array in an object with "items" field: { items: [...your array here...] }' : ''}`;
-
-    return prompt;
-  }
-
-  /**
-   * 스키마를 사람이 읽을 수 있는 형식으로 설명
-   */
-  private describeSchema(schemaDefinition: any, indent = 0): string {
-    const spaces = '  '.repeat(indent);
-
-    if (schemaDefinition.type === 'array' && schemaDefinition.items) {
-      return `Array<${this.describeSchema(schemaDefinition.items, 0)}>`;
-    }
-
-    if (schemaDefinition.type === 'object' && schemaDefinition.shape) {
-      let description = `${spaces}{\n`;
-      for (const [key, fieldDef] of Object.entries(schemaDefinition.shape)) {
-        const optional = (fieldDef as any).optional ? ' (nullable)' : '';
-        const desc = (fieldDef as any).description ? ` // ${(fieldDef as any).description}` : '';
-        description += `${spaces}  ${key}: ${this.describeSchema(fieldDef, indent + 1)}${optional}${desc}\n`;
-      }
-      description += `${spaces}}`;
-      return description;
-    }
-
-    // currency 타입인 경우
-    if (schemaDefinition.type === 'currency') {
-      return '{ code: string, symbol: string, format: string, amount: number, text: string }';
-    }
-
-    // enum이 있는 경우 enum 값들 표시
-    if (schemaDefinition.enum && Array.isArray(schemaDefinition.enum)) {
-      const valuesStr = schemaDefinition.enum.map((v: any) => JSON.stringify(v)).join(' | ');
-      return valuesStr;
-    }
-
-    return schemaDefinition.type || 'any';
-  }
 }

@@ -47,3 +47,7 @@ function buildSelector(selector: string, findBy: 'cssSelector' | 'xpath') {
 }
 
 export { CSSSelectorGenerator } from './utils/CSSSelectorGenerator';
+export { pasteText } from './utils/paste';
+export { dispatchClickEvents, scrollIntoViewAndFocus, getElementCenter } from './utils/click';
+export { scrollToElement, scrollToBottom, scrollByDistance, scrollUntilLoaded } from './utils/scroll';
+export { convertToCSV } from './utils/csv';

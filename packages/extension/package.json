@@ -41,6 +41,7 @@
     "release": "shipjs prepare"
   },
   "dependencies": {
+    "@8g/workflow-engine": "workspace:*",
     "@langchain/anthropic": "^1.0.0",
     "@langchain/core": "^1.0.1",
     "@langchain/openai": "^1.0.0",

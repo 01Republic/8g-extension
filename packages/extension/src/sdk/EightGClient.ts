@@ -19,7 +19,7 @@ import {
 } from './types';
 import { EightGError } from './errors';
 import { ExtensionResponseMessage, isExtensionResponseMessage } from '@/types/external-messages';
-import { THROW_ERROR_MESSAGES } from '@/blocks/ThrowErrorBlock';
+import { THROW_ERROR_MESSAGES } from '@8g/workflow-engine';
 import { z } from 'zod';
 
 /**

@@ -1,4 +1,4 @@
-import { Block } from '../blocks';
+import type { Block } from '@8g/workflow-engine';
 import type {
   StepResult as WorkflowStepResult,
   ForEachContext as WorkflowForEachContext,
@@ -6,7 +6,7 @@ import type {
 } from '../workflow/context/execution-context';
 import { z } from 'zod';
 
-export * from '../blocks';
+export type { Block } from '@8g/workflow-engine';
 
 // =========================
 // Execution Context Types

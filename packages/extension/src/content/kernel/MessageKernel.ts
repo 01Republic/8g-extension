@@ -1,9 +1,10 @@
-import { Block, BlockResult } from '@/blocks';
+import type { Block, BlockResult } from '@8g/workflow-engine';
 import {
   CollectWorkflowNewTabMessage,
   ErrorResponse,
   isErrorResponse,
 } from '@/types/internal-messages';
+import { MESSAGE_TYPES } from '@/content/dom/ChromeDOMProvider';
 
 /**
  * 메시지 처리 커널
@@ -32,8 +33,7 @@ export class MessageKernel {
    * Content script에서 Block 실행
    */
   async executeBlock(block: Block): Promise<BlockResult> {
-    // 동적 import로 circular dependency 방지
-    const { BlockHandler } = await import('@/blocks');
+    const { BlockHandler } = await import('@/content/executor');
     const { synchronizedLock } = await import('../utils');
 
     await synchronizedLock.getLock();
@@ -49,7 +49,7 @@ export class MessageKernel {
    * Chrome runtime 메시지 처리 (Background -> Content)
    */
   async handleRuntimeMessage(message: any): Promise<BlockResult | ErrorResponse> {
-    if (message?.isBlock && message?.type === 'EXECUTE_BLOCK') {
+    if (message?.isBlock && message?.type === MESSAGE_TYPES.EXECUTE_BLOCK) {
       try {
         const result = await this.executeBlock(message.data);
         return result;
