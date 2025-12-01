@@ -44,49 +44,29 @@ async function simulateKeypress(
   keyCode?: number,
   modifiers: string[] = []
 ): Promise<void> {
-  // Use CDP to press key via background service (isTrusted: true)
-  try {
-    const response = await chrome.runtime.sendMessage({
-      type: 'CDP_KEYPRESS',
-      data: {
-        key,
-        code: code || key,
-        keyCode: keyCode || getKeyCodeFromKey(key),
-        modifiers,
-      },
-    });
+  // Use native KeyboardEvent dispatch (isTrusted: false)
+  // CDP 제거: 사용자 인터랙션 차단 기능과 호환을 위해 Fallback만 사용
+  const keydownEvent = new KeyboardEvent('keydown', {
+    key,
+    code: code || key,
+    keyCode: keyCode || getKeyCodeFromKey(key),
+    bubbles: true,
+    cancelable: true,
+    ...getModifierStates(modifiers),
+  });
 
-    if (response && !response.$isError) {
-      console.log('[Keypress] CDP keypress successful:', response);
-    } else {
-      throw new Error(response?.message || 'CDP keypress failed');
-    }
-  } catch (error) {
-    console.error('[Keypress] CDP keypress failed, falling back to native dispatch:', error);
+  const keyupEvent = new KeyboardEvent('keyup', {
+    key,
+    code: code || key,
+    keyCode: keyCode || getKeyCodeFromKey(key),
+    bubbles: true,
+    cancelable: true,
+    ...getModifierStates(modifiers),
+  });
 
-    // Fallback: Use native KeyboardEvent dispatch
-    const keydownEvent = new KeyboardEvent('keydown', {
-      key,
-      code: code || key,
-      keyCode: keyCode || getKeyCodeFromKey(key),
-      bubbles: true,
-      cancelable: true,
-      ...getModifierStates(modifiers),
-    });
-
-    const keyupEvent = new KeyboardEvent('keyup', {
-      key,
-      code: code || key,
-      keyCode: keyCode || getKeyCodeFromKey(key),
-      bubbles: true,
-      cancelable: true,
-      ...getModifierStates(modifiers),
-    });
-
-    document.dispatchEvent(keydownEvent);
-    await new Promise((resolve) => setTimeout(resolve, 10));
-    document.dispatchEvent(keyupEvent);
-  }
+  document.dispatchEvent(keydownEvent);
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  document.dispatchEvent(keyupEvent);
 
   // Small delay to ensure key press is processed
   await new Promise((resolve) => setTimeout(resolve, 50));

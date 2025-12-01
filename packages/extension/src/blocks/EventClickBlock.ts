@@ -213,37 +213,10 @@ async function simulateClickElement(element: HTMLElement): Promise<void> {
     element.focus();
   }
 
-  // 3. Get element position for realistic coordinates
-  const rect = element.getBoundingClientRect();
-  const centerX = rect.left + rect.width / 2;
-  const centerY = rect.top + rect.height / 2;
+  // 3. Use native MouseEvent dispatch (isTrusted: false)
+  // CDP 제거: 사용자 인터랙션 차단 기능과 호환을 위해 Fallback만 사용
+  dispatchClickEvent(element);
 
-  // 4. Use CDP to click via background service (isTrusted: true)
-  // Note: tabId will be automatically detected by background service from sender.tab.id
-  try {
-    const response = await chrome.runtime.sendMessage({
-      type: 'CDP_CLICK',
-      data: {
-        x: centerX,
-        y: centerY,
-      },
-    });
-
-    if (response && !response.$isError) {
-      console.log('[EventClick] CDP click successful:', response);
-    } else {
-      throw new Error(response?.message || 'CDP click failed');
-    }
-  } catch (error) {
-    console.error(
-      '[EventClick] CDP click failed, falling back to native MouseEvent dispatch:',
-      error
-    );
-
-    // Fallback: Use native MouseEvent dispatch (isTrusted: false but works)
-    dispatchClickEvent(element);
-  }
-
-  // 5. Small delay to ensure click is processed
+  // 4. Small delay to ensure click is processed
   await new Promise((resolve) => setTimeout(resolve, 50));
 }
