@@ -47,19 +47,14 @@ export class WorkflowService {
     };
 
     const executeWithHooks = async (
-      tabId: number, 
+      _tabId: number,
       run: () => Promise<{steps: WorkflowStepRunResult<any>[], tabId: number, context: ExecutionContext}>
     ) => {
-      try {
-        // 일반 워크플로우는 ExecutionStatus UI 사용
-        await this.statusController.show(tabId, '워크플로우 실행 중');
-        const result = await run();
-        return result;
-      } finally {
-        await this.statusController.hide(tabId);
-      }
+      // UI show/hide는 WorkflowRunner에서 처리
+      const result = await run();
+      return result;
     };
-    this.workflowRunner = new WorkflowRunner(executeBlock, createTab, executeWithHooks);
+    this.workflowRunner = new WorkflowRunner(executeBlock, createTab, executeWithHooks, this.statusController);
   }
   /**
    * 워크플로우 실행 요청을 처리하고 응답을 전송합니다.

@@ -9,11 +9,17 @@ export type TabCreator = (
   originTabId?: number
 ) => Promise<number>;
 
+export type StatusController = {
+  show: (tabId: number, message?: string) => Promise<void>;
+  hide: (tabId: number) => Promise<void>;
+};
+
 export class WorkflowRunner {
   constructor(
     private executeBlock: BlockExecutor,
     private createTab: TabCreator,
     private executeWithHooks: (tabId: number, run: () => Promise<{steps: WorkflowStepRunResult<any>[], tabId: number, context: ExecutionContext}>) => Promise<{steps: WorkflowStepRunResult<any>[], tabId: number, context: ExecutionContext}>,
+    private statusController: StatusController,
   ) {}
 
   async run(
@@ -37,21 +43,26 @@ export class WorkflowRunner {
       typeof targetUrl === 'string' ? resolveBindings(targetUrl, context) : targetUrl;
     console.log('resolvedTargetUrl', resolvedTargetUrl);
 
-    // 탭 생성
+    // 탭 생성 (UI는 TabManager.createTab 내부에서 즉시 표시됨)
     const tabId = await this.createTab(resolvedTargetUrl, activateTab, originTabId);
 
-    return this.executeWithHooks(tabId, async () => {
-      const stepsById = new Map(workflow.steps.map((s) => [s.id, s]));
-      const { results, context: finalContext } = await executeWorkflowSegment({
-        currentId: workflow.start,
-        context,
-        stepsById,
-        tabId,
-        executeBlock: this.executeBlock,
-      });
+    try {
+      return await this.executeWithHooks(tabId, async () => {
+        const stepsById = new Map(workflow.steps.map((s) => [s.id, s]));
+        const { results, context: finalContext } = await executeWorkflowSegment({
+          currentId: workflow.start,
+          context,
+          stepsById,
+          tabId,
+          executeBlock: this.executeBlock,
+        });
 
-      return { steps: results, tabId, context: finalContext };
-    });
+        return { steps: results, tabId, context: finalContext };
+      });
+    } finally {
+      // 워크플로우 완료 후 UI 숨김
+      await this.statusController.hide(tabId);
+    }
   }
 
 }

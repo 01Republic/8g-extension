@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { getTranslation, getCurrentLocale } from '../../locales';
 
 interface ExecutionStatusUIProps {
   visible: boolean;
@@ -9,80 +8,82 @@ interface ExecutionStatusUIProps {
 export function ExecutionStatusUI({ visible }: ExecutionStatusUIProps) {
   const [isAnimating, setIsAnimating] = useState(false);
 
-  const t = (key: string) => {
-    try {
-      return getTranslation(key, getCurrentLocale());
-    } catch (error) {
-      console.warn('Translation failed:', key, error);
-      return key;
+  useEffect(() => {
+    // Add keyframes animation to document head
+    const styleId = 'execution-status-animation';
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = `
+        @keyframes wave-flow {
+          0% {
+            box-shadow:
+              inset 0 0 0 2px rgba(168, 85, 247, 0.9),
+              inset 0 0 0 8px rgba(168, 85, 247, 0.5),
+              inset 0 0 0 16px rgba(168, 85, 247, 0.2);
+          }
+          25% {
+            box-shadow:
+              inset 0 0 0 4px rgba(168, 85, 247, 1),
+              inset 0 0 0 10px rgba(168, 85, 247, 0.6),
+              inset 0 0 0 18px rgba(168, 85, 247, 0.25);
+          }
+          50% {
+            box-shadow:
+              inset 0 0 0 3px rgba(168, 85, 247, 0.95),
+              inset 0 0 0 12px rgba(168, 85, 247, 0.7),
+              inset 0 0 0 20px rgba(168, 85, 247, 0.3);
+          }
+          75% {
+            box-shadow:
+              inset 0 0 0 2px rgba(168, 85, 247, 0.85),
+              inset 0 0 0 9px rgba(168, 85, 247, 0.55),
+              inset 0 0 0 17px rgba(168, 85, 247, 0.22);
+          }
+          100% {
+            box-shadow:
+              inset 0 0 0 2px rgba(168, 85, 247, 0.9),
+              inset 0 0 0 8px rgba(168, 85, 247, 0.5),
+              inset 0 0 0 16px rgba(168, 85, 247, 0.2);
+          }
+        }
+      `;
+      document.head.appendChild(style);
     }
-  };
+    return () => {
+      const style = document.getElementById(styleId);
+      if (style) {
+        style.remove();
+      }
+    };
+  }, []);
 
   useEffect(() => {
-    if (visible) {
-      setTimeout(() => setIsAnimating(true), 10);
-    } else {
-      setIsAnimating(false);
-    }
+    setIsAnimating(visible);
   }, [visible]);
 
   if (!visible) return null;
 
   const containerStyle: React.CSSProperties = {
     position: 'fixed',
+    top: 0,
     left: 0,
     right: 0,
-    top: 0,
+    bottom: 0,
     zIndex: 2147483647,
-    backgroundColor: '#10b981',
-    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)',
-    pointerEvents: 'auto',
-    transform: isAnimating ? 'translateY(0)' : 'translateY(-100%)',
+    pointerEvents: 'none',
+    borderRadius: '16px',
+    boxSizing: 'border-box',
+    boxShadow: isAnimating
+      ? 'inset 0 0 0 2px rgba(168, 85, 247, 0.9), inset 0 0 0 8px rgba(168, 85, 247, 0.5), inset 0 0 0 16px rgba(168, 85, 247, 0.2)'
+      : 'none',
+    animation: isAnimating ? 'wave-flow 3s ease-in-out infinite' : 'none',
     opacity: isAnimating ? 1 : 0,
-    transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-  };
-
-  const innerContainerStyle: React.CSSProperties = {
-    maxWidth: '100%',
-    margin: '0 auto',
-    padding: '16px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '16px',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-  };
-
-  const messageStyle: React.CSSProperties = {
-    margin: 0,
-    fontSize: '14px',
-    lineHeight: '1.5',
-    color: '#ffffff',
-    fontWeight: 500,
+    transition: 'opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
   };
 
   return createPortal(
-    <div style={containerStyle} onClick={(e) => e.stopPropagation()}>
-      <div style={innerContainerStyle}>
-        <div style={{ flexShrink: 0, color: '#ffffff' }}>
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="8" x2="12" y2="12" />
-            <line x1="12" y1="16" x2="12.01" y2="16" />
-          </svg>
-        </div>
-        <p style={messageStyle}>{t('ui.workflow.executing')}</p>
-      </div>
-    </div>,
+    <div style={containerStyle} />,
     document.body
   );
 }

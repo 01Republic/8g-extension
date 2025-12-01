@@ -182,6 +182,11 @@ export class TabManager {
       throw new Error('Failed to create new tab');
     }
 
+    // 🚀 탭 생성 즉시 UI 표시 (비동기, 에러 무시)
+    this.showExecutionStatus(tab.id, '워크플로우 실행 중', true).catch((err) =>
+      console.warn('[TabManager] Failed to show execution status on tab creation:', err)
+    );
+
     try {
       await this.cdpService.attachDebugger(tab.id);
       console.log('[TabManager] Debugger attached for tab:', tab.id);
