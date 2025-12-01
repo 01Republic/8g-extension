@@ -22,6 +22,7 @@ release/
 .env.development.local
 .env.test.local
 .env.production.local
+.env*
 
 # IDEs
 .vscode/
@@ -54,6 +55,7 @@ coverage/
 # Temporary folders
 tmp/
 temp/
+ignored/
 
 # Optional npm cache directory
 .npm
