@@ -270,7 +270,15 @@ export const WorkflowsTable = (props: WorkflowsTableProps) => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => deleteWorkflows(workflow.id)}
+                        onClick={() => {
+                          if (
+                            window.confirm(
+                              `워크플로우 #${workflow.id} "${workflow.description}"을(를) 정말 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`,
+                            )
+                          ) {
+                            deleteWorkflows(workflow.id);
+                          }
+                        }}
                       >
                         삭제
                       </Button>
