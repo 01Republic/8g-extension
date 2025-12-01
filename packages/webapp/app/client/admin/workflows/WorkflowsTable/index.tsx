@@ -1,5 +1,5 @@
 import { Link, useNavigate, useSearchParams } from "react-router";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Table,
   TableBody,
@@ -9,6 +9,7 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -21,6 +22,7 @@ import type {
   WorkflowType,
 } from "~/.server/db/entities/IntegrationAppWorkflowMetadata";
 import type { PaginationMetaData } from "~/.server/dto/pagination-meta-data.dto";
+import { PublishConfirmDialog } from "../PublishConfirmDialog";
 
 interface Product {
   id: number;
@@ -33,6 +35,8 @@ interface WorkflowsTableProps {
   workflows: IntegrationAppWorkflowMetadata[];
   pagination: PaginationMetaData;
   deleteWorkflows: (workflowId: number) => void;
+  publishWorkflow: (workflowId: number) => void;
+  unpublishWorkflow: (workflowId: number) => void;
   products: Product[];
 }
 
@@ -80,9 +84,13 @@ const getWorkflowTypeBadge = (type: WorkflowType) => {
 };
 
 export const WorkflowsTable = (props: WorkflowsTableProps) => {
-  const { workflows, pagination, deleteWorkflows, products } = props;
+  const { workflows, pagination, deleteWorkflows, publishWorkflow, unpublishWorkflow, products } = props;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [workflowToPublish, setWorkflowToPublish] = useState<IntegrationAppWorkflowMetadata | null>(null);
+  const [currentlyPublished, setCurrentlyPublished] = useState<IntegrationAppWorkflowMetadata | null>(null);
 
   const currentPage = pagination.currentPage;
   const totalPages = pagination.totalPage;
@@ -91,6 +99,7 @@ export const WorkflowsTable = (props: WorkflowsTableProps) => {
   // URL에서 현재 필터 값 가져오기
   const selectedProductId = searchParams.get("productId") || "all";
   const selectedType = searchParams.get("type") || "all";
+  const selectedStatus = searchParams.get("status") || "all";
 
   // Product ID로 매핑
   const productMap = useMemo(() => {
@@ -134,6 +143,44 @@ export const WorkflowsTable = (props: WorkflowsTableProps) => {
     navigate(`/?${params.toString()}`);
   };
 
+  const handleStatusFilterChange = (status: string) => {
+    const params = new URLSearchParams(searchParams);
+    params.set("page", "1"); // 필터 변경 시 첫 페이지로
+    if (status === "all") {
+      params.delete("status");
+    } else {
+      params.set("status", status);
+    }
+    navigate(`/?${params.toString()}`);
+  };
+
+  const handlePublishClick = (workflow: IntegrationAppWorkflowMetadata) => {
+    // Check if another workflow is already published
+    const alreadyPublished = workflows.find(
+      w => w.publishedAt &&
+      w.type === workflow.type &&
+      w.productId === workflow.productId &&
+      w.id !== workflow.id
+    );
+
+    if (alreadyPublished) {
+      setWorkflowToPublish(workflow);
+      setCurrentlyPublished(alreadyPublished);
+      setConfirmDialogOpen(true);
+    } else {
+      publishWorkflow(workflow.id);
+    }
+  };
+
+  const handleConfirmPublish = () => {
+    if (workflowToPublish) {
+      publishWorkflow(workflowToPublish.id);
+    }
+    setConfirmDialogOpen(false);
+    setWorkflowToPublish(null);
+    setCurrentlyPublished(null);
+  };
+
   return (
     <div className="space-y-4">
       {/* 필터 영역 */}
@@ -175,6 +222,20 @@ export const WorkflowsTable = (props: WorkflowsTableProps) => {
           </Select>
         </div>
 
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-gray-700">Status:</span>
+          <Select value={selectedStatus} onValueChange={handleStatusFilterChange}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="전체" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">전체</SelectItem>
+              <SelectItem value="published">✅ 배포됨</SelectItem>
+              <SelectItem value="draft">📝 Draft</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         <div className="ml-auto text-sm text-gray-600">
           {pagination.currentItemCount}개 / 전체 {pagination.totalItemCount}개
         </div>
@@ -191,6 +252,9 @@ export const WorkflowsTable = (props: WorkflowsTableProps) => {
               </TableHead>
               <TableHead className="font-semibold text-gray-900">
                 Type
+              </TableHead>
+              <TableHead className="font-semibold text-gray-900">
+                상태
               </TableHead>
               <TableHead className="font-semibold text-gray-900">
                 설명
@@ -210,7 +274,7 @@ export const WorkflowsTable = (props: WorkflowsTableProps) => {
             {workflows.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={7}
+                  colSpan={8}
                   className="text-center py-8 text-gray-500"
                 >
                   워크플로우가 없습니다. 새로운 워크플로우를 만들어보세요!
@@ -251,6 +315,17 @@ export const WorkflowsTable = (props: WorkflowsTableProps) => {
                       </span>
                     </TableCell>
                     <TableCell>
+                      {workflow.publishedAt ? (
+                        <Badge variant="default" className="bg-green-600 text-white whitespace-nowrap">
+                          ✅ Published
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-gray-700 border-gray-300 whitespace-nowrap">
+                          📝 Draft
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
                       <div className="font-medium">{workflow.description}</div>
                     </TableCell>
                     <TableCell>
@@ -267,6 +342,25 @@ export const WorkflowsTable = (props: WorkflowsTableProps) => {
                           수정
                         </Button>
                       </Link>
+
+                      {workflow.publishedAt ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => unpublishWorkflow(workflow.id)}
+                        >
+                          배포 취소
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => handlePublishClick(workflow)}
+                        >
+                          배포
+                        </Button>
+                      )}
+
                       <Button
                         variant="outline"
                         size="sm"
@@ -380,6 +474,14 @@ export const WorkflowsTable = (props: WorkflowsTableProps) => {
           </Button>
         </div>
       </div>
+
+      <PublishConfirmDialog
+        open={confirmDialogOpen}
+        onOpenChange={setConfirmDialogOpen}
+        onConfirm={handleConfirmPublish}
+        workflowToPublish={workflowToPublish}
+        currentlyPublished={currentlyPublished}
+      />
     </div>
   );
 };

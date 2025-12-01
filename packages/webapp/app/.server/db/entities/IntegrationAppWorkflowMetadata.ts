@@ -52,4 +52,7 @@ export class IntegrationAppWorkflowMetadata extends BaseEntity {
 
   @UpdateDateColumn({ type: "datetime", name: "updated_at" })
   updatedAt: Date;
+
+  @Column({ type: "datetime", name: "published_at", nullable: true })
+  publishedAt: Date | null;
 }

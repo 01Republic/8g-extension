@@ -40,6 +40,8 @@ import {
   SubtreePreviewProvider,
   type SubtreePreviewPayload,
 } from "./context/SubtreePreviewContext";
+import { useFetcher } from "react-router";
+import { toast } from "sonner";
 
 interface Product {
   id: number;
@@ -54,6 +56,7 @@ interface WorkflowBuilderPageProps {
     description: string;
     meta: FormWorkflow;
     productId: number;
+    publishedAt?: Date | null;
   } | null;
   onSave: (payload: {
     workflowId?: number;
@@ -141,6 +144,10 @@ export default function WorkflowBuilderPage({
   const [executionResults, setExecutionResults] = React.useState<any>(null);
   const rfRef = React.useRef<unknown>(null);
   const [paletteOpen, setPaletteOpen] = React.useState(false);
+
+  // Publish/Unpublish state
+  const fetcher = useFetcher();
+  const [isPublishing, setIsPublishing] = React.useState(false);
 
   const buildWorkflow = React.useCallback((): FormWorkflow => {
     const workflow = buildWorkflowJson(nodes, edges, targetUrl);
@@ -240,6 +247,41 @@ export default function WorkflowBuilderPage({
       setIsRunning(false);
     }
   };
+
+  // Publish/Unpublish handlers
+  const handlePublish = () => {
+    if (!workflowId) return;
+    setIsPublishing(true);
+    const formData = new FormData();
+    formData.append("_action", "publish");
+    formData.append("workflowId", workflowId.toString());
+    fetcher.submit(formData, { method: "POST" });
+  };
+
+  const handleUnpublish = () => {
+    if (!workflowId) return;
+    setIsPublishing(true);
+    const formData = new FormData();
+    formData.append("_action", "unpublish");
+    formData.append("workflowId", workflowId.toString());
+    fetcher.submit(formData, { method: "POST" });
+  };
+
+  // Monitor fetcher state for publish/unpublish
+  React.useEffect(() => {
+    if (fetcher.state === "idle" && isPublishing) {
+      setIsPublishing(false);
+      if (fetcher.data?.action === "publish") {
+        toast.success("워크플로우가 배포되었습니다.");
+        // Reload page to update publishedAt
+        window.location.reload();
+      } else if (fetcher.data?.action === "unpublish") {
+        toast.success("배포가 취소되었습니다.");
+        // Reload page to update publishedAt
+        window.location.reload();
+      }
+    }
+  }, [fetcher.state, fetcher.data, isPublishing]);
 
   const addNode = React.useCallback(
     (type: string, data: any) => {
@@ -491,6 +533,11 @@ export default function WorkflowBuilderPage({
           productId={productId}
           onProductIdChange={setProductId}
           products={products}
+          workflowId={workflowId}
+          publishedAt={initialWorkflow?.publishedAt}
+          onPublishClick={handlePublish}
+          onUnpublishClick={handleUnpublish}
+          isPublishing={isPublishing}
         />
 
         <PaletteSheet

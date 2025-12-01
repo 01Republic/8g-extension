@@ -14,6 +14,8 @@ export interface WorkflowsPageProps {
   workflows: IntegrationAppWorkflowMetadata[];
   pagination: PaginationMetaData;
   deleteWorkflows: (workflowId: number) => void;
+  publishWorkflow: (workflowId: number) => void;
+  unpublishWorkflow: (workflowId: number) => void;
   products: Product[];
 }
 
@@ -21,6 +23,8 @@ export default function WorkflowsPage({
   workflows,
   pagination,
   deleteWorkflows,
+  publishWorkflow,
+  unpublishWorkflow,
   products,
 }: WorkflowsPageProps) {
   return (
@@ -36,6 +40,8 @@ export default function WorkflowsPage({
           workflows={workflows}
           pagination={pagination}
           deleteWorkflows={deleteWorkflows}
+          publishWorkflow={publishWorkflow}
+          unpublishWorkflow={unpublishWorkflow}
           products={products}
         />
       </div>

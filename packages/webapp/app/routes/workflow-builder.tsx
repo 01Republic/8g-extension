@@ -10,6 +10,8 @@ import {
   findWorkflowMetadata,
   upsertWorkflowMetadata,
   fetchProducts,
+  publishWorkflow,
+  unpublishWorkflow,
 } from "~/.server/services";
 import type { WorkflowType } from "~/.server/db/entities/IntegrationAppWorkflowMetadata";
 
@@ -32,6 +34,7 @@ export async function loader({ params }: Route.LoaderArgs) {
             meta: workflow.meta,
             type: workflow.type,
             productId: workflow.productId,
+            publishedAt: workflow.publishedAt,
           }
         : null,
       products: productsResponse.items,
@@ -47,6 +50,21 @@ export async function loader({ params }: Route.LoaderArgs) {
 
 export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
+  const actionType = formData.get("_action")?.toString();
+
+  if (actionType === "publish") {
+    const workflowId = parseInt(formData.get("workflowId")!.toString());
+    const published = await publishWorkflow(workflowId);
+    return { success: true, action: "publish", workflow: published };
+  }
+
+  if (actionType === "unpublish") {
+    const workflowId = parseInt(formData.get("workflowId")!.toString());
+    const unpublished = await unpublishWorkflow(workflowId);
+    return { success: true, action: "unpublish", workflow: unpublished };
+  }
+
+  // Original save logic
   const workflowIdStr = formData.get("workflowId")?.toString();
   const workflowId = workflowIdStr ? parseInt(workflowIdStr) : undefined;
   const productIdStr = formData.get("productId")!.toString();

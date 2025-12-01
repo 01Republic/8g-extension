@@ -1,4 +1,5 @@
 import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
 import {
   Select,
@@ -29,6 +30,11 @@ interface WorkflowBuilderHeaderProps {
   productId: number;
   onProductIdChange: (id: number) => void;
   products: Product[];
+  workflowId?: number;
+  publishedAt?: Date | null;
+  onPublishClick?: () => void;
+  onUnpublishClick?: () => void;
+  isPublishing?: boolean;
 }
 
 export const WorkflowBuilderHeader = ({
@@ -45,6 +51,11 @@ export const WorkflowBuilderHeader = ({
   productId,
   onProductIdChange,
   products,
+  workflowId,
+  publishedAt,
+  onPublishClick,
+  onUnpublishClick,
+  isPublishing = false,
 }: WorkflowBuilderHeaderProps) => {
   const typeLabels: Record<WorkflowType, string> = {
     WORKFLOW: "⚡ Data Collection",
@@ -69,6 +80,11 @@ export const WorkflowBuilderHeader = ({
 
   return (
     <>
+      {publishedAt && (
+        <Badge variant="default" className="bg-green-600 text-white whitespace-nowrap">
+          ✅ Published
+        </Badge>
+      )}
       <Select
         value={productId.toString()}
         onValueChange={(value) => onProductIdChange(parseInt(value))}
@@ -126,6 +142,25 @@ export const WorkflowBuilderHeader = ({
       <Button variant="outline" onClick={onSaveClick}>
         저장
       </Button>
+      {workflowId && (
+        publishedAt ? (
+          <Button
+            variant="outline"
+            onClick={onUnpublishClick}
+            disabled={isPublishing}
+          >
+            {isPublishing ? "처리 중..." : "배포 취소"}
+          </Button>
+        ) : (
+          <Button
+            variant="default"
+            onClick={onPublishClick}
+            disabled={isPublishing}
+          >
+            {isPublishing ? "배포 중..." : "배포"}
+          </Button>
+        )
+      )}
       <div style={{ marginLeft: "auto" }} />
     </>
   );
