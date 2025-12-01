@@ -263,7 +263,7 @@ export const CurrencyInfoSchema = {
 };
 
 // =========================
-// Workspace Types & Schemas  
+// Workspace Types & Schemas
 // =========================
 
 export enum BillingCycleTerm {
@@ -309,6 +309,8 @@ export const WorkspaceDetailItemSchema = z.object({
   orgPageUrl: z.string(),
   // 워크스페이스 역할 목록
   roles: z.array(z.string()),
+  // 워크스페이스 초대 가능 한 역할 목록
+  invitableRoles: z.array(z.string()).nullable().optional(),
 });
 
 export type WorkspaceDetailItemDto = z.infer<typeof WorkspaceDetailItemSchema>;

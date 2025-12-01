@@ -38,6 +38,7 @@ export type RunWorkflowParams =
       workspaceKey: string; // 필수!
       slug: string;
       emails: string[]; // 필수!
+      role?: string;
     }
   | {
       evaluatedUrl: string;
@@ -70,6 +71,7 @@ export async function runWorkflow(
     "workspaceKey" in params ? params.workspaceKey : undefined;
   const slug = "slug" in params ? params.slug : undefined;
   const emails = "emails" in params ? params.emails : undefined;
+  const role = "role" in params ? params.role : undefined;
   const client = new EightGClient();
 
   // vars 필드에 변수 병합 (workflow.vars + 주입된 variables)
@@ -126,6 +128,7 @@ export async function runWorkflow(
         workspaceKey,
         slug,
         emails,
+        role,
         requestParams,
       );
       break;

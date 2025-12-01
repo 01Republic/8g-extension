@@ -21,6 +21,8 @@ interface WorkflowParametersDialogProps {
   setSlug: (slug: string) => void;
   emails: string;
   setEmails: (emails: string) => void;
+  role: string;
+  setRole: (role: string) => void;
 }
 
 export function WorkflowParametersDialog({
@@ -33,6 +35,8 @@ export function WorkflowParametersDialog({
   setSlug,
   emails,
   setEmails,
+  role,
+  setRole,
 }: WorkflowParametersDialogProps) {
   // 파라미터가 필요한 타입인지 확인
   const needsParameters = [
@@ -115,6 +119,21 @@ export function WorkflowParametersDialog({
               />
               <p className="text-sm text-muted-foreground">
                 여러 이메일은 쉼표(,)로 구분하세요
+              </p>
+            </div>
+          )}
+
+          {type === "ADD_MEMBERS" && (
+            <div className="grid gap-2">
+              <Label htmlFor="role">Role</Label>
+              <Input
+                id="role"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                placeholder="member"
+              />
+              <p className="text-sm text-muted-foreground">
+                멤버의 역할을 입력하세요 (예: member, admin, 선택사항)
               </p>
             </div>
           )}

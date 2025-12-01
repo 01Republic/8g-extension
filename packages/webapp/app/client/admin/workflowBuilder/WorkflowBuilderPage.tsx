@@ -118,6 +118,8 @@ export default function WorkflowBuilderPage({
   const [slug, setSlug] = React.useState<string>("");
   // Emails 관리 (ADD_MEMBERS, DELETE_MEMBERS 타입에서 사용)
   const [emails, setEmails] = React.useState<string>("");
+  // Role 관리 (ADD_MEMBERS 타입에서 사용)
+  const [role, setRole] = React.useState<string>("");
 
   const onConnect = React.useCallback(
     (connection: Connection) => {
@@ -203,10 +205,11 @@ export default function WorkflowBuilderPage({
         runParams.slug = slug;
       }
 
-      // ADD_MEMBERS 타입일 때 workspaceKey, slug, emails 추가
+      // ADD_MEMBERS 타입일 때 workspaceKey, slug, emails, role 추가
       if (type === "ADD_MEMBERS") {
         runParams.workspaceKey = workspaceKey;
         runParams.slug = slug;
+        runParams.role = role;
         // 쉼표로 구분된 이메일을 배열로 변환
         runParams.emails = emails
           .split(",")
@@ -341,11 +344,8 @@ export default function WorkflowBuilderPage({
             };
           }
           if (data?.__subtreePreviewOwner === startId) {
-            const {
-              __subtreePreviewRole,
-              __subtreePreviewOwner,
-              ...restData
-            } = data || {};
+            const { __subtreePreviewRole, __subtreePreviewOwner, ...restData } =
+              data || {};
             return {
               ...node,
               data: restData,
@@ -365,11 +365,8 @@ export default function WorkflowBuilderPage({
         nodes.map((node) => {
           const data = node.data as any;
           if (data?.__subtreePreviewOwner === startId) {
-            const {
-              __subtreePreviewRole,
-              __subtreePreviewOwner,
-              ...restData
-            } = data || {};
+            const { __subtreePreviewRole, __subtreePreviewOwner, ...restData } =
+              data || {};
             return {
               ...node,
               data: restData,
@@ -498,7 +495,7 @@ export default function WorkflowBuilderPage({
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
-
+  //1500
   return (
     <SubtreePreviewProvider value={subtreePreviewHandlers}>
       <div
@@ -519,75 +516,77 @@ export default function WorkflowBuilderPage({
             borderBottom: "1px solid #eee",
           }}
         >
-        <WorkflowBuilderHeader
-          targetUrl={targetUrl}
-          setTargetUrl={setTargetUrl}
-          runWorkflow={run}
-          isRunning={isRunning}
-          onSaveClick={() => setSaveDialogOpen(true)}
-          onParametersClick={() => setParametersDialogOpen(true)}
-          onExportClick={handleExport}
-          onImportClick={handleImport}
-          type={type}
-          onApiTypeChange={setApiType}
-          productId={productId}
-          onProductIdChange={setProductId}
-          products={products}
-          workflowId={workflowId}
-          publishedAt={initialWorkflow?.publishedAt}
-          onPublishClick={handlePublish}
-          onUnpublishClick={handleUnpublish}
-          isPublishing={isPublishing}
-        />
+          <WorkflowBuilderHeader
+            targetUrl={targetUrl}
+            setTargetUrl={setTargetUrl}
+            runWorkflow={run}
+            isRunning={isRunning}
+            onSaveClick={() => setSaveDialogOpen(true)}
+            onParametersClick={() => setParametersDialogOpen(true)}
+            onExportClick={handleExport}
+            onImportClick={handleImport}
+            type={type}
+            onApiTypeChange={setApiType}
+            productId={productId}
+            onProductIdChange={setProductId}
+            products={products}
+            workflowId={workflowId}
+            publishedAt={initialWorkflow?.publishedAt}
+            onPublishClick={handlePublish}
+            onUnpublishClick={handleUnpublish}
+            isPublishing={isPublishing}
+          />
 
-        <PaletteSheet
-          paletteOpen={paletteOpen}
-          setPaletteOpen={setPaletteOpen}
-          addNode={addNode}
-          blocks={Object.entries(AllBlockSchemas).map(([blockName, schema]) => {
-            const info = blockLabels[blockName] || {
-              title: blockName,
-              description: "",
-            };
+          <PaletteSheet
+            paletteOpen={paletteOpen}
+            setPaletteOpen={setPaletteOpen}
+            addNode={addNode}
+            blocks={Object.entries(AllBlockSchemas).map(
+              ([blockName, schema]) => {
+                const info = blockLabels[blockName] || {
+                  title: blockName,
+                  description: "",
+                };
 
-            // 각 블록의 기본 데이터 생성
-            const defaultBlock: any = {
-              name: blockName,
-              selector: "#selector",
-              findBy: "cssSelector" as const,
-              option: {},
-            };
+                // 각 블록의 기본 데이터 생성
+                const defaultBlock: any = {
+                  name: blockName,
+                  selector: "#selector",
+                  findBy: "cssSelector" as const,
+                  option: {},
+                };
 
-            // 블록별 특수 필드 추가
-            if (blockName === "data-extract") {
-              defaultBlock.code = "";
-              delete defaultBlock.selector;
-              delete defaultBlock.findBy;
-              delete defaultBlock.option;
-            } else if (blockName === "attribute-value") {
-              defaultBlock.attributeName = "href";
-            } else if (blockName === "set-value-form") {
-              defaultBlock.setValue = "";
-              defaultBlock.type = "text-field";
-            } else if (
-              blockName === "get-value-form" ||
-              blockName === "clear-value-form"
-            ) {
-              defaultBlock.type = "text-field";
-            }
+                // 블록별 특수 필드 추가
+                if (blockName === "data-extract") {
+                  defaultBlock.code = "";
+                  delete defaultBlock.selector;
+                  delete defaultBlock.findBy;
+                  delete defaultBlock.option;
+                } else if (blockName === "attribute-value") {
+                  defaultBlock.attributeName = "href";
+                } else if (blockName === "set-value-form") {
+                  defaultBlock.setValue = "";
+                  defaultBlock.type = "text-field";
+                } else if (
+                  blockName === "get-value-form" ||
+                  blockName === "clear-value-form"
+                ) {
+                  defaultBlock.type = "text-field";
+                }
 
-            return {
-              title: info.title,
-              description: info.description,
-              type: blockName,
-              data: {
-                title: info.title,
-                block: defaultBlock as Block,
-                schema,
+                return {
+                  title: info.title,
+                  description: info.description,
+                  type: blockName,
+                  data: {
+                    title: info.title,
+                    block: defaultBlock as Block,
+                    schema,
+                  },
+                };
               },
-            };
-          })}
-        />
+            )}
+          />
         </div>
 
         <div
@@ -598,92 +597,95 @@ export default function WorkflowBuilderPage({
             height: "100%",
           }}
         >
-        {/* 왼쪽: ReactFlow */}
-        <div style={{ flex: 1, position: "relative" }}>
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onEdgeDoubleClick={onEdgeDoubleClick}
-            nodeTypes={workflowNodeTypes}
-            edgeTypes={edgeTypes}
-            onInit={(inst) => {
-              rfRef.current = inst;
-            }}
-            fitView
-          >
-            <Background />
-            <Controls />
-
-            {/* 플로팅 정렬 버튼 */}
-            <Button
-              variant="default"
-              onClick={onAutoLayout}
-              style={{
-                position: "absolute",
-                bottom: 20,
-                right: 20,
-                zIndex: 5,
-                boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+          {/* 왼쪽: ReactFlow */}
+          <div style={{ flex: 1, position: "relative" }}>
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onConnect={onConnect}
+              onEdgeDoubleClick={onEdgeDoubleClick}
+              nodeTypes={workflowNodeTypes}
+              edgeTypes={edgeTypes}
+              onInit={(inst) => {
+                rfRef.current = inst;
               }}
+              fitView
             >
-              정렬
-            </Button>
+              <Background />
+              <Controls />
 
-            <EdgeConfigDialog
-              open={edgeDialogOpen}
-              onOpenChange={setEdgeDialogOpen}
-              edgeData={selectedEdge?.data}
-              onSave={handleEdgeSave}
-              targetNodeId={selectedEdge?.target || ""}
-            />
+              {/* 플로팅 정렬 버튼 */}
+              <Button
+                variant="default"
+                onClick={onAutoLayout}
+                style={{
+                  position: "absolute",
+                  bottom: 20,
+                  right: 20,
+                  zIndex: 5,
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                }}
+              >
+                정렬
+              </Button>
 
-            <SaveDialog
-              open={saveDialogOpen}
-              onOpenChange={setSaveDialogOpen}
-              onSave={handleSave}
-              initialDescription={description}
-            />
+              <EdgeConfigDialog
+                open={edgeDialogOpen}
+                onOpenChange={setEdgeDialogOpen}
+                edgeData={selectedEdge?.data}
+                onSave={handleEdgeSave}
+                targetNodeId={selectedEdge?.target || ""}
+              />
 
-            <VariablesDialog
-              open={variablesDialogOpen}
-              onOpenChange={setVariablesDialogOpen}
-              variables={variables}
-              onVariablesChange={setVariables}
-            />
+              <SaveDialog
+                open={saveDialogOpen}
+                onOpenChange={setSaveDialogOpen}
+                onSave={handleSave}
+                initialDescription={description}
+              />
 
-            <WorkflowParametersDialog
-              open={parametersDialogOpen}
-              onOpenChange={setParametersDialogOpen}
+              <VariablesDialog
+                open={variablesDialogOpen}
+                onOpenChange={setVariablesDialogOpen}
+                variables={variables}
+                onVariablesChange={setVariables}
+              />
+
+              <WorkflowParametersDialog
+                open={parametersDialogOpen}
+                onOpenChange={setParametersDialogOpen}
+                type={type}
+                workspaceKey={workspaceKey}
+                setWorkspaceKey={setWorkspaceKey}
+                slug={slug}
+                setSlug={setSlug}
+                emails={emails}
+                setEmails={setEmails}
+                role={role}
+                setRole={setRole}
+              />
+            </ReactFlow>
+            {result && (
+              <ResultPanel result={result} position="top-right" type={type} />
+            )}
+          </div>
+
+          {/* 오른쪽: Variables Preview */}
+          <div style={{ width: "300px", overflow: "auto" }}>
+            <VariablesPreviewPanel
               type={type}
               workspaceKey={workspaceKey}
-              setWorkspaceKey={setWorkspaceKey}
               slug={slug}
-              setSlug={setSlug}
               emails={emails}
-              setEmails={setEmails}
+              role={role}
+              variables={variables}
+              onAddVariables={() => setVariablesDialogOpen(true)}
+              onAddParameters={() => setParametersDialogOpen(true)}
             />
-          </ReactFlow>
-          {result && (
-            <ResultPanel result={result} position="top-right" type={type} />
-          )}
+          </div>
         </div>
-
-        {/* 오른쪽: Variables Preview */}
-        <div style={{ width: "300px", overflow: "auto" }}>
-          <VariablesPreviewPanel
-            type={type}
-            workspaceKey={workspaceKey}
-            slug={slug}
-            emails={emails}
-            variables={variables}
-            onAddVariables={() => setVariablesDialogOpen(true)}
-            onAddParameters={() => setParametersDialogOpen(true)}
-          />
-        </div>
-      </div>
       </div>
     </SubtreePreviewProvider>
   );

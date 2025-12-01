@@ -8,6 +8,7 @@ interface VariablesPreviewPanelProps {
   workspaceKey: string;
   slug: string;
   emails: string;
+  role: string;
   variables: Record<string, any>;
   onAddVariables: () => void;
   onAddParameters: () => void;
@@ -18,6 +19,7 @@ export function VariablesPreviewPanel({
   workspaceKey,
   slug,
   emails,
+  role,
   variables,
   onAddVariables,
   onAddParameters,
@@ -54,6 +56,11 @@ export function VariablesPreviewPanel({
       label: "Emails",
       value: emails,
       hidden: type !== "ADD_MEMBERS" && type !== "DELETE_MEMBERS",
+    },
+    {
+      label: "Role",
+      value: role,
+      hidden: type !== "ADD_MEMBERS",
     },
   ].filter((row) => !row.hidden);
 
