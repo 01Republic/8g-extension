@@ -37,7 +37,7 @@ export class ContainsStrategy extends BaseConditionStrategy {
   buildFromSubCondition(sub: SubCondition): WhenCondition {
     const fullPath = buildJsonPath(sub.nodeId, sub.path);
     return {
-      contains: { value: fullPath, search: sub.value || "" },
+      contains: { value: fullPath, search: String(sub.value ?? "") },
     };
   }
 

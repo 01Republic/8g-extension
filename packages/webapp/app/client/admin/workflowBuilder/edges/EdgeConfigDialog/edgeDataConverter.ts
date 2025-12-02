@@ -4,6 +4,7 @@ import type {
   MultipleConditionType,
   SingleConditionType,
   SubCondition,
+  ValueType,
 } from "./types";
 import { strategyRegistry } from "./strategies";
 
@@ -13,7 +14,8 @@ import { strategyRegistry } from "./strategies";
 export interface EqualsData {
   nodeId: string;
   path: string;
-  value: string;
+  value: string | number | boolean;
+  valueType: ValueType;
 }
 
 export interface ExistsData {
@@ -64,7 +66,7 @@ export const DEFAULT_FORM_STATE: EdgeFormState = {
   singleConditionType: "default",
   multipleConditionType: "and",
 
-  equalsData: { nodeId: "", path: "result.data", value: "" },
+  equalsData: { nodeId: "", path: "result.data", value: "", valueType: "string" },
   existsData: { nodeId: "", path: "result" },
   containsData: { nodeId: "", path: "result.data", search: "" },
   regexData: { nodeId: "", path: "result.data", pattern: "" },

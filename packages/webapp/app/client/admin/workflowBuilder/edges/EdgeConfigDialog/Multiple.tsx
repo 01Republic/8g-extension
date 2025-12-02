@@ -9,7 +9,9 @@ import type {
   MultipleConditionType,
   SubCondition,
   SubConditionType,
+  ValueType,
 } from "./types";
+import { Checkbox } from "~/components/ui/checkbox";
 import { EdgFieldContentBox } from "./EdgFieldContentBox";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
@@ -39,8 +41,46 @@ export const Multiple = (props: MultipleProps) => {
         nodeId: previousNodes[0]?.id || "",
         path: "result.data",
         value: "",
+        valueType: "string",
       },
     ]);
+  };
+
+  // equals 타입일 때 값 타입 변경 핸들러
+  const handleValueTypeChange = (id: string, newType: ValueType) => {
+    onChange(
+      subConditions.map((c) => {
+        if (c.id !== id) return c;
+
+        const currentValue = c.value;
+        let convertedValue: string | number | boolean;
+
+        switch (newType) {
+          case "boolean":
+            if (typeof currentValue === "boolean") {
+              convertedValue = currentValue;
+            } else if (typeof currentValue === "string") {
+              convertedValue =
+                currentValue.toLowerCase() === "true" || currentValue === "1";
+            } else {
+              convertedValue = Boolean(currentValue);
+            }
+            break;
+          case "number":
+            if (typeof currentValue === "number") {
+              convertedValue = currentValue;
+            } else {
+              const num = Number(currentValue);
+              convertedValue = isNaN(num) ? 0 : num;
+            }
+            break;
+          default:
+            convertedValue = String(currentValue ?? "");
+        }
+
+        return { ...c, valueType: newType, value: convertedValue };
+      }),
+    );
   };
 
   const updateSubCondition = (
@@ -143,29 +183,73 @@ export const Multiple = (props: MultipleProps) => {
                 />
               </EdgFieldContentBox>
 
-              {(sub.type === "equals" ||
-                sub.type === "contains" ||
-                sub.type === "regex") && (
+              {/* equals 타입: 값 타입 선택 + 값 입력 */}
+              {sub.type === "equals" && (
+                <EdgFieldContentBox label="비교 값">
+                  <div className="flex gap-2 items-center">
+                    <Select
+                      value={sub.valueType || "string"}
+                      onValueChange={(v) =>
+                        handleValueTypeChange(sub.id, v as ValueType)
+                      }
+                    >
+                      <SelectTrigger className="w-[100px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="string">문자열</SelectItem>
+                        <SelectItem value="number">숫자</SelectItem>
+                        <SelectItem value="boolean">논리값</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    {sub.valueType === "boolean" ? (
+                      <div className="flex-1 flex items-center gap-2">
+                        <Checkbox
+                          checked={sub.value === true}
+                          onCheckedChange={(checked) =>
+                            updateSubCondition(sub.id, "value", checked === true)
+                          }
+                        />
+                        <span className="text-sm text-gray-600">
+                          {sub.value === true ? "true" : "false"}
+                        </span>
+                      </div>
+                    ) : (
+                      <Input
+                        className="flex-1"
+                        value={String(sub.value ?? "")}
+                        onChange={(e) =>
+                          updateSubCondition(
+                            sub.id,
+                            "value",
+                            sub.valueType === "number"
+                              ? Number(e.target.value)
+                              : e.target.value,
+                          )
+                        }
+                        type={sub.valueType === "number" ? "number" : "text"}
+                        placeholder={sub.valueType === "number" ? "0" : "OK"}
+                      />
+                    )}
+                  </div>
+                </EdgFieldContentBox>
+              )}
+
+              {/* contains/regex 타입: 문자열만 */}
+              {(sub.type === "contains" || sub.type === "regex") && (
                 <EdgFieldContentBox
                   label={
-                    sub.type === "equals"
-                      ? "비교 값"
-                      : sub.type === "contains"
-                        ? "검색 문자열"
-                        : "정규식 패턴"
+                    sub.type === "contains" ? "검색 문자열" : "정규식 패턴"
                   }
                 >
                   <Input
-                    value={sub.value || ""}
+                    value={String(sub.value ?? "")}
                     onChange={(e) =>
                       updateSubCondition(sub.id, "value", e.target.value)
                     }
                     placeholder={
-                      sub.type === "equals"
-                        ? "OK"
-                        : sub.type === "contains"
-                          ? "검색할 문자열"
-                          : "^OK$"
+                      sub.type === "contains" ? "검색할 문자열" : "^OK$"
                     }
                   />
                 </EdgFieldContentBox>

@@ -37,7 +37,7 @@ export class RegexStrategy extends BaseConditionStrategy {
   buildFromSubCondition(sub: SubCondition): WhenCondition {
     const fullPath = buildJsonPath(sub.nodeId, sub.path);
     return {
-      regex: { value: fullPath, pattern: sub.value || "" },
+      regex: { value: fullPath, pattern: String(sub.value ?? "") },
     };
   }
 
