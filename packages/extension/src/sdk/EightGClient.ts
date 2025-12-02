@@ -348,8 +348,11 @@ export class EightGClient {
       for (const item of rawData) {
         const parsed = schema.safeParse(item);
         if (parsed.success) {
+          // MemberOperationResult의 경우 completed 값으로 success 결정
+          const isCompleted = (parsed.data as any).completed !== false;
+
           validatedItems.push({
-            success: true,
+            success: isCompleted,
             data: parsed.data,
           });
         } else {
@@ -370,16 +373,31 @@ export class EightGClient {
     if (isSingleCheck(rawData)) {
       // 단일 객체인 경우: 배열로 만들어서 래핑하고 스키마 검증
       const parsed = schema.safeParse(rawData);
-      return {
-        ...result,
-        data: [
-          {
-            success: parsed.success,
-            message: parsed.success ? undefined : 'Data validation failed',
-            data: parsed.success ? parsed.data : rawData,
-          },
-        ],
-      } as CollectWorkflowArrayResult<T>;
+      if (parsed.success) {
+        // MemberOperationResult의 경우 completed 값으로 success 결정
+        const isCompleted = (parsed.data as any).completed !== false;
+
+        return {
+          ...result,
+          data: [
+            {
+              success: isCompleted,
+              data: parsed.data,
+            },
+          ],
+        } as CollectWorkflowArrayResult<T>;
+      } else {
+        return {
+          ...result,
+          data: [
+            {
+              success: false,
+              message: 'Data validation failed',
+              data: rawData,
+            },
+          ],
+        } as CollectWorkflowArrayResult<T>;
+      }
     }
 
     // 기본 fallback: 빈 배열
