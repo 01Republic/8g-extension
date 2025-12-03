@@ -12,8 +12,11 @@ import {
   fetchProducts,
   publishWorkflow,
   unpublishWorkflow,
+  findNodePositions,
+  upsertNodePositions,
 } from "~/.server/services";
 import type { WorkflowType } from "~/.server/db/entities/IntegrationAppWorkflowMetadata";
+import type { NodePositionsMap } from "~/.server/db/entities/WorkflowNodePositions";
 
 export async function loader({ params }: Route.LoaderArgs) {
   const workflowId = params.workflowId
@@ -24,7 +27,10 @@ export async function loader({ params }: Route.LoaderArgs) {
   const productsResponse = await fetchProducts({ itemsPerPage: 100 });
 
   if (workflowId) {
-    const workflow = await findWorkflowMetadata(workflowId);
+    const [workflow, nodePositionsEntity] = await Promise.all([
+      findWorkflowMetadata(workflowId),
+      findNodePositions(workflowId),
+    ]);
     return {
       workflowId,
       workflow: workflow
@@ -37,6 +43,7 @@ export async function loader({ params }: Route.LoaderArgs) {
             publishedAt: workflow.publishedAt,
           }
         : null,
+      nodePositions: nodePositionsEntity?.positions ?? null,
       products: productsResponse.items,
     };
   }
@@ -44,6 +51,7 @@ export async function loader({ params }: Route.LoaderArgs) {
   return {
     workflowId: undefined,
     workflow: null,
+    nodePositions: null,
     products: productsResponse.items,
   };
 }
@@ -72,14 +80,28 @@ export async function action({ request }: Route.ActionArgs) {
   const description = formData.get("description")!.toString();
   const meta = JSON.parse(formData.get("meta")!.toString()) as FormWorkflow;
   const typeStr = formData.get("type")?.toString() as WorkflowType | undefined;
+  const nodePositionsStr = formData.get("nodePositions")?.toString();
+  const nodePositions = nodePositionsStr
+    ? (JSON.parse(nodePositionsStr) as NodePositionsMap)
+    : null;
 
-  return await upsertWorkflowMetadata({
+  const savedWorkflow = await upsertWorkflowMetadata({
     workflowId,
     productId,
     description,
     meta,
     type: typeStr || "WORKFLOW",
   });
+
+  // 노드 위치 정보 저장 (워크플로우 ID가 있어야 저장 가능)
+  if (savedWorkflow && nodePositions) {
+    await upsertNodePositions({
+      workflowId: savedWorkflow.id,
+      positions: nodePositions,
+    });
+  }
+
+  return savedWorkflow;
 }
 
 export default function WorkflowBuilder({ loaderData }: Route.ComponentProps) {
@@ -93,8 +115,10 @@ export default function WorkflowBuilder({ loaderData }: Route.ComponentProps) {
     description: string;
     meta: FormWorkflow;
     type?: WorkflowType;
+    nodePositions?: NodePositionsMap;
   }) => {
-    const { workflowId, productId, description, meta, type } = payload;
+    const { workflowId, productId, description, meta, type, nodePositions } =
+      payload;
 
     const formData = new FormData();
     if (workflowId) {
@@ -105,6 +129,9 @@ export default function WorkflowBuilder({ loaderData }: Route.ComponentProps) {
     formData.append("meta", JSON.stringify(meta));
     if (type) {
       formData.append("type", type);
+    }
+    if (nodePositions) {
+      formData.append("nodePositions", JSON.stringify(nodePositions));
     }
     fetcher.submit(formData, { method: "POST" });
   };
@@ -134,6 +161,7 @@ export default function WorkflowBuilder({ loaderData }: Route.ComponentProps) {
     <WorkflowBuilderPage
       workflowId={loaderData.workflowId}
       initialWorkflow={loaderData.workflow}
+      initialNodePositions={loaderData.nodePositions}
       onSave={onSave}
       isSaving={isSaving}
       type={loaderData.workflow?.type as WorkflowType | undefined}

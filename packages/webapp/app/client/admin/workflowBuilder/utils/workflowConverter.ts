@@ -5,6 +5,8 @@ import type { WorkflowEdge } from "~/models/workflow/types";
 import { getLayoutedElements } from "./autoLayout";
 import { getConditionLabel } from "./conditionUtils";
 
+export type NodePositionsMap = Record<string, { x: number; y: number }>;
+
 interface ConvertedWorkflow {
   nodes: Node[];
   edges: WorkflowEdge[];
@@ -12,12 +14,19 @@ interface ConvertedWorkflow {
 
 /**
  * Workflow JSON을 React Flow의 노드/엣지로 변환
+ *
+ * @param workflow - 워크플로우 JSON
+ * @param nodePositions - 저장된 노드 위치 정보 (없으면 dagre 자동 레이아웃 적용)
  */
 export function convertWorkflowToNodesAndEdges(
   workflow: Workflow,
+  nodePositions?: NodePositionsMap | null,
 ): ConvertedWorkflow {
   const nodes: Node[] = [];
   const edges: WorkflowEdge[] = [];
+
+  // 저장된 위치가 있는지 확인
+  const hasPositions = nodePositions && Object.keys(nodePositions).length > 0;
 
   // Steps를 노드로 변환
   workflow.steps.forEach((step: WorkflowStep, index: number) => {
@@ -25,10 +34,16 @@ export function convertWorkflowToNodesAndEdges(
     const schema =
       AllBlockSchemas[blockName as keyof typeof AllBlockSchemas] || null;
 
+    // 저장된 위치가 있으면 사용, 없으면 임시 위치 (나중에 레이아웃으로 재배치)
+    const position =
+      hasPositions && nodePositions[step.id]
+        ? nodePositions[step.id]
+        : { x: 200 * index, y: 100 * index };
+
     const node: Node = {
       id: step.id,
       type: blockName,
-      position: { x: 200 * index, y: 100 * index }, // 임시 위치 (나중에 레이아웃으로 재배치)
+      position,
       data: {
         title: step.title || blockName || step.id,
         block: step.block,
@@ -105,11 +120,18 @@ export function convertWorkflowToNodesAndEdges(
     }
   });
 
-  // 자동 레이아웃 적용
-  const layouted = getLayoutedElements(nodes, edges, "TB");
+  // 저장된 위치가 없을 때만 자동 레이아웃 적용
+  if (!hasPositions) {
+    const layouted = getLayoutedElements(nodes, edges, "TB");
+    return {
+      nodes: layouted.nodes,
+      edges: layouted.edges,
+    };
+  }
 
+  // 저장된 위치가 있으면 그대로 반환
   return {
-    nodes: layouted.nodes,
-    edges: layouted.edges,
+    nodes,
+    edges,
   };
 }

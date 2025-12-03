@@ -26,7 +26,10 @@ import { ConditionalEdge } from "./edges/ConditionalEdge";
 import { getLayoutedElements } from "./utils/autoLayout";
 import type { FormWorkflow } from "~/models/integration/types";
 import { SaveDialog } from "./SaveDialog";
-import { convertWorkflowToNodesAndEdges } from "./utils/workflowConverter";
+import {
+  convertWorkflowToNodesAndEdges,
+  type NodePositionsMap,
+} from "./utils/workflowConverter";
 import { useNodesState } from "@xyflow/react";
 import { VariablesDialog } from "./VariablesDialog";
 import { VariablesPreviewPanel } from "./VariablesPreviewPanel";
@@ -58,12 +61,14 @@ interface WorkflowBuilderPageProps {
     productId: number;
     publishedAt?: Date | null;
   } | null;
+  initialNodePositions?: NodePositionsMap | null;
   onSave: (payload: {
     workflowId?: number;
     productId: number;
     description: string;
     meta: FormWorkflow;
     type?: WorkflowType;
+    nodePositions?: NodePositionsMap;
   }) => void;
   isSaving: boolean;
   type?: WorkflowType; // Workspace API 타입 지정
@@ -73,18 +78,22 @@ interface WorkflowBuilderPageProps {
 export default function WorkflowBuilderPage({
   workflowId,
   initialWorkflow,
+  initialNodePositions,
   onSave,
   isSaving,
   type: initialApiType,
   products,
 }: WorkflowBuilderPageProps) {
-  // 초기 노드/엣지 변환
+  // 초기 노드/엣지 변환 (저장된 위치 정보가 있으면 적용)
   const initialData = React.useMemo(() => {
     if (initialWorkflow?.meta) {
-      return convertWorkflowToNodesAndEdges(initialWorkflow.meta as Workflow);
+      return convertWorkflowToNodesAndEdges(
+        initialWorkflow.meta as Workflow,
+        initialNodePositions,
+      );
     }
     return { nodes: [], edges: [] };
-  }, [initialWorkflow]);
+  }, [initialWorkflow, initialNodePositions]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialData.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState<WorkflowEdge>(
@@ -411,16 +420,26 @@ export default function WorkflowBuilderPage({
         targetUrl: targetUrl || undefined,
       } as FormWorkflow;
 
+      // 현재 노드들의 위치 정보 추출
+      const nodePositions: NodePositionsMap = {};
+      nodes.forEach((node) => {
+        nodePositions[node.id] = {
+          x: node.position.x,
+          y: node.position.y,
+        };
+      });
+
       onSave({
         workflowId,
         productId,
         description: desc,
         meta: workflowWithUrl,
         type,
+        nodePositions,
       });
       setDescription(desc);
     },
-    [workflowId, productId, buildWorkflow, onSave, targetUrl, type],
+    [workflowId, productId, buildWorkflow, onSave, targetUrl, type, nodes],
   );
 
   const handleExport = React.useCallback(() => {
