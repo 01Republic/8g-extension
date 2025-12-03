@@ -144,7 +144,7 @@ export function convertWorkflowToNodesAndEdges(
         type: "group",
         position: group.position,
         style: { width: group.width, height: group.height },
-        data: { label: group.label, color: group.color },
+        data: { label: group.label, color: group.color, nodeIds: group.nodeIds },
       };
       groupNodes.push(groupNode);
     });

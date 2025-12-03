@@ -221,13 +221,13 @@ export default function WorkflowBuilderPage({
         groupHeight = 200;
       }
 
-      // 그룹 노드 생성
+      // 그룹 노드 생성 (nodeIds도 data에 포함 - 정렬 시 사용)
       const groupNode: Node = {
         id: groupId,
         type: "group",
         position: { x: groupX, y: groupY },
         style: { width: groupWidth, height: groupHeight },
-        data: { label, color },
+        data: { label, color, nodeIds },
       };
 
       // 그룹 정보 저장

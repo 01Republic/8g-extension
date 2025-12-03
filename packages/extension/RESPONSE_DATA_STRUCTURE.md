@@ -437,7 +437,83 @@ async deleteMembers(
 ### 마이그레이션 체크리스트
 
 - [ ] `MemberOperationResult` 타입 정의
-- [ ] `addMembers` 메소드 수정 
+- [ ] `addMembers` 메소드 수정
 - [ ] `deleteMembers` 메소드 수정
 - [ ] 워크플로우에서 배열 결과 수집 지원
 - [ ] 클라이언트 코드 업데이트 가이드 작성
+
+---
+
+## 워크플로우 마지막 execute-javascript 결과 매핑 예시
+
+워크플로우 마지막에 `execute-javascript` 블록을 사용하여 `result.data`에 직접 매핑되는 결과를 반환할 수 있습니다.
+
+### deleteMembers 예시 (Slack - forEach 반복 사용)
+
+```javascript
+(() => {
+  const its = ${steps.node_1763108868768.result.data}.iterations;
+  const emails = ${vars.emails};
+
+  return its.map(i => ({
+    email: emails[i.index],
+    operation: 'delete',
+    completed: i.success,
+    reason: i.success ? undefined : (i.steps.find(s => !s.success)?.message || 'Unknown error')
+  }));
+})();
+```
+
+### addMembers 예시 (Notion - 멤버 리스트 검증)
+
+```javascript
+(async () => {
+  var wait = function(ms) { return new Promise(function(r) { setTimeout(r, ms); }); };
+
+  await wait(1000);
+
+  var results = [];
+  var targetEmails = ${vars.emails};
+  var memberListContainer = document.querySelector('#settings-tabpanel-members > div:nth-child(1) > div > div:nth-child(4) > div:nth-child(5)');
+
+  if (!memberListContainer) {
+    return targetEmails.map(function(email) {
+      return { email: email, operation: 'add', completed: false, reason: '멤버 리스트 컨테이너를 찾을 수 없습니다.' };
+    });
+  }
+
+  var memberEmails = new Set();
+  var memberItems = memberListContainer.querySelectorAll('div[data-index]');
+
+  for (var i = 0; i < memberItems.length; i++) {
+    var emailElement = memberItems[i].querySelector('[title] + div');
+    if (emailElement && emailElement.textContent) {
+      var email = emailElement.textContent.trim().toLowerCase();
+      if (email && email.indexOf('@') !== -1) {
+        memberEmails.add(email);
+      }
+    }
+  }
+
+  for (var j = 0; j < targetEmails.length; j++) {
+    var targetEmail = targetEmails[j];
+    var isMember = memberEmails.has(targetEmail.toLowerCase().trim());
+
+    results.push({
+      email: targetEmail,
+      operation: 'add',
+      completed: isMember,
+      reason: isMember ? undefined : 'Email not found in member list after invitation'
+    });
+  }
+
+  return results;
+})();
+```
+
+### 주의사항
+
+- `execute-javascript` 블록에서 반환하는 값이 그대로 `result.data`에 매핑됩니다
+- `ResDataContainer` 래핑 없이 `MemberOperationResult[]` 배열을 직접 반환합니다
+- async 함수 사용 시 `(async () => { ... })();` 형태로 즉시 실행
+- ES5 문법 사용 권장 (`var`, 일반 `function`, `indexOf` 등)

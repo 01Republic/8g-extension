@@ -748,5 +748,45 @@ export class CdpService {
     await chrome.debugger.attach({ tabId }, '1.3');
     this.debuggerSessions.set(tabId, { networkEnabled: false });
     this.attachNetworkListeners();
+
+    // 비활성 탭 throttling 우회
+    await this.disableThrottling(tabId);
+  }
+
+  /**
+   * 비활성 탭의 throttling을 비활성화합니다.
+   *
+   * Chrome은 비활성(background) 탭에서 다음과 같은 제한을 적용합니다:
+   * - setTimeout/setInterval이 최소 1초 간격으로 제한
+   * - requestAnimationFrame 콜백이 실행되지 않음
+   * - 5분 이상 비활성 시 탭이 frozen 상태가 될 수 있음
+   *
+   * CDP의 Emulation.setFocusEmulationEnabled를 사용하면 탭이 항상 포커스된 것처럼
+   * 에뮬레이션하여 이러한 throttling을 우회할 수 있습니다.
+   *
+   * @param tabId - 대상 탭 ID
+   */
+  private async disableThrottling(tabId: number): Promise<void> {
+    try {
+      // 탭이 항상 포커스된 것처럼 에뮬레이션 (throttling 우회 핵심)
+      await chrome.debugger.sendCommand({ tabId }, 'Emulation.setFocusEmulationEnabled', {
+        enabled: true,
+      });
+      console.log('[CdpService] Focus emulation enabled for tab', tabId, '- throttling disabled');
+    } catch (error) {
+      // Emulation.setFocusEmulationEnabled가 실패해도 워크플로우 실행은 계속
+      console.warn('[CdpService] Failed to enable focus emulation for tab', tabId, ':', error);
+    }
+
+    try {
+      // 페이지 상태를 'active'로 강제 설정 (frozen 상태 방지)
+      await chrome.debugger.sendCommand({ tabId }, 'Page.setWebLifecycleState', {
+        state: 'active',
+      });
+      console.log('[CdpService] Page lifecycle state set to active for tab', tabId);
+    } catch (error) {
+      // Page.setWebLifecycleState가 실패해도 워크플로우 실행은 계속
+      console.warn('[CdpService] Failed to set page lifecycle state for tab', tabId, ':', error);
+    }
   }
 }
