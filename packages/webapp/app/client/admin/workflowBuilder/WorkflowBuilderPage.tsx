@@ -7,8 +7,11 @@ import {
   useEdgesState,
   type Connection,
   type Edge,
+  type Node,
+  type OnSelectionChangeParams,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import "./styles/workflow-builder.css";
 import { workflowNodeTypes } from "~/client/admin/workflowBuilder/nodes";
 import type { Workflow, Block } from "scordi-extension";
 import { AllBlockSchemas } from "scordi-extension";
@@ -30,6 +33,8 @@ import {
   convertWorkflowToNodesAndEdges,
   type NodePositionsMap,
 } from "./utils/workflowConverter";
+import type { NodeGroupsMap, NodeAliasesMap } from "~/.server/db/entities/WorkflowNodePositions";
+import { GroupDialog, GROUP_COLORS } from "./GroupDialog";
 import { useNodesState } from "@xyflow/react";
 import { VariablesDialog } from "./VariablesDialog";
 import { VariablesPreviewPanel } from "./VariablesPreviewPanel";
@@ -62,6 +67,8 @@ interface WorkflowBuilderPageProps {
     publishedAt?: Date | null;
   } | null;
   initialNodePositions?: NodePositionsMap | null;
+  initialNodeGroups?: NodeGroupsMap | null;
+  initialNodeAliases?: NodeAliasesMap | null;
   onSave: (payload: {
     workflowId?: number;
     productId: number;
@@ -69,6 +76,8 @@ interface WorkflowBuilderPageProps {
     meta: FormWorkflow;
     type?: WorkflowType;
     nodePositions?: NodePositionsMap;
+    nodeGroups?: NodeGroupsMap | null;
+    nodeAliases?: NodeAliasesMap | null;
   }) => void;
   isSaving: boolean;
   type?: WorkflowType; // Workspace API 타입 지정
@@ -79,6 +88,8 @@ export default function WorkflowBuilderPage({
   workflowId,
   initialWorkflow,
   initialNodePositions,
+  initialNodeGroups,
+  initialNodeAliases,
   onSave,
   isSaving,
   type: initialApiType,
@@ -90,10 +101,12 @@ export default function WorkflowBuilderPage({
       return convertWorkflowToNodesAndEdges(
         initialWorkflow.meta as Workflow,
         initialNodePositions,
+        initialNodeGroups,
+        initialNodeAliases,
       );
     }
     return { nodes: [], edges: [] };
-  }, [initialWorkflow, initialNodePositions]);
+  }, [initialWorkflow, initialNodePositions, initialNodeGroups, initialNodeAliases]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialData.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState<WorkflowEdge>(
@@ -121,6 +134,18 @@ export default function WorkflowBuilderPage({
   );
   const [variablesDialogOpen, setVariablesDialogOpen] = React.useState(false);
 
+  // Group 관리
+  const [nodeGroups, setNodeGroups] = React.useState<NodeGroupsMap>(
+    initialNodeGroups || {},
+  );
+  const [selectedNodesForGroup, setSelectedNodesForGroup] = React.useState<
+    Node[]
+  >([]);
+  const [groupDialogOpen, setGroupDialogOpen] = React.useState(false);
+  const [editingGroupId, setEditingGroupId] = React.useState<string | null>(
+    null,
+  );
+
   // Workspace Key 관리 (MEMBERS, ADD_MEMBERS, DELETE_MEMBERS, BILLING, BILLING_HISTORIES, WORKSPACE_DETAIL 타입에서 사용)
   const [workspaceKey, setWorkspaceKey] = React.useState<string>("");
   // Slug 관리 (WORKSPACE_DETAIL, MEMBERS, ADD_MEMBERS, DELETE_MEMBERS, BILLING, BILLING_HISTORIES 타입에서 사용)
@@ -144,6 +169,130 @@ export default function WorkflowBuilderPage({
       setEdges((eds) => addEdge(newEdge, eds));
     },
     [setEdges],
+  );
+
+  // 노드 선택 변경 핸들러 (Shift+드래그로 다중 선택)
+  const onSelectionChange = React.useCallback(
+    ({ nodes: selectedNodes }: OnSelectionChangeParams) => {
+      // 그룹 노드는 제외하고 일반 노드만 선택 (위치 정보 포함)
+      const nonGroupNodes = selectedNodes.filter((n) => n.type !== "group");
+      setSelectedNodesForGroup(nonGroupNodes as Node[]);
+    },
+    [],
+  );
+
+  // 그룹 생성 핸들러 (노드가 없어도 생성 가능)
+  const handleCreateGroup = React.useCallback(
+    (label: string, color: string) => {
+      const padding = 40;
+      const groupId = `group_${Date.now()}`;
+
+      let groupX: number, groupY: number, groupWidth: number, groupHeight: number;
+      let nodeIds: string[] = [];
+
+      if (selectedNodesForGroup.length > 0) {
+        // 선택된 노드들의 바운딩 박스 계산
+        let minX = Infinity,
+          minY = Infinity,
+          maxX = -Infinity,
+          maxY = -Infinity;
+
+        selectedNodesForGroup.forEach((node) => {
+          const nodeWidth = node.measured?.width ?? 200;
+          const nodeHeight = node.measured?.height ?? 80;
+          minX = Math.min(minX, node.position.x);
+          minY = Math.min(minY, node.position.y);
+          maxX = Math.max(maxX, node.position.x + nodeWidth);
+          maxY = Math.max(maxY, node.position.y + nodeHeight);
+        });
+
+        groupWidth = maxX - minX + padding * 2;
+        groupHeight = maxY - minY + padding * 2;
+        groupX = minX - padding;
+        groupY = minY - padding;
+        nodeIds = selectedNodesForGroup.map((n) => n.id);
+      } else {
+        // 노드가 없으면 뷰포트 중앙에 기본 크기로 생성
+        const inst: any = rfRef.current as any;
+        const vp = inst?.getViewport?.();
+        groupX = vp ? -vp.x / vp.zoom + 100 : 100;
+        groupY = vp ? -vp.y / vp.zoom + 100 : 100;
+        groupWidth = 300;
+        groupHeight = 200;
+      }
+
+      // 그룹 노드 생성
+      const groupNode: Node = {
+        id: groupId,
+        type: "group",
+        position: { x: groupX, y: groupY },
+        style: { width: groupWidth, height: groupHeight },
+        data: { label, color },
+      };
+
+      // 그룹 정보 저장
+      const newGroup = {
+        label,
+        color,
+        position: { x: groupX, y: groupY },
+        width: groupWidth,
+        height: groupHeight,
+        nodeIds,
+      };
+
+      setNodeGroups((prev) => ({ ...prev, [groupId]: newGroup }));
+
+      // 그룹 노드를 맨 앞에 추가 (z-index가 가장 낮게)
+      setNodes((nds) => [groupNode, ...nds]);
+
+      // 선택 해제
+      setSelectedNodesForGroup([]);
+    },
+    [selectedNodesForGroup, setNodes],
+  );
+
+  // 그룹 수정 핸들러
+  const handleEditGroup = React.useCallback(
+    (label: string, color: string) => {
+      if (!editingGroupId) return;
+
+      setNodeGroups((prev) => ({
+        ...prev,
+        [editingGroupId]: { ...prev[editingGroupId], label, color },
+      }));
+
+      setNodes((nds) =>
+        nds.map((n) =>
+          n.id === editingGroupId ? { ...n, data: { ...n.data, label, color } } : n,
+        ),
+      );
+
+      setEditingGroupId(null);
+    },
+    [editingGroupId, setNodes],
+  );
+
+  // 그룹 삭제 핸들러
+  const handleDeleteGroup = React.useCallback(
+    (groupId: string) => {
+      setNodeGroups((prev) => {
+        const { [groupId]: _, ...rest } = prev;
+        return rest;
+      });
+      setNodes((nds) => nds.filter((n) => n.id !== groupId));
+    },
+    [setNodes],
+  );
+
+  // 그룹 노드 더블클릭 핸들러
+  const onNodeDoubleClick = React.useCallback(
+    (_event: React.MouseEvent, node: Node) => {
+      if (node.type === "group") {
+        setEditingGroupId(node.id);
+        setGroupDialogOpen(true);
+      }
+    },
+    [],
   );
 
   const [targetUrl, setTargetUrl] = React.useState<string>(
@@ -420,13 +569,56 @@ export default function WorkflowBuilderPage({
         targetUrl: targetUrl || undefined,
       } as FormWorkflow;
 
-      // 현재 노드들의 위치 정보 추출
+      // 현재 노드들의 위치 정보 추출 (그룹 노드 제외)
       const nodePositions: NodePositionsMap = {};
       nodes.forEach((node) => {
-        nodePositions[node.id] = {
-          x: node.position.x,
-          y: node.position.y,
-        };
+        if (node.type !== "group") {
+          nodePositions[node.id] = {
+            x: node.position.x,
+            y: node.position.y,
+          };
+        }
+      });
+
+      // 그룹 노드 위치 및 크기 업데이트
+      // NodeResizer는 node.measured 또는 node.width/height에 크기를 저장함
+      const updatedGroups: NodeGroupsMap = {};
+      nodes.forEach((node) => {
+        if (node.type === "group") {
+          // 크기 우선순위: measured > width/height > style > 기존값 > 기본값
+          const width =
+            node.measured?.width ??
+            node.width ??
+            (node.style?.width as number) ??
+            nodeGroups[node.id]?.width ??
+            300;
+          const height =
+            node.measured?.height ??
+            node.height ??
+            (node.style?.height as number) ??
+            nodeGroups[node.id]?.height ??
+            200;
+
+          updatedGroups[node.id] = {
+            label: (node.data as any)?.label || nodeGroups[node.id]?.label || "",
+            color: (node.data as any)?.color || nodeGroups[node.id]?.color || "#ef4444",
+            position: { x: node.position.x, y: node.position.y },
+            width,
+            height,
+            nodeIds: nodeGroups[node.id]?.nodeIds || [],
+          };
+        }
+      });
+
+      // 노드들의 alias 추출
+      const nodeAliases: NodeAliasesMap = {};
+      nodes.forEach((node) => {
+        if (node.type !== "group") {
+          const alias = (node.data as any)?.alias;
+          if (alias) {
+            nodeAliases[node.id] = alias;
+          }
+        }
       });
 
       onSave({
@@ -436,10 +628,12 @@ export default function WorkflowBuilderPage({
         meta: workflowWithUrl,
         type,
         nodePositions,
+        nodeGroups: Object.keys(updatedGroups).length > 0 ? updatedGroups : null,
+        nodeAliases: Object.keys(nodeAliases).length > 0 ? nodeAliases : null,
       });
       setDescription(desc);
     },
-    [workflowId, productId, buildWorkflow, onSave, targetUrl, type, nodes],
+    [workflowId, productId, buildWorkflow, onSave, targetUrl, type, nodes, nodeGroups],
   );
 
   const handleExport = React.useCallback(() => {
@@ -625,30 +819,55 @@ export default function WorkflowBuilderPage({
               onEdgesChange={onEdgesChange}
               onConnect={onConnect}
               onEdgeDoubleClick={onEdgeDoubleClick}
+              onNodeDoubleClick={onNodeDoubleClick}
+              onSelectionChange={onSelectionChange}
               nodeTypes={workflowNodeTypes}
               edgeTypes={edgeTypes}
               onInit={(inst) => {
                 rfRef.current = inst;
               }}
               fitView
+              selectionOnDrag
+              selectionKeyCode="Shift"
+              multiSelectionKeyCode="Shift"
             >
               <Background />
               <Controls />
 
-              {/* 플로팅 정렬 버튼 */}
-              <Button
-                variant="default"
-                onClick={onAutoLayout}
+              {/* 플로팅 버튼들 */}
+              <div
                 style={{
                   position: "absolute",
                   bottom: 20,
                   right: 20,
                   zIndex: 5,
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                  display: "flex",
+                  gap: 8,
                 }}
               >
-                정렬
-              </Button>
+                {/* 그룹 만들기 버튼 (항상 표시) */}
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setEditingGroupId(null);
+                    setGroupDialogOpen(true);
+                  }}
+                  style={{
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                  }}
+                >
+                  그룹 만들기{selectedNodesForGroup.length > 0 ? ` (${selectedNodesForGroup.length}개 선택)` : ""}
+                </Button>
+                <Button
+                  variant="default"
+                  onClick={onAutoLayout}
+                  style={{
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                  }}
+                >
+                  정렬
+                </Button>
+              </div>
 
               <EdgeConfigDialog
                 open={edgeDialogOpen}
@@ -684,6 +903,21 @@ export default function WorkflowBuilderPage({
                 setEmails={setEmails}
                 role={role}
                 setRole={setRole}
+              />
+
+              <GroupDialog
+                open={groupDialogOpen}
+                onOpenChange={setGroupDialogOpen}
+                onSave={editingGroupId ? handleEditGroup : handleCreateGroup}
+                initialLabel={
+                  editingGroupId ? nodeGroups[editingGroupId]?.label : ""
+                }
+                initialColor={
+                  editingGroupId
+                    ? nodeGroups[editingGroupId]?.color
+                    : GROUP_COLORS[0].value
+                }
+                mode={editingGroupId ? "edit" : "create"}
               />
             </ReactFlow>
             {result && (

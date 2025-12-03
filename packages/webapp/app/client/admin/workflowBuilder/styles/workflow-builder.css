@@ -1,0 +1,27 @@
+/* 그룹 노드의 기본 선택 테두리 숨기기 */
+.react-flow__node-group {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+.react-flow__node-group.selected {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.react-flow__node-group:focus,
+.react-flow__node-group:focus-visible,
+.react-flow__node-group:focus-within {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* 그룹 노드 내부 컨테이너 */
+.group-node-container {
+  outline: none !important;
+  box-shadow: none !important;
+}

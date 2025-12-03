@@ -7,10 +7,13 @@ export const buildWorkflowJson = (
   edges: WorkflowEdge[],
   targetUrl: string,
 ): FormWorkflow => {
+  // 그룹 노드 제외 (워크플로우 step이 아님)
+  const workflowNodes = nodes.filter((n) => n.type !== "group");
+
   const outgoingEdges = new Map<string, WorkflowEdge[]>();
   const incomingCount = new Map<string, number>();
 
-  nodes.forEach((n) => incomingCount.set(n.id, 0));
+  workflowNodes.forEach((n) => incomingCount.set(n.id, 0));
 
   // Edge를 source별로 그룹핑
   edges.forEach((e) => {
@@ -22,9 +25,9 @@ export const buildWorkflowJson = (
   });
 
   const startNode =
-    nodes.find((n) => (incomingCount.get(n.id) ?? 0) === 0) ?? nodes[0];
+    workflowNodes.find((n) => (incomingCount.get(n.id) ?? 0) === 0) ?? workflowNodes[0];
 
-  const steps: WorkflowStep[] = nodes.map((n) => {
+  const steps: WorkflowStep[] = workflowNodes.map((n) => {
     const edges = outgoingEdges.get(n.id) ?? [];
     const block = (n.data as any).block as Block;
     const repeat = (n.data as any).repeat; // ✅ repeat 데이터 추출
@@ -70,7 +73,7 @@ export const buildWorkflowJson = (
 
   return {
     version: "1.0",
-    start: startNode?.id ?? (nodes[0]?.id || ""),
+    start: startNode?.id ?? (workflowNodes[0]?.id || ""),
     steps,
     targetUrl,
   } as FormWorkflow;

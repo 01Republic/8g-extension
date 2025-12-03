@@ -16,7 +16,11 @@ import {
   upsertNodePositions,
 } from "~/.server/services";
 import type { WorkflowType } from "~/.server/db/entities/IntegrationAppWorkflowMetadata";
-import type { NodePositionsMap } from "~/.server/db/entities/WorkflowNodePositions";
+import type {
+  NodePositionsMap,
+  NodeGroupsMap,
+  NodeAliasesMap,
+} from "~/.server/db/entities/WorkflowNodePositions";
 
 export async function loader({ params }: Route.LoaderArgs) {
   const workflowId = params.workflowId
@@ -44,6 +48,8 @@ export async function loader({ params }: Route.LoaderArgs) {
           }
         : null,
       nodePositions: nodePositionsEntity?.positions ?? null,
+      nodeGroups: nodePositionsEntity?.groups ?? null,
+      nodeAliases: nodePositionsEntity?.aliases ?? null,
       products: productsResponse.items,
     };
   }
@@ -52,6 +58,8 @@ export async function loader({ params }: Route.LoaderArgs) {
     workflowId: undefined,
     workflow: null,
     nodePositions: null,
+    nodeGroups: null,
+    nodeAliases: null,
     products: productsResponse.items,
   };
 }
@@ -84,6 +92,14 @@ export async function action({ request }: Route.ActionArgs) {
   const nodePositions = nodePositionsStr
     ? (JSON.parse(nodePositionsStr) as NodePositionsMap)
     : null;
+  const nodeGroupsStr = formData.get("nodeGroups")?.toString();
+  const nodeGroups = nodeGroupsStr
+    ? (JSON.parse(nodeGroupsStr) as NodeGroupsMap)
+    : null;
+  const nodeAliasesStr = formData.get("nodeAliases")?.toString();
+  const nodeAliases = nodeAliasesStr
+    ? (JSON.parse(nodeAliasesStr) as NodeAliasesMap)
+    : null;
 
   const savedWorkflow = await upsertWorkflowMetadata({
     workflowId,
@@ -93,11 +109,13 @@ export async function action({ request }: Route.ActionArgs) {
     type: typeStr || "WORKFLOW",
   });
 
-  // 노드 위치 정보 저장 (워크플로우 ID가 있어야 저장 가능)
+  // 노드 위치, 그룹, 별칭 정보 저장 (워크플로우 ID가 있어야 저장 가능)
   if (savedWorkflow && nodePositions) {
     await upsertNodePositions({
       workflowId: savedWorkflow.id,
       positions: nodePositions,
+      groups: nodeGroups,
+      aliases: nodeAliases,
     });
   }
 
@@ -116,9 +134,19 @@ export default function WorkflowBuilder({ loaderData }: Route.ComponentProps) {
     meta: FormWorkflow;
     type?: WorkflowType;
     nodePositions?: NodePositionsMap;
+    nodeGroups?: NodeGroupsMap | null;
+    nodeAliases?: NodeAliasesMap | null;
   }) => {
-    const { workflowId, productId, description, meta, type, nodePositions } =
-      payload;
+    const {
+      workflowId,
+      productId,
+      description,
+      meta,
+      type,
+      nodePositions,
+      nodeGroups,
+      nodeAliases,
+    } = payload;
 
     const formData = new FormData();
     if (workflowId) {
@@ -132,6 +160,12 @@ export default function WorkflowBuilder({ loaderData }: Route.ComponentProps) {
     }
     if (nodePositions) {
       formData.append("nodePositions", JSON.stringify(nodePositions));
+    }
+    if (nodeGroups) {
+      formData.append("nodeGroups", JSON.stringify(nodeGroups));
+    }
+    if (nodeAliases) {
+      formData.append("nodeAliases", JSON.stringify(nodeAliases));
     }
     fetcher.submit(formData, { method: "POST" });
   };
@@ -162,6 +196,8 @@ export default function WorkflowBuilder({ loaderData }: Route.ComponentProps) {
       workflowId={loaderData.workflowId}
       initialWorkflow={loaderData.workflow}
       initialNodePositions={loaderData.nodePositions}
+      initialNodeGroups={loaderData.nodeGroups}
+      initialNodeAliases={loaderData.nodeAliases}
       onSave={onSave}
       isSaving={isSaving}
       type={loaderData.workflow?.type as WorkflowType | undefined}

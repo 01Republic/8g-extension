@@ -16,14 +16,33 @@ import {
  *   id INT NOT NULL AUTO_INCREMENT,
  *   workflow_id INT NOT NULL,
  *   positions JSON NOT NULL,
+ *   groups JSON DEFAULT NULL,
+ *   aliases JSON DEFAULT NULL,
  *   created_at DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6),
  *   updated_at DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
  *   PRIMARY KEY (id),
  *   UNIQUE KEY uk_workflow_id (workflow_id),
  *   KEY idx_workflow_id (workflow_id)
  * ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+ *
+ * 기존 테이블에 컬럼 추가:
+ * ALTER TABLE workflow_node_positions ADD COLUMN groups JSON DEFAULT NULL;
+ * ALTER TABLE workflow_node_positions ADD COLUMN aliases JSON DEFAULT NULL;
  */
 export type NodePositionsMap = Record<string, { x: number; y: number }>;
+
+export interface NodeGroup {
+  label: string;
+  color: string;
+  position: { x: number; y: number };
+  width: number;
+  height: number;
+  nodeIds: string[];
+}
+
+export type NodeGroupsMap = Record<string, NodeGroup>;
+
+export type NodeAliasesMap = Record<string, string>;
 
 @Entity("workflow_node_positions")
 export class WorkflowNodePositions extends BaseEntity {
@@ -35,6 +54,12 @@ export class WorkflowNodePositions extends BaseEntity {
 
   @Column({ type: "json", name: "positions" })
   positions: NodePositionsMap;
+
+  @Column({ type: "json", name: "groups", nullable: true })
+  groups: NodeGroupsMap | null;
+
+  @Column({ type: "json", name: "aliases", nullable: true })
+  aliases: NodeAliasesMap | null;
 
   @CreateDateColumn({ type: "datetime", name: "created_at" })
   createdAt: Date;

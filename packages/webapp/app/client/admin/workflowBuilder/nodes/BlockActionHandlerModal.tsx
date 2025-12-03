@@ -39,6 +39,7 @@ interface BlockActionHandlerModalProps {
   parsedSchema: ParsedSchema;
   repeat?: RepeatConfig;
   executionResults?: Record<string, any>;
+  alias?: string;
 }
 
 export const BlockActionHandlerModal = (
@@ -51,6 +52,7 @@ export const BlockActionHandlerModal = (
     block,
     repeat: initialRepeat,
     executionResults,
+    alias: initialAlias,
   } = props;
 
   const { setNodes } = useReactFlow();
@@ -76,6 +78,9 @@ export const BlockActionHandlerModal = (
   // Repeat state
   const [repeat, setRepeat] = useState<RepeatConfig | undefined>(initialRepeat);
 
+  // Alias state
+  const [alias, setAlias] = useState<string>(initialAlias || "");
+
   const onOpenChange = (next: boolean) => {
     setOpen(next);
     if (next) {
@@ -94,6 +99,8 @@ export const BlockActionHandlerModal = (
       setFormData(newFormData);
       // Reset repeat from props
       setRepeat(initialRepeat);
+      // Reset alias from props
+      setAlias(initialAlias || "");
     }
   };
 
@@ -130,6 +137,7 @@ export const BlockActionHandlerModal = (
             ...n.data,
             block: nextBlock,
             repeat, // ✅ repeat 데이터 저장
+            alias: alias.trim() || undefined, // ✅ alias 저장 (빈 문자열은 undefined로)
           },
         } as any;
       }),
@@ -183,7 +191,22 @@ export const BlockActionHandlerModal = (
           <DialogTitle className="text-xl">{title} 편집</DialogTitle>
         </DialogHeader>
         <div className="mt-2 flex flex-col gap-5">
-          {/* ⭐ Repeat 설정 섹션 (상단 배치) */}
+          {/* ⭐ Alias 입력 섹션 (최상단) */}
+          <div className="flex flex-col gap-1.5 pb-4 border-b border-gray-200">
+            <label className="text-sm font-medium">별칭 (Alias)</label>
+            <input
+              type="text"
+              value={alias}
+              onChange={(e) => setAlias(e.target.value)}
+              placeholder="예: 로그인 버튼 클릭"
+              className="rounded-md border border-gray-200 px-3 py-2 text-sm"
+            />
+            <p className="text-xs text-gray-500">
+              노드에 표시될 설명입니다. 비워두면 블록 타입만 표시됩니다.
+            </p>
+          </div>
+
+          {/* ⭐ Repeat 설정 섹션 */}
           <RepeatFieldBlock
             repeat={repeat}
             onRepeatChange={setRepeat}

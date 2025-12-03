@@ -1,16 +1,20 @@
 import type { NodeTypes } from "@xyflow/react";
 import GenericBlockNode from "./GenericBlockNode";
+import GroupNode from "./GroupNode";
 import { AllBlockSchemas } from "scordi-extension";
 import { blockLabels } from "8g-shared";
 
-// 모든 블록 타입을 GenericBlockNode로 자동 등록
-export const workflowNodeTypes: NodeTypes = Object.keys(AllBlockSchemas).reduce(
-  (acc, blockName) => {
-    acc[blockName] = GenericBlockNode;
-    return acc;
-  },
-  {} as NodeTypes,
-);
+// 모든 블록 타입을 GenericBlockNode로 자동 등록 + 그룹 노드
+export const workflowNodeTypes: NodeTypes = {
+  ...Object.keys(AllBlockSchemas).reduce(
+    (acc, blockName) => {
+      acc[blockName] = GenericBlockNode;
+      return acc;
+    },
+    {} as NodeTypes,
+  ),
+  group: GroupNode,
+};
 
 // blockLabels는 8g-shared에서 import
 export { blockLabels };

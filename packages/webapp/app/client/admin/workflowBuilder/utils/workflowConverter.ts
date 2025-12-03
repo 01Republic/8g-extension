@@ -4,6 +4,7 @@ import { AllBlockSchemas } from "scordi-extension";
 import type { WorkflowEdge } from "~/models/workflow/types";
 import { getLayoutedElements } from "./autoLayout";
 import { getConditionLabel } from "./conditionUtils";
+import type { NodeGroupsMap, NodeAliasesMap } from "~/.server/db/entities/WorkflowNodePositions";
 
 export type NodePositionsMap = Record<string, { x: number; y: number }>;
 
@@ -17,10 +18,14 @@ interface ConvertedWorkflow {
  *
  * @param workflow - 워크플로우 JSON
  * @param nodePositions - 저장된 노드 위치 정보 (없으면 dagre 자동 레이아웃 적용)
+ * @param nodeGroups - 저장된 그룹 정보 (있으면 그룹 노드로 변환)
+ * @param nodeAliases - 저장된 별칭 정보 (있으면 노드 data에 alias 포함)
  */
 export function convertWorkflowToNodesAndEdges(
   workflow: Workflow,
   nodePositions?: NodePositionsMap | null,
+  nodeGroups?: NodeGroupsMap | null,
+  nodeAliases?: NodeAliasesMap | null,
 ): ConvertedWorkflow {
   const nodes: Node[] = [];
   const edges: WorkflowEdge[] = [];
@@ -49,6 +54,7 @@ export function convertWorkflowToNodesAndEdges(
         block: step.block,
         schema, // ✅ AllBlockSchemas에서 스키마 매칭!
         repeat: step.repeat, // ✅ repeat 데이터 역변환
+        alias: nodeAliases?.[step.id], // ✅ 저장된 별칭 적용
       },
     };
     nodes.push(node);
@@ -126,6 +132,27 @@ export function convertWorkflowToNodesAndEdges(
     return {
       nodes: layouted.nodes,
       edges: layouted.edges,
+    };
+  }
+
+  // 그룹 노드 추가 (저장된 그룹이 있을 경우)
+  if (nodeGroups && Object.keys(nodeGroups).length > 0) {
+    const groupNodes: Node[] = [];
+    Object.entries(nodeGroups).forEach(([groupId, group]) => {
+      const groupNode: Node = {
+        id: groupId,
+        type: "group",
+        position: group.position,
+        style: { width: group.width, height: group.height },
+        data: { label: group.label, color: group.color },
+      };
+      groupNodes.push(groupNode);
+    });
+
+    // 그룹 노드를 맨 앞에 추가 (z-index가 가장 낮게)
+    return {
+      nodes: [...groupNodes, ...nodes],
+      edges,
     };
   }
 

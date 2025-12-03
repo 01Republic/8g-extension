@@ -4,7 +4,7 @@ import type { z } from "zod";
 import type { Block, RepeatConfig } from "scordi-extension";
 import { cn } from "~/lib/utils";
 import { parseZodSchema } from "~/lib/schema-parser";
-import { blockLabels, fieldLabels } from "./index";
+import { blockLabels } from "./index";
 import { BlockActionHandlerModal } from "./BlockActionHandlerModal";
 
 type GenericBlockNodeData = {
@@ -13,6 +13,7 @@ type GenericBlockNodeData = {
   schema: z.ZodTypeAny;
   repeat?: RepeatConfig;
   executionResults?: Record<string, any>;
+  alias?: string;
 };
 
 type GenericBlockNodeType = Node<GenericBlockNodeData>;
@@ -91,35 +92,16 @@ export default function GenericBlockNode({
           block={block}
           repeat={repeat}
           executionResults={executionResults}
+          alias={data.alias}
         />
       </div>
 
-      <div className="px-3 py-2 flex gap-1 flex-col">
-        {Object.entries(block).map(([key, value]) => {
-          if (key === "name") return null;
-          if (key === "option") {
-            return Object.entries(value as any).map(([optKey, optVal]) => (
-              <Row
-                key={`option.${optKey}`}
-                label={fieldLabels[optKey] || optKey}
-                value={String(optVal)}
-              />
-            ));
-          }
-          if (value === undefined || value === null || value === "")
-            return null;
-
-          const displayValue =
-            typeof value === "object" ? JSON.stringify(value) : String(value);
-          return (
-            <Row
-              key={key}
-              label={fieldLabels[key] || key}
-              value={displayValue}
-            />
-          );
-        })}
-      </div>
+      {/* alias가 있을 때만 표시 */}
+      {data.alias && (
+        <div className="px-3 py-2 text-sm text-gray-600 border-t border-gray-100">
+          {data.alias}
+        </div>
+      )}
 
       <Handle
         type="target"
@@ -135,11 +117,3 @@ export default function GenericBlockNode({
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between gap-10 items-center">
-      <span className="text-xxs text-gray-500 whitespace-nowrap">{label}</span>
-      <span className="text-sm text-gray-700 font-semibold">{value}</span>
-    </div>
-  );
-}
