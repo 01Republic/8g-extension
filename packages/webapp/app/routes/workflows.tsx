@@ -3,7 +3,10 @@ import WorkflowsPage from "~/client/admin/workflows/WorkflowsPage";
 import { useFetcher } from "react-router";
 import { deleteWorkflows } from "~/.server/services/workflow/delete-workflows.service";
 import { findAllWorkflows } from "~/.server/services/workflow/find-all-workflows.service";
-import { publishWorkflow, unpublishWorkflow } from "~/.server/services/workflow";
+import {
+  publishWorkflow,
+  unpublishWorkflow,
+} from "~/.server/services/workflow";
 import { fetchProducts } from "~/.server/services";
 import { IsNull, Not } from "typeorm";
 
@@ -33,7 +36,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     page,
     itemsPerPage,
     where,
-    order: { id: "DESC" },
+    order: { publishedAt: "DESC", id: "DESC" },
     relations: [],
     limit: itemsPerPage,
     offset: (page - 1) * itemsPerPage,
