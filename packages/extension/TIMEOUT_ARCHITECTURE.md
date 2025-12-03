@@ -288,7 +288,7 @@ const response = await chrome.runtime.sendMessage({
   data: {
     // ...
     waitForRequest: data.waitForRequest || false,
-    waitTimeout: data.waitTimeout || 5000,
+    waitTimeout: data.waitTimeout || 30000,
     // ...
   },
 });
@@ -297,9 +297,38 @@ const response = await chrome.runtime.sendMessage({
 #### 설명
 
 - 네트워크 요청 캐치 블록의 대기 타임아웃
-- **기본값: 5000ms (5초)**
+- **기본값: 30000ms (30초)**
 - `waitTimeout` 옵션으로 설정 가능
 - `waitForRequest`가 `true`일 때만 적용
+
+### 4.5 ExecuteJavaScriptBlock
+
+#### 위치
+
+`src/blocks/ExecuteJavaScriptBlock.ts`
+
+#### 구현
+
+```typescript
+const { code, returnResult = true, timeout = 30000 } = data;
+
+// Background로 CDP 명령 전송
+const response = await chrome.runtime.sendMessage({
+  type: 'CDP_EXECUTE_JAVASCRIPT',
+  data: {
+    code,
+    returnResult,
+    timeout,
+  },
+});
+```
+
+#### 설명
+
+- JavaScript 코드 실행 블록의 타임아웃
+- **기본값: 30000ms (30초)**
+- `timeout` 옵션으로 설정 가능
+- CDP를 통해 Background에서 실행
 
 ---
 
@@ -433,18 +462,19 @@ static requestTimeout(timeoutMs: number = 600000) {
 
 ## 8. 타임아웃 기본값 요약
 
-| 위치                  | 타임아웃 종류   | 기본값          | 설정 가능 여부             |
-| --------------------- | --------------- | --------------- | -------------------------- |
-| SDK `checkExtension`  | Extension 확인  | 5초 (고정)      | ❌                         |
-| SDK `collectWorkflow` | 워크플로우 실행 | 10분 (600000ms) | ✅ (`request.timeoutMs`)   |
-| Step 실행             | 각 스텝 실행    | 설정값에 따라   | ✅ (`step.timeoutMs`)      |
-| API 요청              | HTTP 요청       | 요청 시 지정    | ✅ (`request.timeout`)     |
-| WaitForConditionBlock | 조건 대기       | 5분 (300000ms)  | ✅ (`timeoutMs`)           |
-| NavigateBlock         | 페이지 로드     | 30초 (30000ms)  | ✅ (`timeout`)             |
-| FetchApiBlock         | API 요청        | 30초 (30000ms)  | ✅ (`timeout`)             |
-| NetworkCatchBlock     | 네트워크 대기   | 5초 (5000ms)    | ✅ (`waitTimeout`)         |
-| ElementSelector       | 요소 선택 대기  | 5초 (5000ms)    | ✅ (`waitSelectorTimeout`) |
-| TabManager            | 탭 로드         | 30초 (30000ms)  | ✅ (`timeout` 파라미터)    |
+| 위치                    | 타임아웃 종류      | 기본값           | 설정 가능 여부             |
+| ----------------------- | ------------------ | ---------------- | -------------------------- |
+| SDK `checkExtension`    | Extension 확인     | 5초 (고정)       | ❌                         |
+| SDK `collectWorkflow`   | 워크플로우 실행    | 10분 (600000ms)  | ✅ (`request.timeoutMs`)   |
+| Step 실행               | 각 스텝 실행       | 설정값에 따라    | ✅ (`step.timeoutMs`)      |
+| API 요청                | HTTP 요청          | 요청 시 지정     | ✅ (`request.timeout`)     |
+| WaitForConditionBlock   | 조건 대기          | 5분 (300000ms)   | ✅ (`timeoutMs`)           |
+| NavigateBlock           | 페이지 로드        | 30초 (30000ms)   | ✅ (`timeout`)             |
+| FetchApiBlock           | API 요청           | 30초 (30000ms)   | ✅ (`timeout`)             |
+| NetworkCatchBlock       | 네트워크 대기      | 30초 (30000ms)   | ✅ (`waitTimeout`)         |
+| ExecuteJavaScriptBlock  | JS 코드 실행       | 30초 (30000ms)   | ✅ (`timeout`)             |
+| ElementSelector         | 요소 선택 대기     | 5초 (5000ms)     | ✅ (`waitSelectorTimeout`) |
+| TabManager              | 탭 로드            | 100초 (100000ms) | ✅ (`timeout` 파라미터)    |
 
 ---
 
@@ -522,6 +552,7 @@ const checkElement = async () => {
 - `src/blocks/NavigateBlock.ts` - 네비게이션 타임아웃
 - `src/blocks/FetchApiBlock.ts` - API 블록 타임아웃
 - `src/blocks/NetworkCatchBlock.ts` - 네트워크 캐치 타임아웃
+- `src/blocks/ExecuteJavaScriptBlock.ts` - JS 실행 타임아웃
 - `src/content/elements/finders/ElementSelector.ts` - 요소 선택 타임아웃
 - `src/content/elements/index.ts` - 요소 선택 옵션
 - `src/background/chrome/TabManager.ts` - 탭 로드 타임아웃

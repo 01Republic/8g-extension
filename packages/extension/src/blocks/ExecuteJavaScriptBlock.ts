@@ -26,7 +26,7 @@ export async function handlerExecuteJavaScript(
   data: ExecuteJavaScriptBlock
 ): Promise<BlockResult<any>> {
   try {
-    const { code, returnResult = true, timeout = 5000 } = data;
+    const { code, returnResult = true, timeout = 30000 } = data;
 
     if (!code || code.trim() === '') {
       throw new Error('JavaScript code is required');

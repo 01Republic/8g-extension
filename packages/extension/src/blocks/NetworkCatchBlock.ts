@@ -69,7 +69,7 @@ export async function handlerNetworkCatch(
         mimeType: data.mimeType,
         requestBodyPattern: data.requestBodyPattern,
         waitForRequest: data.waitForRequest || false,
-        waitTimeout: data.waitTimeout || 5000,
+        waitTimeout: data.waitTimeout || 30000,
         returnAll: data.returnAll || false,
         includeHeaders: data.includeHeaders || false,
       },
