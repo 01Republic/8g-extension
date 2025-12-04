@@ -234,8 +234,6 @@ export async function handlerWaitForCondition(
           clearInterval(intervalId);
           intervalId = null;
         }
-        // 표시된 경우 ExecutionStatusUI 숨김
-        window.dispatchEvent(new CustomEvent('8g-hide-execution-status'));
       };
 
       const resolveWith = (result: WaitForConditionResult) => {

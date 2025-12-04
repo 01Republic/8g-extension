@@ -33,15 +33,62 @@ import { refreshLocaleFromBrowser } from '../locales';
 
   if (isTopFrame) {
     const initUI = () => {
+      // Shadow DOM 호스트 생성 (호스트 페이지의 DOM 조작으로부터 UI 격리)
+      const shadowHost = document.createElement('div');
+      shadowHost.id = '8g-extension-shadow-host';
+      shadowHost.style.cssText = 'all: initial; position: fixed; top: 0; left: 0; width: 0; height: 0; z-index: 2147483647; pointer-events: none;';
+      document.body.appendChild(shadowHost);
+
+      // Shadow DOM 생성 (closed 모드로 외부 접근 차단)
+      const shadowRoot = shadowHost.attachShadow({ mode: 'closed' });
+
+      // Shadow DOM 내부에 React 루트 컨테이너 생성
       const confirmationRoot = document.createElement('div');
       confirmationRoot.id = '8g-confirmation-ui-root';
-      confirmationRoot.style.cssText = 'all: initial; position: fixed; z-index: 2147483647;';
-      document.body.appendChild(confirmationRoot);
+      shadowRoot.appendChild(confirmationRoot);
+
+      // Shadow DOM 내부에서 사용할 스타일 주입 (keyframes 애니메이션 포함)
+      const styleElement = document.createElement('style');
+      styleElement.textContent = `
+        @keyframes wave-flow {
+          0% {
+            box-shadow:
+              inset 0 0 0 2px rgba(168, 85, 247, 0.9),
+              inset 0 0 0 8px rgba(168, 85, 247, 0.5),
+              inset 0 0 0 16px rgba(168, 85, 247, 0.2);
+          }
+          25% {
+            box-shadow:
+              inset 0 0 0 4px rgba(168, 85, 247, 1),
+              inset 0 0 0 10px rgba(168, 85, 247, 0.6),
+              inset 0 0 0 18px rgba(168, 85, 247, 0.25);
+          }
+          50% {
+            box-shadow:
+              inset 0 0 0 3px rgba(168, 85, 247, 0.95),
+              inset 0 0 0 12px rgba(168, 85, 247, 0.7),
+              inset 0 0 0 20px rgba(168, 85, 247, 0.3);
+          }
+          75% {
+            box-shadow:
+              inset 0 0 0 2px rgba(168, 85, 247, 0.85),
+              inset 0 0 0 9px rgba(168, 85, 247, 0.55),
+              inset 0 0 0 17px rgba(168, 85, 247, 0.22);
+          }
+          100% {
+            box-shadow:
+              inset 0 0 0 2px rgba(168, 85, 247, 0.9),
+              inset 0 0 0 8px rgba(168, 85, 247, 0.5),
+              inset 0 0 0 16px rgba(168, 85, 247, 0.2);
+          }
+        }
+      `;
+      shadowRoot.appendChild(styleElement);
 
       const confirmationReactRoot = createRoot(confirmationRoot);
       confirmationReactRoot.render(<ExecutionStatusUIContainer />);
 
-      console.log('[8G Extension] ExecutionStatusUI mounted (top frame only)');
+      console.log('[8G Extension] ExecutionStatusUI mounted in Shadow DOM (top frame only)');
     };
     
 

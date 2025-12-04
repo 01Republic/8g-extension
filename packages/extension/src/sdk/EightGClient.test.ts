@@ -770,7 +770,8 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
       const result = await client.getWorkspaceDetail('test-key', 'test-slug', mockRequest);
 
       expect(result.success).toBe(true);
-      expect(result.data).toHaveProperty('success', true);
+      expect(result.data).toHaveProperty('success', false);
+      expect(result.data).toHaveProperty('message', 'Data validation failed');
       expect(result.data).toHaveProperty('data', undefined);
       expect(consoleSpy).toHaveBeenCalledWith(
         'Invalid data:',

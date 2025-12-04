@@ -46,6 +46,7 @@ export class InternalMessageHandler {
 
       if (isHideExecutionStatusMessage(message)) {
         console.log('[InternalMessageHandler] Hide execution status');
+        console.trace('[InternalMessageHandler] HIDE call stack:');
         window.dispatchEvent(new CustomEvent('8g-hide-execution-status'));
         // 워크플로우 실행 종료 시 초록색 ConfirmationUI도 함께 숨김
         window.dispatchEvent(new CustomEvent('8g-hide-execution-status'));

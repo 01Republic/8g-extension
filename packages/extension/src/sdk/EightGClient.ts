@@ -483,6 +483,7 @@ export class EightGClient {
         // ResDataContainer 구조: { success: true, data: [...] }
         const container = rawData as ResDataContainer<T[]>;
         const validatedItems: T[] = [];
+        let hasValidationError = false;
 
         if (container.data) {
           for (const item of container.data) {
@@ -491,6 +492,7 @@ export class EightGClient {
               validatedItems.push(parsed.data);
             } else {
               console.warn(`Invalid data:`, item, parsed.error);
+              hasValidationError = true;
             }
           }
         }
@@ -498,7 +500,8 @@ export class EightGClient {
         return {
           ...result,
           data: {
-            ...container,
+            success: !hasValidationError && container.success,
+            message: hasValidationError ? 'Data validation failed' : container.message,
             data: validatedItems,
           },
         } as CollectWorkflowResult<T[]>;
@@ -513,6 +516,7 @@ export class EightGClient {
       }
 
       const validatedItems: T[] = [];
+      let hasValidationError = false;
       for (const item of rawData) {
         const itemData = (item as any)?.data !== undefined ? (item as any).data : item;
         const parsed = schema.safeParse(itemData);
@@ -520,12 +524,17 @@ export class EightGClient {
           validatedItems.push(parsed.data);
         } else {
           console.warn(`Invalid data:`, item, parsed.error);
+          hasValidationError = true;
         }
       }
 
       return {
         ...result,
-        data: { success: true, data: validatedItems },
+        data: {
+          success: !hasValidationError,
+          message: hasValidationError ? 'Data validation failed' : undefined,
+          data: validatedItems,
+        },
       } as CollectWorkflowResult<T[]>;
     } else {
       // 단일 객체 검증 - ResDataContainer<T>
