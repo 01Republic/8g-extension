@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
@@ -8,12 +9,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "~/components/ui/command";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "~/lib/utils";
 import type { WorkflowType } from "~/.server/db/entities/IntegrationAppWorkflowMetadata";
 
 interface Product {
   id: number;
   nameKo: string;
   nameEn: string;
+  image?: string;
 }
 
 interface WorkflowBuilderHeaderProps {
@@ -57,6 +74,8 @@ export const WorkflowBuilderHeader = ({
   onUnpublishClick,
   isPublishing = false,
 }: WorkflowBuilderHeaderProps) => {
+  const [productComboboxOpen, setProductComboboxOpen] = useState(false);
+
   const typeLabels: Record<WorkflowType, string> = {
     WORKFLOW: "⚡ Data Collection",
     WORKSPACE: "🏢 Get Workspaces",
@@ -85,21 +104,59 @@ export const WorkflowBuilderHeader = ({
           ✅ Published
         </Badge>
       )}
-      <Select
-        value={productId.toString()}
-        onValueChange={(value) => onProductIdChange(parseInt(value))}
-      >
-        <SelectTrigger style={{ width: 200 }}>
-          <SelectValue placeholder="Select Product" />
-        </SelectTrigger>
-        <SelectContent>
-          {products.map((product) => (
-            <SelectItem key={product.id} value={product.id.toString()}>
-              {product.nameKo || product.nameEn}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <Popover open={productComboboxOpen} onOpenChange={setProductComboboxOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={productComboboxOpen}
+            style={{ width: 200 }}
+            className="justify-between"
+          >
+            {products.find((p) => p.id === productId)?.nameKo ||
+              products.find((p) => p.id === productId)?.nameEn ||
+              "Select Product"}
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[200px] p-0">
+          <Command>
+            <CommandInput placeholder="제품 검색..." />
+            <CommandList>
+              <CommandEmpty>제품을 찾을 수 없습니다.</CommandEmpty>
+              <CommandGroup>
+                {products.map((product) => (
+                  <CommandItem
+                    key={product.id}
+                    value={`${product.nameKo} ${product.nameEn} ${product.id}`}
+                    onSelect={() => {
+                      onProductIdChange(product.id);
+                      setProductComboboxOpen(false);
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        productId === product.id ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    <div className="flex items-center gap-2">
+                      {product.image && (
+                        <img
+                          src={product.image}
+                          alt=""
+                          className="w-4 h-4 rounded"
+                        />
+                      )}
+                      <span>{product.nameKo || product.nameEn}</span>
+                    </div>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
       <Select
         value={type}
         onValueChange={(value) => onApiTypeChange?.(value as WorkflowType)}
