@@ -313,8 +313,8 @@ export const WorkspaceRoleSchema = z.object({
   title: z.string(),
   // 역할 권한 설명
   permission: z.string().nullable().optional(),
-  // 가격 정보
-  amount: CurrencyAmountSchema.nullable().optional(),
+  // 가격 정보 (예: "$20 / month")
+  amount: z.string().nullable().optional(),
   // 역할 상세 설명
   description: z.string().nullable().optional(),
 });

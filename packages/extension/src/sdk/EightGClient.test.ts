@@ -7,7 +7,6 @@ import {
   ExecutionContext,
   CollectWorkflowRequest,
   CollectWorkflowResult,
-  CurrencyCode,
 } from './types';
 import { EightGError } from './errors';
 
@@ -647,25 +646,13 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
               {
                 title: 'admin',
                 permission: 'Full access to all features',
-                amount: {
-                  code: CurrencyCode.USD,
-                  symbol: '$',
-                  format: 'symbol_first',
-                  amount: 0,
-                  text: 'Free',
-                },
+                amount: 'Free',
                 description: 'Administrator role with full permissions',
               },
               {
                 title: 'member',
                 permission: 'Basic access',
-                amount: {
-                  code: CurrencyCode.USD,
-                  symbol: '$',
-                  format: 'symbol_first',
-                  amount: 10,
-                  text: '$10 / month',
-                },
+                amount: '$10 / month',
                 description: 'Standard member role',
               },
             ],
@@ -689,25 +676,13 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
                   {
                     title: 'admin',
                     permission: 'Full access to all features',
-                    amount: {
-                      code: CurrencyCode.USD,
-                      symbol: '$',
-                      format: 'symbol_first',
-                      amount: 0,
-                      text: 'Free',
-                    },
+                    amount: 'Free',
                     description: 'Administrator role with full permissions',
                   },
                   {
                     title: 'member',
                     permission: 'Basic access',
-                    amount: {
-                      code: CurrencyCode.USD,
-                      symbol: '$',
-                      format: 'symbol_first',
-                      amount: 10,
-                      text: '$10 / month',
-                    },
+                    amount: '$10 / month',
                     description: 'Standard member role',
                   },
                 ],
@@ -742,25 +717,13 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
           {
             title: 'admin',
             permission: 'Full access to all features',
-            amount: {
-              code: CurrencyCode.USD,
-              symbol: '$',
-              format: 'symbol_first',
-              amount: 0,
-              text: 'Free',
-            },
+            amount: 'Free',
             description: 'Administrator role with full permissions',
           },
           {
             title: 'member',
             permission: 'Basic access',
-            amount: {
-              code: CurrencyCode.USD,
-              symbol: '$',
-              format: 'symbol_first',
-              amount: 10,
-              text: '$10 / month',
-            },
+            amount: '$10 / month',
             description: 'Standard member role',
           },
         ],
@@ -975,25 +938,13 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
           {
             title: 'admin',
             permission: 'Full access to all features',
-            amount: {
-              code: CurrencyCode.USD,
-              symbol: '$',
-              format: 'symbol_first',
-              amount: 0,
-              text: 'Free',
-            },
+            amount: 'Free',
             description: 'Administrator role with full permissions',
           },
           {
             title: 'member',
             permission: 'Basic access',
-            amount: {
-              code: CurrencyCode.USD,
-              symbol: '$',
-              format: 'symbol_first',
-              amount: 10,
-              text: '$10 / month',
-            },
+            amount: '$10 / month',
             description: 'Standard member role',
           },
         ],
