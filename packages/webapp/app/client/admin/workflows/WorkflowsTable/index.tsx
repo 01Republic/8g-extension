@@ -17,6 +17,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "~/components/ui/command";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "~/lib/utils";
 import type {
   IntegrationAppWorkflowMetadata,
   WorkflowType,
@@ -91,6 +106,7 @@ export const WorkflowsTable = (props: WorkflowsTableProps) => {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [workflowToPublish, setWorkflowToPublish] = useState<IntegrationAppWorkflowMetadata | null>(null);
   const [currentlyPublished, setCurrentlyPublished] = useState<IntegrationAppWorkflowMetadata | null>(null);
+  const [productComboboxOpen, setProductComboboxOpen] = useState(false);
 
   const currentPage = pagination.currentPage;
   const totalPages = pagination.totalPage;
@@ -187,22 +203,77 @@ export const WorkflowsTable = (props: WorkflowsTableProps) => {
       <div className="flex gap-4 items-center bg-white p-4 rounded-lg border">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-gray-700">Product:</span>
-          <Select
-            value={selectedProductId}
-            onValueChange={handleProductFilterChange}
-          >
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="전체" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">전체</SelectItem>
-              {products.map((product) => (
-                <SelectItem key={product.id} value={product.id.toString()}>
-                  {product.nameKo || product.nameEn}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Popover open={productComboboxOpen} onOpenChange={setProductComboboxOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={productComboboxOpen}
+                className="w-[200px] justify-between"
+              >
+                {selectedProductId === "all"
+                  ? "전체"
+                  : products.find((p) => p.id.toString() === selectedProductId)?.nameKo ||
+                    products.find((p) => p.id.toString() === selectedProductId)?.nameEn ||
+                    "선택"}
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[200px] p-0">
+              <Command>
+                <CommandInput placeholder="제품 검색..." />
+                <CommandList>
+                  <CommandEmpty>제품을 찾을 수 없습니다.</CommandEmpty>
+                  <CommandGroup>
+                    <CommandItem
+                      value="all"
+                      onSelect={() => {
+                        handleProductFilterChange("all");
+                        setProductComboboxOpen(false);
+                      }}
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          selectedProductId === "all" ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      전체
+                    </CommandItem>
+                    {products.map((product) => (
+                      <CommandItem
+                        key={product.id}
+                        value={`${product.nameKo} ${product.nameEn} ${product.id}`}
+                        onSelect={() => {
+                          handleProductFilterChange(product.id.toString());
+                          setProductComboboxOpen(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            selectedProductId === product.id.toString()
+                              ? "opacity-100"
+                              : "opacity-0"
+                          )}
+                        />
+                        <div className="flex items-center gap-2">
+                          {product.image && (
+                            <img
+                              src={product.image}
+                              alt=""
+                              className="w-4 h-4 rounded"
+                            />
+                          )}
+                          <span>{product.nameKo || product.nameEn}</span>
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
 
         <div className="flex items-center gap-2">

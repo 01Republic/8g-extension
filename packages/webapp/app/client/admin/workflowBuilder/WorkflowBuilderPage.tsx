@@ -33,7 +33,10 @@ import {
   convertWorkflowToNodesAndEdges,
   type NodePositionsMap,
 } from "./utils/workflowConverter";
-import type { NodeGroupsMap, NodeAliasesMap } from "~/.server/db/entities/WorkflowNodePositions";
+import type {
+  NodeGroupsMap,
+  NodeAliasesMap,
+} from "~/.server/db/entities/WorkflowNodePositions";
 import { GroupDialog, GROUP_COLORS } from "./GroupDialog";
 import { useNodesState } from "@xyflow/react";
 import { VariablesDialog } from "./VariablesDialog";
@@ -106,7 +109,12 @@ export default function WorkflowBuilderPage({
       );
     }
     return { nodes: [], edges: [] };
-  }, [initialWorkflow, initialNodePositions, initialNodeGroups, initialNodeAliases]);
+  }, [
+    initialWorkflow,
+    initialNodePositions,
+    initialNodeGroups,
+    initialNodeAliases,
+  ]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialData.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState<WorkflowEdge>(
@@ -187,7 +195,10 @@ export default function WorkflowBuilderPage({
       const padding = 40;
       const groupId = `group_${Date.now()}`;
 
-      let groupX: number, groupY: number, groupWidth: number, groupHeight: number;
+      let groupX: number,
+        groupY: number,
+        groupWidth: number,
+        groupHeight: number;
       let nodeIds: string[] = [];
 
       if (selectedNodesForGroup.length > 0) {
@@ -263,7 +274,9 @@ export default function WorkflowBuilderPage({
 
       setNodes((nds) =>
         nds.map((n) =>
-          n.id === editingGroupId ? { ...n, data: { ...n.data, label, color } } : n,
+          n.id === editingGroupId
+            ? { ...n, data: { ...n.data, label, color } }
+            : n,
         ),
       );
 
@@ -600,8 +613,12 @@ export default function WorkflowBuilderPage({
             200;
 
           updatedGroups[node.id] = {
-            label: (node.data as any)?.label || nodeGroups[node.id]?.label || "",
-            color: (node.data as any)?.color || nodeGroups[node.id]?.color || "#ef4444",
+            label:
+              (node.data as any)?.label || nodeGroups[node.id]?.label || "",
+            color:
+              (node.data as any)?.color ||
+              nodeGroups[node.id]?.color ||
+              "#ef4444",
             position: { x: node.position.x, y: node.position.y },
             width,
             height,
@@ -628,12 +645,22 @@ export default function WorkflowBuilderPage({
         meta: workflowWithUrl,
         type,
         nodePositions,
-        nodeGroups: Object.keys(updatedGroups).length > 0 ? updatedGroups : null,
+        nodeGroups:
+          Object.keys(updatedGroups).length > 0 ? updatedGroups : null,
         nodeAliases: Object.keys(nodeAliases).length > 0 ? nodeAliases : null,
       });
       setDescription(desc);
     },
-    [workflowId, productId, buildWorkflow, onSave, targetUrl, type, nodes, nodeGroups],
+    [
+      workflowId,
+      productId,
+      buildWorkflow,
+      onSave,
+      targetUrl,
+      type,
+      nodes,
+      nodeGroups,
+    ],
   );
 
   const handleExport = React.useCallback(() => {
@@ -710,7 +737,7 @@ export default function WorkflowBuilderPage({
   }, []);
   //1500
   return (
-    <SubtreePreviewProvider value={subtreePreviewHandlers}>
+    <SubtreePreviewProvider>
       <div
         style={{
           height: "100vh",
@@ -856,7 +883,10 @@ export default function WorkflowBuilderPage({
                     boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
                   }}
                 >
-                  그룹 만들기{selectedNodesForGroup.length > 0 ? ` (${selectedNodesForGroup.length}개 선택)` : ""}
+                  그룹 만들기
+                  {selectedNodesForGroup.length > 0
+                    ? ` (${selectedNodesForGroup.length}개 선택)`
+                    : ""}
                 </Button>
                 <Button
                   variant="default"
@@ -920,9 +950,7 @@ export default function WorkflowBuilderPage({
                 mode={editingGroupId ? "edit" : "create"}
               />
             </ReactFlow>
-            {result && (
-              <ResultPanel result={result} position="top-right" type={type} />
-            )}
+            {result && <ResultPanel result={result} position="top-right" />}
           </div>
 
           {/* 오른쪽: Variables Preview */}
