@@ -7,6 +7,7 @@ import {
   ExecutionContext,
   CollectWorkflowRequest,
   CollectWorkflowResult,
+  CurrencyCode,
 } from './types';
 import { EightGError } from './errors';
 
@@ -642,7 +643,32 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
             publicEmail: 'public@test.com',
             billingEmail: 'billing@test.com',
             orgPageUrl: 'https://test.com',
-            roles: ['admin', 'member'],
+            roles: [
+              {
+                title: 'admin',
+                permission: 'Full access to all features',
+                amount: {
+                  code: CurrencyCode.USD,
+                  symbol: '$',
+                  format: 'symbol_first',
+                  amount: 0,
+                  text: 'Free',
+                },
+                description: 'Administrator role with full permissions',
+              },
+              {
+                title: 'member',
+                permission: 'Basic access',
+                amount: {
+                  code: CurrencyCode.USD,
+                  symbol: '$',
+                  format: 'symbol_first',
+                  amount: 10,
+                  text: '$10 / month',
+                },
+                description: 'Standard member role',
+              },
+            ],
           },
         },
         steps: [
@@ -659,7 +685,32 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
                 publicEmail: 'public@test.com',
                 billingEmail: 'billing@test.com',
                 orgPageUrl: 'https://test.com',
-                roles: ['admin', 'member'],
+                roles: [
+                  {
+                    title: 'admin',
+                    permission: 'Full access to all features',
+                    amount: {
+                      code: CurrencyCode.USD,
+                      symbol: '$',
+                      format: 'symbol_first',
+                      amount: 0,
+                      text: 'Free',
+                    },
+                    description: 'Administrator role with full permissions',
+                  },
+                  {
+                    title: 'member',
+                    permission: 'Basic access',
+                    amount: {
+                      code: CurrencyCode.USD,
+                      symbol: '$',
+                      format: 'symbol_first',
+                      amount: 10,
+                      text: '$10 / month',
+                    },
+                    description: 'Standard member role',
+                  },
+                ],
               },
             },
             startedAt: '2023-01-01T00:00:00Z',
@@ -687,7 +738,32 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
         publicEmail: 'public@test.com',
         billingEmail: 'billing@test.com',
         orgPageUrl: 'https://test.com',
-        roles: ['admin', 'member'],
+        roles: [
+          {
+            title: 'admin',
+            permission: 'Full access to all features',
+            amount: {
+              code: CurrencyCode.USD,
+              symbol: '$',
+              format: 'symbol_first',
+              amount: 0,
+              text: 'Free',
+            },
+            description: 'Administrator role with full permissions',
+          },
+          {
+            title: 'member',
+            permission: 'Basic access',
+            amount: {
+              code: CurrencyCode.USD,
+              symbol: '$',
+              format: 'symbol_first',
+              amount: 10,
+              text: '$10 / month',
+            },
+            description: 'Standard member role',
+          },
+        ],
       });
     });
 
@@ -895,7 +971,32 @@ describe('EightGClient - executeWorkflowAndValidate', () => {
         publicEmail: 'public@test.com',
         billingEmail: 'billing@test.com',
         orgPageUrl: 'https://test.com',
-        roles: ['admin', 'member'],
+        roles: [
+          {
+            title: 'admin',
+            permission: 'Full access to all features',
+            amount: {
+              code: CurrencyCode.USD,
+              symbol: '$',
+              format: 'symbol_first',
+              amount: 0,
+              text: 'Free',
+            },
+            description: 'Administrator role with full permissions',
+          },
+          {
+            title: 'member',
+            permission: 'Basic access',
+            amount: {
+              code: CurrencyCode.USD,
+              symbol: '$',
+              format: 'symbol_first',
+              amount: 10,
+              text: '$10 / month',
+            },
+            description: 'Standard member role',
+          },
+        ],
       };
 
       const mockWorkflowResult: CollectWorkflowResult = {

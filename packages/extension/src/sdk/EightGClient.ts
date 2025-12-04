@@ -547,6 +547,8 @@ export class EightGClient {
             ...result,
             data: {
               ...container,
+              success: false,
+              message: 'Data validation failed',
               data: undefined,
             },
           } as CollectWorkflowResult<T>;

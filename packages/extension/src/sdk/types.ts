@@ -291,6 +291,36 @@ export const WorkspaceItemSchema = z.object({
 
 export type WorkspaceItemDto = z.infer<typeof WorkspaceItemSchema>;
 
+// Currency Amount (통화 정보)
+export const CurrencyAmountSchema = z.object({
+  // 통화 코드
+  code: z.nativeEnum(CurrencyCode),
+  // 통화 기호
+  symbol: z.string(),
+  // 통화 표시 형식
+  format: z.string(),
+  // 실제 금액
+  amount: z.number(),
+  // 표시용 텍스트 (optional, 예: "US$57.75")
+  text: z.string().optional(),
+});
+
+export type CurrencyDto = z.infer<typeof CurrencyAmountSchema>;
+
+// Workspace Role (워크스페이스 역할)
+export const WorkspaceRoleSchema = z.object({
+  // 역할 식별자 (예: "dev", "admin", "viewer")
+  title: z.string(),
+  // 역할 권한 설명
+  permission: z.string().nullable().optional(),
+  // 가격 정보
+  amount: CurrencyAmountSchema.nullable().optional(),
+  // 역할 상세 설명
+  description: z.string().nullable().optional(),
+});
+
+export type WorkspaceRoleDto = z.infer<typeof WorkspaceRoleSchema>;
+
 // Workspace Detail (워크스페이스 상세)
 export const WorkspaceDetailItemSchema = z.object({
   // 워크스페이스를 구분할 수 있는 구분자, ex) slug 같은 것들 01republic
@@ -308,28 +338,12 @@ export const WorkspaceDetailItemSchema = z.object({
   // 조직 메인 페이지 URL
   orgPageUrl: z.string(),
   // 워크스페이스 역할 목록
-  roles: z.array(z.string()),
+  roles: z.array(WorkspaceRoleSchema),
   // 워크스페이스 초대 가능 한 역할 목록
-  invitableRoles: z.array(z.string()).nullable().optional(),
+  invitableRoles: z.array(WorkspaceRoleSchema).nullable().optional(),
 });
 
 export type WorkspaceDetailItemDto = z.infer<typeof WorkspaceDetailItemSchema>;
-
-// Currency Amount (통화 정보)
-export const CurrencyAmountSchema = z.object({
-  // 통화 코드
-  code: z.nativeEnum(CurrencyCode),
-  // 통화 기호
-  symbol: z.string(),
-  // 통화 표시 형식
-  format: z.string(),
-  // 실제 금액
-  amount: z.number(),
-  // 표시용 텍스트 (optional, 예: "US$57.75")
-  text: z.string().optional(),
-});
-
-export type CurrencyDto = z.infer<typeof CurrencyAmountSchema>;
 
 // Workspace Billing (워크스페이스 결제 정보)
 export const WorkspaceBillingSchema = z.object({
