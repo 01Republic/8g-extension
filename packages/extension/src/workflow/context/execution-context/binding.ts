@@ -19,21 +19,29 @@ export interface Binding {
  * interpolate('${vars.userId}', context) // -> 값 그대로 (타입 유지)
  * interpolate('${steps.step1.result.data}', context) // -> 값 그대로 (타입 유지)
  * interpolate('Hello ${vars.name}!', context)        // -> 'Hello World!' (문자열 보간)
+ * interpolate('Price: $${price}', context)           // -> 'Price: $123' ($$는 리터럴 $)
  */
 export const interpolate = (template: string, context: ExecutionContext): any => {
+  // 0. $$ 이스케이프 처리를 위한 임시 플레이스홀더로 변환
+  const DOLLAR_PLACEHOLDER = '\u0000ESCAPED_DOLLAR\u0000';
+  let processedTemplate = template.replace(/\$\$/g, DOLLAR_PLACEHOLDER);
+
   // 1. "${path}" 형태 - 값 그대로 반환 (타입 유지)
-  const singleMatch = /^\$\{([^}]+)\}$/.exec(template);
+  const singleMatch = /^\$\{([^}]+)\}$/.exec(processedTemplate);
   if (singleMatch) {
     return getByPath(context, singleMatch[1].trim());
   }
 
   // 2. "Hello ${name}!" 형태 - 문자열 보간
-  return template.replace(/\$\{([^}]+)\}/g, (_match, path) => {
+  const result = processedTemplate.replace(/\$\{([^}]+)\}/g, (_match, path) => {
     const value = getByPath(context, path.trim());
     if (value == null) return '';
     if (typeof value === 'object') return JSON.stringify(value);
     return String(value);
   });
+
+  // 3. 플레이스홀더를 다시 $로 복원
+  return result.replace(new RegExp(DOLLAR_PLACEHOLDER, 'g'), '$');
 };
 
 /**
