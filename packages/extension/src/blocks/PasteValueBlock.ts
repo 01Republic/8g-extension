@@ -54,8 +54,8 @@ export async function handlerPasteValue(data: PasteValueBlock): Promise<BlockRes
 }
 
 /**
- * 요소에 값을 붙여넣기합니다.
- * 실제 사용자 동작과 유사하게 paste 이벤트를 발생시킵니다.
+ * CDP를 사용하여 요소에 값을 붙여넣기합니다.
+ * CDP의 Input.insertText를 사용하여 실제 키보드 입력처럼 텍스트를 삽입합니다.
  */
 async function pasteValueToElement(element: HTMLElement, value: string): Promise<void> {
   // 1. 요소를 뷰포트에 보이도록 스크롤
@@ -73,34 +73,56 @@ async function pasteValueToElement(element: HTMLElement, value: string): Promise
     element.focus();
   }
 
-  // 3. 요소가 편집 가능한 요소인지 확인하고 처리
+  // 3. 요소가 편집 가능한 요소인지 확인하고 전체 선택
   if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
-    // 기존 값 선택 (전체 선택)
+    // 기존 값 전체 선택
     element.select();
+  } else if (element.isContentEditable) {
+    // contentEditable 요소의 경우 전체 선택
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+  }
+
+  await new Promise((resolve) => setTimeout(resolve, 30));
+
+  // 4. CDP를 사용하여 텍스트 삽입
+  try {
+    const response = await chrome.runtime.sendMessage({
+      type: 'CDP_INSERT_TEXT',
+      data: { text: value },
+    });
+
+    if (response?.$isError) {
+      throw new Error(response.message || 'CDP insert text failed');
+    }
+  } catch (error) {
+    // CDP 실패 시 fallback으로 기존 방식 사용
+    console.warn('[PasteValueBlock] CDP insert text failed, using fallback:', error);
+    await fallbackPasteValue(element, value);
+  }
+
+  await new Promise((resolve) => setTimeout(resolve, 50));
+}
+
+/**
+ * CDP 실패 시 사용하는 fallback 붙여넣기 방식
+ */
+async function fallbackPasteValue(element: HTMLElement, value: string): Promise<void> {
+  if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
     const start = element.selectionStart || 0;
     const end = element.selectionEnd || 0;
-
-    // 4. 선택된 텍스트를 새 값으로 교체 (먼저 값을 설정)
     const currentValue = element.value;
     const newValue = currentValue.substring(0, start) + value + currentValue.substring(end);
 
     element.value = newValue;
-    // 커서 위치 조정
     const newCursorPosition = start + value.length;
     element.setSelectionRange(newCursorPosition, newCursorPosition);
 
-    const pasteEvent = new ClipboardEvent('paste', {
-      bubbles: true,
-      cancelable: true,
-      clipboardData: new DataTransfer(),
-    });
-
-    // clipboardData에 붙여넣을 데이터 설정
-    if (pasteEvent.clipboardData) {
-      pasteEvent.clipboardData.setData('text/plain', value);
-    }
-
-    element.dispatchEvent(pasteEvent);
+    // input 이벤트 발생
+    element.dispatchEvent(new InputEvent('input', { bubbles: true, data: value }));
   } else if (element.isContentEditable) {
     const selection = window.getSelection();
     if (selection && selection.rangeCount > 0) {
@@ -112,18 +134,7 @@ async function pasteValueToElement(element: HTMLElement, value: string): Promise
       selection.addRange(range);
     }
 
-    const pasteEvent = new ClipboardEvent('paste', {
-      bubbles: true,
-      cancelable: true,
-      clipboardData: new DataTransfer(),
-    });
-
-    if (pasteEvent.clipboardData) {
-      pasteEvent.clipboardData.setData('text/plain', value);
-    }
-
-    element.dispatchEvent(pasteEvent);
+    // input 이벤트 발생
+    element.dispatchEvent(new InputEvent('input', { bubbles: true, data: value }));
   }
-
-  await new Promise((resolve) => setTimeout(resolve, 50));
 }

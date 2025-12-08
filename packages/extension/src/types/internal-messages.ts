@@ -47,6 +47,13 @@ export interface CdpExecuteJavaScriptMessage {
   };
 }
 
+export interface CdpInsertTextMessage {
+  type: 'CDP_INSERT_TEXT';
+  data: {
+    text: string;
+  };
+}
+
 export interface FetchApiMessage {
   type: 'FETCH_API';
   data: {
@@ -135,6 +142,7 @@ export type BackgroundMessage =
   | CdpClickMessage
   | CdpKeypressMessage
   | CdpExecuteJavaScriptMessage
+  | CdpInsertTextMessage
   | FetchApiMessage
   | ExportDataMessage
   | NetworkCatchMessage;
@@ -171,6 +179,10 @@ export function isCdpKeypressMessage(message: any): message is CdpKeypressMessag
 
 export function isCdpExecuteJavaScriptMessage(message: any): message is CdpExecuteJavaScriptMessage {
   return message && message.type === 'CDP_EXECUTE_JAVASCRIPT';
+}
+
+export function isCdpInsertTextMessage(message: any): message is CdpInsertTextMessage {
+  return message && message.type === 'CDP_INSERT_TEXT';
 }
 
 export function isFetchApiMessage(message: any): message is FetchApiMessage {

@@ -5,12 +5,14 @@ import {
   CdpClickMessage,
   CdpKeypressMessage,
   CdpExecuteJavaScriptMessage,
+  CdpInsertTextMessage,
   FetchApiMessage,
   ExportDataMessage,
   NetworkCatchMessage,
   isCdpClickMessage,
   isCdpKeypressMessage,
   isCdpExecuteJavaScriptMessage,
+  isCdpInsertTextMessage,
   isFetchApiMessage,
   isExportDataMessage,
   isNetworkCatchMessage,
@@ -102,6 +104,21 @@ export class BackgroundManager {
         return true;
       }
 
+      if ((message as any).type === 'CDP_INSERT_TEXT' && isCdpInsertTextMessage(message)) {
+        // Get tabId from sender
+        const tabId = sender.tab?.id;
+        if (!tabId) {
+          sendResponse({
+            $isError: true,
+            message: 'Tab ID not found in sender',
+            data: null,
+          } as ErrorResponse);
+          return false;
+        }
+        this.handleAsyncCdpInsertText({ ...message.data, tabId }, sendResponse);
+        return true;
+      }
+
       if ((message as any).type === 'AI_PARSE_DATA') {
         this.handleAsyncAiParseData((message as any).data, sendResponse);
         return true;
@@ -184,6 +201,14 @@ export class BackgroundManager {
     sendResponse: (response: any) => void
   ) {
     await this.cdpService.handleExecuteJavaScript(requestData, sendResponse);
+  }
+
+  // CDP 텍스트 삽입 요청 처리
+  private async handleAsyncCdpInsertText(
+    requestData: CdpInsertTextMessage['data'] & { tabId: number },
+    sendResponse: (response: any) => void
+  ) {
+    await this.cdpService.handleInsertText(requestData, sendResponse);
   }
 
   // AI 파싱 요청 처리

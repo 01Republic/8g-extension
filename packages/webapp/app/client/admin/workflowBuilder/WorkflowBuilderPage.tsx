@@ -318,6 +318,13 @@ export default function WorkflowBuilderPage({
   const rfRef = React.useRef<unknown>(null);
   const [paletteOpen, setPaletteOpen] = React.useState(false);
 
+  // Clipboard for copy/paste functionality
+  const clipboardRef = React.useRef<{
+    nodes: Node[];
+    edges: WorkflowEdge[];
+  } | null>(null);
+  const pasteCountRef = React.useRef<number>(0);
+
   // Publish/Unpublish state
   const fetcher = useFetcher();
   const [isPublishing, setIsPublishing] = React.useState(false);
@@ -720,13 +727,136 @@ export default function WorkflowBuilderPage({
     input.click();
   }, [setNodes, setEdges, setTargetUrl, setVariables]);
 
-  // 키보드 단축키: Ctrl+S (Windows/Linux) 또는 Cmd+S (Mac)
+  // Copy selected nodes to system clipboard (supports cross-tab paste)
+  const handleCopy = React.useCallback(async () => {
+    const selectedNodes = nodes.filter(
+      (node) => node.selected && node.type !== "group",
+    );
+
+    if (selectedNodes.length === 0) return;
+
+    const selectedNodeIds = new Set(selectedNodes.map((n) => n.id));
+
+    // Copy only internal edges (edges between selected nodes)
+    const internalEdges = edges.filter(
+      (edge) =>
+        selectedNodeIds.has(edge.source) && selectedNodeIds.has(edge.target),
+    );
+
+    const clipboardData = {
+      type: "8g-workflow-nodes",
+      nodes: selectedNodes,
+      edges: internalEdges,
+    };
+
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(clipboardData));
+      // Also store in ref for same-tab paste offset tracking
+      clipboardRef.current = {
+        nodes: JSON.parse(JSON.stringify(selectedNodes)),
+        edges: JSON.parse(JSON.stringify(internalEdges)),
+      };
+      pasteCountRef.current = 0;
+    } catch (err) {
+      console.error("Failed to copy to clipboard:", err);
+    }
+  }, [nodes, edges]);
+
+  // Paste nodes from system clipboard (supports cross-tab paste)
+  const handlePaste = React.useCallback(async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      const clipboardData = JSON.parse(text);
+
+      // Validate clipboard data
+      if (
+        clipboardData.type !== "8g-workflow-nodes" ||
+        !Array.isArray(clipboardData.nodes) ||
+        clipboardData.nodes.length === 0
+      ) {
+        return;
+      }
+
+      const { nodes: copiedNodes, edges: copiedEdges } = clipboardData;
+
+      pasteCountRef.current += 1;
+      const offset = pasteCountRef.current * 50;
+
+      // Create ID mapping: old ID -> new ID
+      const idMapping = new Map<string, string>();
+      const timestamp = Date.now();
+
+      copiedNodes.forEach((node: Node, index: number) => {
+        idMapping.set(node.id, `node_${timestamp}_${index}`);
+      });
+
+      // Create new nodes with updated IDs and positions
+      const newNodes = copiedNodes.map((node: Node) => ({
+        ...node,
+        id: idMapping.get(node.id)!,
+        position: {
+          x: node.position.x + offset,
+          y: node.position.y + offset,
+        },
+        selected: true,
+        data: {
+          ...node.data,
+          executionResults: undefined,
+        },
+      }));
+
+      // Create new edges with remapped IDs
+      const newEdges = (copiedEdges || []).map((edge: WorkflowEdge) => ({
+        ...edge,
+        id: `${idMapping.get(edge.source)}-${idMapping.get(edge.target)}-${Date.now()}`,
+        source: idMapping.get(edge.source)!,
+        target: idMapping.get(edge.target)!,
+      }));
+
+      // Deselect existing nodes, then add new nodes
+      setNodes((nds) => [
+        ...nds.map((n) => ({ ...n, selected: false })),
+        ...newNodes,
+      ]);
+
+      setEdges((eds) => [...eds, ...newEdges]);
+    } catch (err) {
+      // Clipboard read failed or invalid data - silently ignore
+      console.error("Failed to paste from clipboard:", err);
+    }
+  }, [setNodes, setEdges]);
+
+  // 키보드 단축키: Ctrl+S, Ctrl+C, Ctrl+V
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ctrl+S (Windows/Linux) 또는 Cmd+S (Mac)
-      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
-        e.preventDefault(); // 브라우저 기본 저장 동작 방지
+      // Skip if focus is in an input element
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      const isCtrlOrCmd = e.ctrlKey || e.metaKey;
+
+      if (isCtrlOrCmd && e.key === "s") {
+        e.preventDefault();
         setSaveDialogOpen(true);
+        return;
+      }
+
+      if (isCtrlOrCmd && e.key === "c") {
+        e.preventDefault();
+        handleCopy();
+        return;
+      }
+
+      if (isCtrlOrCmd && e.key === "v") {
+        e.preventDefault();
+        handlePaste();
+        return;
       }
     };
 
@@ -734,7 +864,7 @@ export default function WorkflowBuilderPage({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, []);
+  }, [handleCopy, handlePaste]);
   //1500
   return (
     <SubtreePreviewProvider>

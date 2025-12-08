@@ -186,6 +186,49 @@ export class CdpService {
   }
 
   /**
+   * CDP 텍스트 삽입 요청을 처리하고 응답을 전송합니다.
+   *
+   * @param requestData - 텍스트 삽입 요청 데이터
+   * @param sendResponse - 응답 전송 함수
+   */
+  async handleInsertText(
+    requestData: { tabId: number; text: string },
+    sendResponse: (response: any) => void
+  ): Promise<void> {
+    try {
+      const { tabId, text } = requestData;
+
+      await this.insertText(tabId, text);
+
+      sendResponse({ success: true, data: { inserted: true } });
+    } catch (error) {
+      console.error('[CdpService] InsertText error:', error);
+      sendResponse({
+        $isError: true,
+        message: error instanceof Error ? error.message : 'CDP insert text failed',
+        data: null,
+      } as ErrorResponse);
+    }
+  }
+
+  /**
+   * CDP를 사용하여 텍스트를 삽입합니다.
+   * Input.insertText는 현재 포커스된 요소에 텍스트를 삽입합니다.
+   *
+   * @param tabId - 대상 탭 ID
+   * @param text - 삽입할 텍스트
+   */
+  async insertText(tabId: number, text: string): Promise<void> {
+    // Debugger 연결
+    await this.ensureAttached(tabId);
+
+    // Input.insertText를 사용하여 텍스트 삽입
+    await chrome.debugger.sendCommand({ tabId }, 'Input.insertText', {
+      text,
+    });
+  }
+
+  /**
    * CDP를 사용하여 키보드 입력을 실행합니다.
    *
    * @param tabId - 대상 탭 ID
