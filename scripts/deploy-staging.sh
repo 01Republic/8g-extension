@@ -52,7 +52,7 @@ if [ -f "$PROJECT_ROOT/.env" ]; then
         [[ "$key" =~ ^#.*$ ]] && continue
         [[ -z "$key" ]] && continue
         # 따옴표 제거
-        value=$(echo "$value" | sed 's/^["'"'"']//;s/["'"'"']$//')
+        value=$(echo "$value" | sed 's/[[:space:]]*#.*$//' | sed 's/^["'"'"']//;s/["'"'"']$//' | xargs)
         # 해당 키만 처리
         if [[ "$key" == "GOOGLE_DRIVE_PATH" && -z "$GOOGLE_DRIVE_PATH" ]]; then
             export GOOGLE_DRIVE_PATH="$value"
