@@ -21,7 +21,8 @@
     "clean": "pnpm --recursive run clean",
     "typecheck": "pnpm --recursive run typecheck",
     "publish:extension": "pnpm --filter=scordi-extension run build && cd packages/extension && npm publish",
-    "release:extension": "pnpm --filter=scordi-extension run release"
+    "release:extension": "pnpm --filter=scordi-extension run release",
+    "deploy:staging": "bash scripts/deploy-staging.sh"
   },
   "devDependencies": {
     "@types/node": "^24.0.15",
