@@ -99,13 +99,22 @@ const getWorkflowTypeBadge = (type: WorkflowType) => {
 };
 
 export const WorkflowsTable = (props: WorkflowsTableProps) => {
-  const { workflows, pagination, deleteWorkflows, publishWorkflow, unpublishWorkflow, products } = props;
+  const {
+    workflows,
+    pagination,
+    deleteWorkflows,
+    publishWorkflow,
+    unpublishWorkflow,
+    products,
+  } = props;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
-  const [workflowToPublish, setWorkflowToPublish] = useState<IntegrationAppWorkflowMetadata | null>(null);
-  const [currentlyPublished, setCurrentlyPublished] = useState<IntegrationAppWorkflowMetadata | null>(null);
+  const [workflowToPublish, setWorkflowToPublish] =
+    useState<IntegrationAppWorkflowMetadata | null>(null);
+  const [currentlyPublished, setCurrentlyPublished] =
+    useState<IntegrationAppWorkflowMetadata | null>(null);
   const [productComboboxOpen, setProductComboboxOpen] = useState(false);
 
   const currentPage = pagination.currentPage;
@@ -173,10 +182,11 @@ export const WorkflowsTable = (props: WorkflowsTableProps) => {
   const handlePublishClick = (workflow: IntegrationAppWorkflowMetadata) => {
     // Check if another workflow is already published
     const alreadyPublished = workflows.find(
-      w => w.publishedAt &&
-      w.type === workflow.type &&
-      w.productId === workflow.productId &&
-      w.id !== workflow.id
+      (w) =>
+        w.publishedAt &&
+        w.type === workflow.type &&
+        w.productId === workflow.productId &&
+        w.id !== workflow.id,
     );
 
     if (alreadyPublished) {
@@ -203,7 +213,10 @@ export const WorkflowsTable = (props: WorkflowsTableProps) => {
       <div className="flex gap-4 items-center bg-white p-4 rounded-lg border">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-gray-700">Product:</span>
-          <Popover open={productComboboxOpen} onOpenChange={setProductComboboxOpen}>
+          <Popover
+            open={productComboboxOpen}
+            onOpenChange={setProductComboboxOpen}
+          >
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
@@ -213,8 +226,10 @@ export const WorkflowsTable = (props: WorkflowsTableProps) => {
               >
                 {selectedProductId === "all"
                   ? "전체"
-                  : products.find((p) => p.id.toString() === selectedProductId)?.nameKo ||
-                    products.find((p) => p.id.toString() === selectedProductId)?.nameEn ||
+                  : products.find((p) => p.id.toString() === selectedProductId)
+                      ?.nameKo ||
+                    products.find((p) => p.id.toString() === selectedProductId)
+                      ?.nameEn ||
                     "선택"}
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
@@ -235,7 +250,9 @@ export const WorkflowsTable = (props: WorkflowsTableProps) => {
                       <Check
                         className={cn(
                           "mr-2 h-4 w-4",
-                          selectedProductId === "all" ? "opacity-100" : "opacity-0"
+                          selectedProductId === "all"
+                            ? "opacity-100"
+                            : "opacity-0",
                         )}
                       />
                       전체
@@ -254,7 +271,7 @@ export const WorkflowsTable = (props: WorkflowsTableProps) => {
                             "mr-2 h-4 w-4",
                             selectedProductId === product.id.toString()
                               ? "opacity-100"
-                              : "opacity-0"
+                              : "opacity-0",
                           )}
                         />
                         <div className="flex items-center gap-2">
@@ -286,16 +303,26 @@ export const WorkflowsTable = (props: WorkflowsTableProps) => {
               <SelectItem value="all">전체</SelectItem>
               <SelectItem value="WORKFLOW">⚡ Data</SelectItem>
               <SelectItem value="WORKSPACE">🏢 Workspaces</SelectItem>
+              <SelectItem value="WORKSPACE_DETAIL">
+                🏢 Workspace Detail
+              </SelectItem>
               <SelectItem value="MEMBERS">👥 Members</SelectItem>
-              <SelectItem value="PLAN">💳 Plan</SelectItem>
-              <SelectItem value="BILLING">📊 Billing</SelectItem>
+              <SelectItem value="BILLING">💳 Billing</SelectItem>
+              <SelectItem value="BILLING_HISTORIES">
+                📊 Billing Histories
+              </SelectItem>
+              <SelectItem value="ADD_MEMBERS">➕ Add Members</SelectItem>
+              <SelectItem value="DELETE_MEMBERS">➖ Delete Members</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-gray-700">Status:</span>
-          <Select value={selectedStatus} onValueChange={handleStatusFilterChange}>
+          <Select
+            value={selectedStatus}
+            onValueChange={handleStatusFilterChange}
+          >
             <SelectTrigger className="w-[150px]">
               <SelectValue placeholder="전체" />
             </SelectTrigger>
@@ -387,11 +414,17 @@ export const WorkflowsTable = (props: WorkflowsTableProps) => {
                     </TableCell>
                     <TableCell>
                       {workflow.publishedAt ? (
-                        <Badge variant="default" className="bg-green-600 text-white whitespace-nowrap">
+                        <Badge
+                          variant="default"
+                          className="bg-green-600 text-white whitespace-nowrap"
+                        >
                           ✅ Published
                         </Badge>
                       ) : (
-                        <Badge variant="outline" className="text-gray-700 border-gray-300 whitespace-nowrap">
+                        <Badge
+                          variant="outline"
+                          className="text-gray-700 border-gray-300 whitespace-nowrap"
+                        >
                           📝 Draft
                         </Badge>
                       )}
