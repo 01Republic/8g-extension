@@ -139,8 +139,8 @@ jobs:
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: packages/extension/release/crx-scordi-extension-${{ needs.check-commit.outputs.version-number }}.zip
-          asset_name: scordi-extension-${{ needs.check-commit.outputs.version-number }}.zip
+          asset_path: packages/extension/release/crx-SaaS Admin Control Manager-${{ needs.check-commit.outputs.version-number }}.zip
+          asset_name: SaaS Admin Control Manager-${{ needs.check-commit.outputs.version-number }}.zip
           asset_content_type: application/zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
