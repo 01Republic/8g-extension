@@ -61,10 +61,14 @@ const result = await client.collectWorkflow({
 ```typescript
 {
   version: '1.0',              // 필수: 워크플로우 버전
+  id?: string,                 // 선택: 워크플로우 ID
+  title?: string,              // 선택: 워크플로우 제목
+  description?: string,        // 선택: 설명
   start: 'stepId',             // 필수: 시작 스텝 ID
   steps: [                     // 필수: 스텝 배열
     {
       id: 'stepId',            // 필수: 고유 스텝 ID
+      title?: string,          // 선택: 스텝 제목
       block?: { ... },         // 선택: 실행할 블록
       when?: { ... },          // 선택: 실행 조건
       repeat?: { ... },        // 선택: 반복 설정 (forEach 또는 count)
@@ -77,7 +81,9 @@ const result = await client.collectWorkflow({
       delayAfterMs?: number,   // 선택: 스텝 후 대기 시간 (ms)
     }
   ],
-  vars?: { ... }               // 선택: 워크플로우 초기 변수
+  vars?: { ... },              // 선택: 워크플로우 초기 변수
+  defaultDelayMs?: number,     // 선택: 기본 대기 시간
+  workflowType?: string        // 선택: 워크플로우 타입 식별자
 }
 ```
 
@@ -379,9 +385,7 @@ const workflow = {
         selector: '.product',
         findBy: 'cssSelector',
         option: { multiple: true },
-        extractors: [
-          { type: 'attribute', attribute: 'data-id', saveAs: 'id' }
-        ]
+        attributes: ['data-id']
       },
       next: 'fetchEachProduct'
     },
@@ -395,7 +399,7 @@ const workflow = {
       },
       block: {
         name: 'fetch-api',
-        url: { template: 'https://api.example.com/products/${forEach.item.id}' },
+        url: { template: 'https://api.example.com/products/${forEach.item.data-id}' },
         method: 'GET',
         parseJson: true
       }
@@ -486,7 +490,7 @@ steps.fetchEachProduct.result.data = [result1, result2, result3, ...]
     selector: '.form input',
     findBy: 'cssSelector',
     option: {},
-    value: { template: '${forEach.item.value}' },
+    setValue: { template: '${forEach.item.value}' },
   },
   next: 'submitForm'
 },
@@ -578,6 +582,50 @@ forEach/count 반복 중 에러가 발생해도 계속 진행:
 }
 ```
 
+### throw-error - 제어된 에러 발생
+
+워크플로우 내에서 의도적으로 에러를 발생시킬 수 있습니다:
+
+```typescript
+{
+  id: 'checkLogin',
+  block: {
+    name: 'element-exists',
+    selector: '.login-form',
+    findBy: 'cssSelector',
+    option: {}
+  },
+  switch: [
+    {
+      when: { equals: { left: 'steps.checkLogin.result.data', right: true } },
+      next: 'throwLoginError'
+    }
+  ],
+  next: 'continueWorkflow'
+},
+{
+  id: 'throwLoginError',
+  block: {
+    name: 'throw-error',
+    message: 'LOGIN_FAILED',
+    data: { reason: '로그인이 필요합니다' }
+  }
+}
+```
+
+**지원하는 에러 메시지:**
+
+- `LOGIN_FAILED` - 로그인 실패
+- `NETWORK_ERROR` - 네트워크 오류
+- `VALIDATION_ERROR` - 유효성 검사 실패
+- `UNAUTHORIZED` - 인증 실패
+- `FORBIDDEN` - 권한 없음
+- `NOT_FOUND` - 리소스 없음
+- `SERVER_ERROR` - 서버 오류
+- `TIMEOUT` - 타임아웃
+- `CONNECTION_ERROR` - 연결 오류
+- `UNKNOWN_ERROR` - 알 수 없는 오류
+
 ## 실전 예제
 
 ### 예제 1: 로그인 후 데이터 수집
@@ -594,7 +642,7 @@ const workflow = {
         selector: 'input[name="email"]',
         findBy: 'cssSelector',
         option: {},
-        value: 'user@example.com',
+        setValue: 'user@example.com',
       },
       delayAfterMs: 200,
       next: 'inputPassword',
@@ -606,7 +654,7 @@ const workflow = {
         selector: 'input[name="password"]',
         findBy: 'cssSelector',
         option: {},
-        value: 'password123',
+        setValue: 'password123',
       },
       delayAfterMs: 200,
       next: 'clickLogin',
@@ -646,11 +694,9 @@ const workflow = {
     {
       id: 'loginFailed',
       block: {
-        name: 'get-text',
-        selector: '.error-message',
-        findBy: 'cssSelector',
-        option: {},
-        useTextContent: true,
+        name: 'throw-error',
+        message: 'LOGIN_FAILED',
+        data: { page: 'login' },
       },
     },
   ],
@@ -690,18 +736,42 @@ const workflow = {
         selector: '.item',
         findBy: 'cssSelector',
         option: { multiple: true },
-        extractors: [
-          { type: 'text', saveAs: 'title', selector: '.title' },
-          { type: 'attribute', attribute: 'href', saveAs: 'link', selector: 'a' },
-          { type: 'attribute', attribute: 'data-id', saveAs: 'id' },
-        ],
+        includeText: true,
+        attributes: ['href', 'data-id'],
+        includeSelector: true,
       },
     },
   ],
 };
 ```
 
-### 예제 3: 페이지네이션 처리
+### 예제 3: scrollToCollect를 사용한 무한 스크롤
+
+```typescript
+const workflow = {
+  version: '1.0',
+  start: 'collectWithScroll',
+  steps: [
+    {
+      id: 'collectWithScroll',
+      block: {
+        name: 'get-text',
+        selector: '.item-title',
+        findBy: 'cssSelector',
+        option: { multiple: true },
+        useTextContent: true,
+        scrollToCollect: true,
+        scrollDistance: 500,
+        scrollWaitMs: 1000,
+        maxScrollAttempts: 30,
+        filterEmpty: true,
+      },
+    },
+  ],
+};
+```
+
+### 예제 4: 페이지네이션 처리
 
 ```typescript
 const workflow = {
@@ -730,7 +800,7 @@ const workflow = {
         selector: '.item',
         findBy: 'cssSelector',
         option: { multiple: true },
-        extractors: [{ type: 'text', saveAs: 'title' }],
+        includeText: true,
       },
       next: 'clickNextPage',
     },
@@ -755,7 +825,7 @@ const workflow = {
 };
 ```
 
-### 예제 4: 외부 API 연동
+### 예제 5: 외부 API 연동
 
 ```typescript
 const workflow = {
@@ -769,7 +839,7 @@ const workflow = {
         selector: '.product',
         findBy: 'cssSelector',
         option: { multiple: true },
-        extractors: [{ type: 'attribute', attribute: 'data-id', saveAs: 'id' }],
+        attributes: ['data-id'],
       },
       next: 'enrichWithApi',
     },
@@ -782,7 +852,7 @@ const workflow = {
       },
       block: {
         name: 'fetch-api',
-        url: { template: 'https://api.example.com/products/${forEach.item.id}' },
+        url: { template: 'https://api.example.com/products/${forEach.item.data-id}' },
         method: 'GET',
         parseJson: true,
         headers: {
@@ -799,7 +869,7 @@ const workflow = {
 };
 ```
 
-### 예제 5: 데이터 변환 (transform-data)
+### 예제 6: 데이터 변환 (transform-data)
 
 JSONata를 사용하여 이전 스텝의 데이터를 변환/필터링/집계할 수 있습니다.
 
@@ -815,10 +885,8 @@ const workflow = {
         selector: '.product',
         findBy: 'cssSelector',
         option: { multiple: true },
-        extractors: [
-          { type: 'text', selector: '.name', saveAs: 'name' },
-          { type: 'text', selector: '.price', saveAs: 'price' },
-        ],
+        includeText: true,
+        attributes: ['data-price'],
       },
       next: 'transformData',
     },
@@ -827,7 +895,7 @@ const workflow = {
       block: {
         name: 'transform-data',
         sourceData: { valueFrom: 'steps.getProducts.result.data' },
-        expression: '$sum([price > 100].price)', // 100원 이상 상품의 합계
+        expression: '$sum([data-price > 100].data-price)', // 100원 이상 상품의 합계
       },
       next: 'filterProducts',
     },
@@ -836,7 +904,7 @@ const workflow = {
       block: {
         name: 'transform-data',
         sourceData: { valueFrom: 'steps.getProducts.result.data' },
-        expression: '[price > 100]', // 100원 이상 상품만 필터링
+        expression: '[data-price > 100]', // 100원 이상 상품만 필터링
       },
     },
   ],
@@ -851,7 +919,7 @@ const workflow = {
 - 변환: `$map(items, function($v) { { "id": $v.id, "total": $v.price * 1.1 } })`
 - 문자열: `$uppercase(text)`, `$lowercase(text)`
 
-### 예제 6: AI 파싱
+### 예제 7: AI 파싱
 
 ```typescript
 const workflow = {
@@ -891,7 +959,7 @@ const workflow = {
 };
 ```
 
-### 예제 6-1: AI 파싱 + 통화 스키마 (Schema.currency)
+### 예제 7-1: AI 파싱 + 통화 스키마 (Schema.currency)
 
 SDK는 다양한 통화 정보를 포함한 통합 스키마를 제공합니다. `Schema.currency()`를 사용하면 40개 통화 코드와 27개 통화 심볼, 8개 포맷 패턴을 지원하는 통화 필드를 쉽게 정의할 수 있습니다.
 
@@ -1027,7 +1095,7 @@ const multiCurrencyWorkflow = {
 // 출력: 각 통화가 자동으로 올바른 코드와 심볼로 파싱됨
 ```
 
-### 예제 7: 로그인 대기 (wait-for-condition)
+### 예제 8: 로그인 대기 (wait-for-condition)
 
 ```typescript
 const workflow = {
@@ -1081,18 +1149,16 @@ const workflow = {
     {
       id: 'handleLoginTimeout',
       block: {
-        name: 'get-text',
-        selector: 'body',
-        findBy: 'cssSelector',
-        option: {},
-        useTextContent: true,
+        name: 'throw-error',
+        message: 'TIMEOUT',
+        data: { step: 'login' },
       },
     },
   ],
 };
 ```
 
-### 예제 8: 다중 페이지 네비게이션
+### 예제 9: 다중 페이지 네비게이션
 
 ```typescript
 const workflow = {
@@ -1128,10 +1194,148 @@ const workflow = {
         selector: '.content',
         findBy: 'cssSelector',
         option: { multiple: true },
-        extractors: [
-          { type: 'text', selector: '.title', saveAs: 'title' },
-          { type: 'text', selector: '.description', saveAs: 'description' },
-        ],
+        includeText: true,
+        attributes: ['data-title', 'data-description'],
+      },
+    },
+  ],
+};
+```
+
+### 예제 10: 네트워크 요청 캡처
+
+```typescript
+const workflow = {
+  version: '1.0',
+  start: 'clickSearch',
+  steps: [
+    {
+      id: 'clickSearch',
+      block: {
+        name: 'event-click',
+        selector: '.search-button',
+        findBy: 'cssSelector',
+        option: {},
+      },
+      next: 'captureApiResponse',
+    },
+    {
+      id: 'captureApiResponse',
+      block: {
+        name: 'network-catch',
+        urlPattern: '/api/search',
+        method: 'GET',
+        status: [200, 299], // 성공 응답만
+        waitForRequest: true,
+        waitTimeout: 10000,
+        includeHeaders: true,
+      },
+      next: 'processResponse',
+    },
+    {
+      id: 'processResponse',
+      block: {
+        name: 'transform-data',
+        sourceData: { valueFrom: 'steps.captureApiResponse.result.data' },
+        expression: 'response.body.items',
+      },
+    },
+  ],
+};
+```
+
+### 예제 11: JavaScript 실행
+
+```typescript
+const workflow = {
+  version: '1.0',
+  start: 'executeScript',
+  steps: [
+    {
+      id: 'executeScript',
+      block: {
+        name: 'execute-javascript',
+        code: `
+          const items = document.querySelectorAll('.item');
+          return Array.from(items).map(item => ({
+            id: item.dataset.id,
+            name: item.querySelector('.name').textContent.trim()
+          }));
+        `,
+        returnResult: true,
+        timeout: 5000,
+      },
+    },
+  ],
+};
+```
+
+### 예제 12: 요소 하이라이트
+
+```typescript
+const workflow = {
+  version: '1.0',
+  start: 'highlightTarget',
+  steps: [
+    {
+      id: 'highlightTarget',
+      block: {
+        name: 'mark-border',
+        selector: '.important-element',
+        findBy: 'cssSelector',
+        option: {},
+        highlightMode: 'spotlight',
+        spotlightOptions: {
+          showPointer: true,
+          showLabel: true,
+          labelText: '여기를 확인하세요',
+          pulseAnimation: true,
+        },
+      },
+      next: 'waitForUser',
+    },
+    {
+      id: 'waitForUser',
+      block: {
+        name: 'wait-for-condition',
+        conditions: {
+          userConfirmation: true,
+          message: '확인하셨으면 계속 진행합니다',
+          buttonText: '확인 완료',
+        },
+        mode: 'manual',
+      },
+    },
+  ],
+};
+```
+
+### 예제 13: 데이터 내보내기
+
+```typescript
+const workflow = {
+  version: '1.0',
+  start: 'collectData',
+  steps: [
+    {
+      id: 'collectData',
+      block: {
+        name: 'get-element-data',
+        selector: '.product',
+        findBy: 'cssSelector',
+        option: { multiple: true },
+        includeText: true,
+        attributes: ['data-id', 'data-price', 'data-category'],
+      },
+      next: 'exportToExcel',
+    },
+    {
+      id: 'exportToExcel',
+      block: {
+        name: 'export-data',
+        data: { valueFrom: 'steps.collectData.result.data' },
+        format: 'xlsx',
+        filename: 'products_export',
       },
     },
   ],
@@ -1159,6 +1363,51 @@ const stepResult = EightGClient.getStepResult(result.context, 'getProducts');
 console.log(stepResult.success, stepResult.skipped);
 ```
 
+## SDK API 메서드
+
+### 핵심 메서드
+
+```typescript
+const client = new EightGClient();
+
+// 확장 설치 확인 (5초 타임아웃)
+await client.checkExtension();
+
+// 워크플로우 실행 (기본 600초 타임아웃)
+const result = await client.collectWorkflow({
+  targetUrl: 'https://example.com',
+  workflow: { ... },
+  activateTab?: boolean,           // 탭 활성화 여부
+  closeTabAfterCollection?: boolean, // 완료 후 탭 닫기
+  timeoutMs?: number               // SDK 타임아웃
+});
+```
+
+### Workspace 메서드
+
+```typescript
+// 워크스페이스 목록 조회
+const workspaces = await client.getWorkspaces();
+
+// 워크스페이스 상세 정보
+const detail = await client.getWorkspaceDetail(workspaceKey, slug, request);
+
+// 빌링 정보
+const billing = await client.getWorkspaceBilling(workspaceKey, slug, request);
+
+// 빌링 히스토리
+const histories = await client.getWorkspaceBillingHistories(workspaceKey, slug, request);
+
+// 멤버 목록
+const members = await client.getWorkspaceMembers(workspaceKey, slug, request);
+
+// 멤버 추가
+const added = await client.addMembers(workspaceKey, slug, emails, role, request);
+
+// 멤버 삭제
+const deleted = await client.deleteMembers(workspaceKey, slug, emails, request);
+```
+
 ## 참고 사항
 
 ### 블록 option 필드
@@ -1176,7 +1425,20 @@ console.log(stepResult.success, stepResult.skipped);
 }
 ```
 
-**예외:** `keypress`, `wait`, `fetch-api`, `ai-parse-data`, `navigate`, `wait-for-condition`, `check-status` 블록은 `selector`, `findBy`, `option` 불필요
+**예외 (selector, findBy, option 불필요):**
+
+- `keypress`
+- `wait`
+- `fetch-api`
+- `ai-parse-data`
+- `transform-data`
+- `export-data`
+- `network-catch`
+- `navigate`
+- `wait-for-condition`
+- `execute-javascript`
+- `throw-error`
+- `apply-locale`
 
 ### delayAfterMs 활용
 
@@ -1208,114 +1470,6 @@ console.log(stepResult.success, stepResult.skipped);
 }
 ```
 
-### 예제 8: 상태 확인 (Side Panel + CDP Auto-click)
-
-`check-status` 블록을 사용하여 워크플로우 실행 중 사용자 상태를 확인할 수 있습니다. 자동 클릭 기능을 사용하면 사용자 개입 없이 자동으로 확인됩니다.
-
-#### 수동 모드 (기본)
-
-```typescript
-const workflow = {
-  version: '1.0',
-  start: 'checkLogin',
-  steps: [
-    {
-      id: 'checkLogin',
-      block: {
-        name: 'check-status',
-        checkType: 'login',
-        title: '로그인 상태 확인',
-        description: '계속하려면 로그인이 필요합니다',
-        notification: {
-          message: '로그인 확인 필요 🔐',
-          urgency: 'high',
-        },
-        options: {
-          timeoutMs: 60000,
-          retryable: true,
-        },
-      },
-      onSuccess: 'collectData',
-      onFailure: 'loginRequired',
-    },
-    {
-      id: 'collectData',
-      block: {
-        name: 'get-text',
-        selector: '.user-data',
-        findBy: 'cssSelector',
-        option: {},
-      },
-    },
-    {
-      id: 'loginRequired',
-      block: {
-        name: 'navigate',
-        url: '/login',
-        waitForLoad: true,
-      },
-    },
-  ],
-};
-```
-
-#### 자동 클릭 모드 (CDP Auto-click)
-
-```typescript
-const workflow = {
-  version: '1.0',
-  start: 'autoCheckLogin',
-  steps: [
-    {
-      id: 'autoCheckLogin',
-      block: {
-        name: 'check-status',
-        checkType: 'login',
-        title: '로그인 상태 자동 확인',
-        description: 'CDP를 통해 자동으로 확인됩니다',
-        notification: {
-          message: '자동 확인 중... 🤖',
-          urgency: 'medium',
-        },
-        options: {
-          autoClick: true, // CDP 자동 클릭 활성화
-          clickDelay: 1000, // 1초 후 자동 클릭
-          fallbackToManual: true, // 실패 시 수동 모드
-          timeoutMs: 30000,
-          retryable: false,
-        },
-      },
-      next: 'processResult',
-    },
-    {
-      id: 'processResult',
-      block: {
-        name: 'get-text',
-        selector: '.result',
-        findBy: 'cssSelector',
-        option: {},
-      },
-    },
-  ],
-};
-```
-
-#### 지원하는 checkType
-
-- `login`: 로그인 상태 확인
-- `pageLoad`: 페이지 로딩 완료 확인
-- `element`: 특정 요소 존재 확인
-- `custom`: 사용자 정의 확인 로직
-
-#### 실행 플로우
-
-1. 플로팅 알림 버튼 표시
-2. 사용자 클릭 OR CDP 자동 클릭
-3. Chrome Side Panel 열기
-4. 상태 확인 UI 표시
-5. 사용자 확인/취소
-6. 워크플로우 계속/중단
-
 ## 디버깅
 
 ### 결과 구조
@@ -1323,6 +1477,11 @@ const workflow = {
 ```typescript
 {
   success: boolean;
+  data: {
+    success: boolean;
+    message?: string;
+    data?: any;
+  };
   steps: [
     {
       stepId: string;
@@ -1335,6 +1494,7 @@ const workflow = {
       attempts: number;
     }
   ];
+  context: ExecutionContext;
   timestamp: string;
   targetUrl: string;
   error?: string;
@@ -1351,4 +1511,5 @@ const workflow = {
 
 - [CLAUDE.md](CLAUDE.md) - 프로젝트 개요 및 아키텍처
 - [BLOCK_EXECUTION_ARCHITECTURE.md](BLOCK_EXECUTION_ARCHITECTURE.md) - 블록 실행 아키텍처
+- [EXPORT_DATA_BLOCK_EXAMPLES.md](EXPORT_DATA_BLOCK_EXAMPLES.md) - 데이터 내보내기 예제
 - [README.md](README.md) - 프로젝트 설치 및 실행 (Korean)

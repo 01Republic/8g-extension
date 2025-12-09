@@ -44,7 +44,7 @@ const result = await client.collectWorkflow({
 });
 ```
 
-## 지원 블록 목록
+## 지원 블록 목록 (29개)
 
 ### 데이터 추출 블록
 
@@ -61,9 +61,16 @@ const result = await client.collectWorkflow({
     multiple?: boolean
   },
   useTextContent?: boolean,
+  includeTags?: boolean,
   regex?: string,
-  prefix?: string,
-  suffix?: string
+  prefixText?: string,
+  suffixText?: string,
+  filterEmpty?: boolean,
+  // 무한 스크롤 지원
+  scrollToCollect?: boolean,
+  scrollDistance?: number,
+  scrollWaitMs?: number,
+  maxScrollAttempts?: number
 }
 ```
 
@@ -75,7 +82,7 @@ const result = await client.collectWorkflow({
   selector: 'img',
   findBy: 'cssSelector',
   option: { multiple?: boolean },
-  attribute: 'src'
+  attributeName: 'src'
 }
 ```
 
@@ -87,12 +94,27 @@ const result = await client.collectWorkflow({
   selector: '.product',
   findBy: 'cssSelector',
   option: { multiple?: boolean },
-  extractors: [
-    { type: 'text', selector: '.title', saveAs: 'title' },
-    { type: 'attribute', attribute: 'data-id', saveAs: 'id' },
-    { type: 'cssSelector', saveAs: 'selector' },
-    { type: 'xpath', saveAs: 'xpath' }
-  ]
+  includeText?: boolean,
+  includeTags?: boolean,
+  useTextContent?: boolean,
+  regex?: string,
+  prefixText?: string,
+  suffixText?: string,
+  attributes?: string[],     // 추출할 속성 목록
+  includeSelector?: boolean, // CSS 선택자 포함
+  includeXPath?: boolean     // XPath 포함
+}
+```
+
+**save-assets** - 이미지/미디어 수집
+
+```typescript
+{
+  name: 'save-assets',
+  selector: 'img',  // 기본값: 'img, audio, video, source'
+  findBy: 'cssSelector',
+  option: { multiple?: boolean },
+  attributeName: 'src'
 }
 ```
 
@@ -105,7 +127,8 @@ const result = await client.collectWorkflow({
   name: 'get-value-form',
   selector: 'input[name="email"]',
   findBy: 'cssSelector',
-  option: {}
+  option: {},
+  type?: 'text-field' | 'select' | 'checkbox'
 }
 ```
 
@@ -117,7 +140,8 @@ const result = await client.collectWorkflow({
   selector: 'input[name="email"]',
   findBy: 'cssSelector',
   option: {},
-  value: 'user@example.com'
+  setValue: 'user@example.com',
+  type?: 'text-field' | 'select' | 'checkbox'
 }
 ```
 
@@ -128,7 +152,33 @@ const result = await client.collectWorkflow({
   name: 'clear-value-form',
   selector: 'input[name="search"]',
   findBy: 'cssSelector',
-  option: {}
+  option: {},
+  type?: 'text-field' | 'select' | 'checkbox'
+}
+```
+
+**set-contenteditable** - Contenteditable 요소 설정
+
+```typescript
+{
+  name: 'set-contenteditable',
+  selector: '[contenteditable="true"]',
+  findBy: 'cssSelector',
+  option: {},
+  setValue: '새로운 내용'
+}
+```
+
+**paste-value** - 값 붙여넣기
+
+```typescript
+{
+  name: 'paste-value',
+  selector: 'input',
+  findBy: 'cssSelector',
+  option: {},
+  value: '붙여넣을 값',
+  useCdp?: boolean  // CDP 사용 여부 (기본값: true)
 }
 ```
 
@@ -142,8 +192,10 @@ const result = await client.collectWorkflow({
   selector: '.button',
   findBy: 'cssSelector',
   option: {},
-  filterByText?: string,  // 텍스트로 필터링
-  clickAll?: boolean      // 여러 요소 모두 클릭
+  textFilter?: {
+    text: string,
+    mode: 'exact' | 'contains' | 'startsWith' | 'endsWith' | 'regex'
+  }
 }
 ```
 
@@ -153,7 +205,9 @@ const result = await client.collectWorkflow({
 {
   name: 'keypress',
   key: 'Enter',  // 'Escape', 'Tab', 'ArrowDown' 등
-  modifiers?: ['ctrl', 'shift', 'alt', 'meta']
+  code?: 'Enter',
+  keyCode?: 13,
+  modifiers?: ['Alt', 'Control', 'Meta', 'Shift']
 }
 // selector, findBy, option 불필요
 ```
@@ -166,6 +220,7 @@ const result = await client.collectWorkflow({
   scrollType: 'toBottom' | 'toElement' | 'byDistance' | 'untilLoaded',
   selector?: string,      // toElement일 때 필요
   distance?: number,      // byDistance, untilLoaded일 때 사용
+  behavior?: 'auto' | 'smooth',
   maxScrolls?: number,    // untilLoaded일 때 최대 스크롤 횟수
   waitAfterScroll?: number  // 스크롤 후 대기 시간 (ms)
 }
@@ -242,45 +297,36 @@ const result = await client.collectWorkflow({
 // 결과: boolean (성공 여부)
 ```
 
-**check-status** - 상태 확인 (Side Panel + CDP Auto-click)
+**mark-border** - 요소 하이라이트
 
 ```typescript
 {
-  name: 'check-status',
-  checkType: 'login' | 'pageLoad' | 'element' | 'custom',
-  title: string,                     // 확인 제목
-  description?: string,              // 확인 설명
-  notification?: {
-    message: string,                 // 플로팅 버튼 메시지
-    urgency?: 'low' | 'medium' | 'high'
-  },
-  options?: {
-    timeoutMs?: number,              // 타임아웃 (ms)
-    retryable?: boolean,             // 재시도 가능 여부
-    autoClick?: boolean,             // CDP 자동 클릭 활성화
-    clickDelay?: number,             // 클릭 전 대기 시간 (ms)
-    fallbackToManual?: boolean,      // 자동 클릭 실패 시 수동 모드
-    customValidator?: string         // 사용자 정의 검증 로직
-  }
-}
-// selector, findBy, option 불필요
-// 플로팅 알림 버튼 → 사용자 클릭 or CDP 자동 클릭 → Side Panel → 상태 확인
-// 결과: { confirmed: boolean, data?: any }
-```
-
-**save-assets** - 이미지/미디어 수집
-
-```typescript
-{
-  name: 'save-assets',
-  selector: 'img',
+  name: 'mark-border',
+  selector: '.target',
   findBy: 'cssSelector',
   option: { multiple?: boolean },
-  attributeName: 'src'
+  highlightMode?: 'border' | 'spotlight' | 'both',
+  borderStyle?: {
+    color?: string,
+    width?: number,
+    style?: 'solid' | 'dashed' | 'dotted'
+  },
+  spotlightOptions?: {
+    overlayColor?: string,
+    overlayOpacity?: number,
+    showPointer?: boolean,
+    showLabel?: boolean,
+    labelText?: string,
+    pulseAnimation?: boolean
+  },
+  textFilter?: {
+    text: string,
+    mode: 'exact' | 'contains' | 'startsWith' | 'endsWith' | 'regex'
+  }
 }
 ```
 
-### API/AI 블록
+### API/Network 블록
 
 **fetch-api** - 외부 API 호출
 
@@ -291,11 +337,33 @@ const result = await client.collectWorkflow({
   method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',
   headers?: { [key: string]: string },
   body?: any,
-  parseJson?: boolean
+  timeout?: number,
+  parseJson?: boolean,
+  returnHeaders?: boolean
 }
 // selector, findBy, option 불필요
 // CORS 제약 없음 (Background에서 실행)
 ```
+
+**network-catch** - 네트워크 요청 캡처
+
+```typescript
+{
+  name: 'network-catch',
+  urlPattern: string,           // URL 패턴 (정규식)
+  method?: string,              // HTTP 메서드 필터
+  status?: number | [number, number],  // 상태 코드 또는 범위
+  mimeType?: string,            // MIME 타입 필터
+  requestBodyPattern?: string,  // 요청 바디 패턴
+  waitForRequest?: boolean,     // 요청 대기 여부
+  waitTimeout?: number,         // 대기 타임아웃 (ms)
+  returnAll?: boolean,          // 모든 매칭 요청 반환
+  includeHeaders?: boolean      // 헤더 포함 여부
+}
+// selector, findBy, option 불필요
+```
+
+### AI/데이터 변환 블록
 
 **ai-parse-data** - AI 데이터 파싱
 
@@ -303,7 +371,10 @@ const result = await client.collectWorkflow({
 {
   name: 'ai-parse-data',
   apiKey: 'sk-...',
+  provider?: 'openai' | 'anthropic',
+  model?: string,
   sourceData: 'raw text data',
+  prompt?: string,
   schemaDefinition: {
     type: 'object',
     shape: {
@@ -314,7 +385,78 @@ const result = await client.collectWorkflow({
   }
 }
 // selector, findBy, option 불필요
-// OpenAI를 사용해서 비구조화 데이터를 구조화
+// OpenAI/Anthropic을 사용해서 비구조화 데이터를 구조화
+```
+
+**transform-data** - 데이터 변환 (JSONata)
+
+```typescript
+{
+  name: 'transform-data',
+  sourceData: { valueFrom: 'steps.getData.result.data' },
+  expression: '$sum([price > 100].price)'  // JSONata 표현식
+}
+// selector, findBy, option 불필요
+```
+
+**export-data** - 데이터 내보내기
+
+```typescript
+{
+  name: 'export-data',
+  data: { valueFrom: 'steps.getData.result.data' },
+  format: 'json' | 'csv' | 'xlsx',
+  filename?: string,
+  csvOptions?: {
+    delimiter?: string,
+    header?: boolean
+  }
+}
+// selector, findBy, option 불필요
+```
+
+**apply-locale** - 데이터 로컬라이제이션
+
+```typescript
+{
+  name: 'apply-locale',
+  sourceData: { valueFrom: 'steps.getData.result.data' },
+  locale: 'ko' | 'en' | 'ja' | ...,
+  mappings: {
+    [key: string]: {
+      [locale: string]: string
+    }
+  }
+}
+// selector, findBy, option 불필요
+```
+
+### 실행 제어 블록
+
+**execute-javascript** - JavaScript 실행 (CDP)
+
+```typescript
+{
+  name: 'execute-javascript',
+  code: 'return document.title',
+  returnResult?: boolean,  // 결과 반환 여부
+  timeout?: number         // 실행 타임아웃 (ms)
+}
+// selector, findBy, option 불필요
+// Background service worker에서 CDP를 통해 실행
+```
+
+**throw-error** - 에러 발생
+
+```typescript
+{
+  name: 'throw-error',
+  message: 'LOGIN_FAILED' | 'NETWORK_ERROR' | 'VALIDATION_ERROR' |
+           'UNAUTHORIZED' | 'FORBIDDEN' | 'NOT_FOUND' |
+           'SERVER_ERROR' | 'TIMEOUT' | 'CONNECTION_ERROR' | 'UNKNOWN_ERROR',
+  data?: any  // 에러와 함께 전달할 데이터
+}
+// selector, findBy, option 불필요
 ```
 
 ## 블록 실행 파이프라인
@@ -348,7 +490,20 @@ const result = await client.collectWorkflow({
 }
 ```
 
-**예외:** `keypress`, `wait`, `fetch-api`, `ai-parse-data`, `navigate`, `wait-for-condition` 블록은 `selector`, `findBy`, `option` 불필요
+**예외 (selector, findBy, option 불필요):**
+
+- `keypress`
+- `wait`
+- `fetch-api`
+- `ai-parse-data`
+- `transform-data`
+- `export-data`
+- `network-catch`
+- `navigate`
+- `wait-for-condition`
+- `execute-javascript`
+- `throw-error`
+- `apply-locale`
 
 ### waitForSelector
 
@@ -374,6 +529,40 @@ const result = await client.collectWorkflow({
   }
 }
 // 결과: ['text1', 'text2', 'text3']
+```
+
+### scrollToCollect (무한 스크롤)
+
+스크롤하면서 데이터를 수집 (get-text, get-element-data):
+
+```typescript
+{
+  name: 'get-text',
+  selector: '.item',
+  findBy: 'cssSelector',
+  option: { multiple: true },
+  scrollToCollect: true,
+  scrollDistance: 500,        // 스크롤 거리 (px)
+  scrollWaitMs: 1000,         // 스크롤 후 대기 (ms)
+  maxScrollAttempts: 20       // 최대 스크롤 횟수
+}
+```
+
+### textFilter (요소 필터링)
+
+텍스트로 요소 필터링 (event-click, mark-border):
+
+```typescript
+{
+  name: 'event-click',
+  selector: 'button',
+  findBy: 'cssSelector',
+  option: {},
+  textFilter: {
+    text: '확인',
+    mode: 'exact'  // 'exact' | 'contains' | 'startsWith' | 'endsWith' | 'regex'
+  }
+}
 ```
 
 ## 블록 결과 구조
@@ -406,9 +595,8 @@ const result = await client.collectWorkflow({
         selector: '.item',
         findBy: 'cssSelector',
         option: { multiple: true },
-        extractors: [
-          { type: 'attribute', attribute: 'data-id', saveAs: 'id' }
-        ]
+        includeText: true,
+        attributes: ['data-id']
       },
       next: 'fetchDetail'
     },
@@ -417,7 +605,7 @@ const result = await client.collectWorkflow({
       block: {
         name: 'fetch-api',
         // 이전 스텝 결과 참조
-        url: { template: 'https://api.example.com/items/${steps.getIds.result.data[0].id}' },
+        url: { template: 'https://api.example.com/items/${steps.getIds.result.data[0].data-id}' },
         method: 'GET',
         parseJson: true
       }
@@ -438,6 +626,8 @@ src/blocks/
 ├── GetValueFormBlock.ts      # 폼 값 가져오기
 ├── SetValueFormBlock.ts      # 폼 값 설정
 ├── ClearValueFormBlock.ts    # 폼 값 초기화
+├── SetContenteditableBlock.ts # Contenteditable 설정
+├── PasteValueBlock.ts        # 값 붙여넣기
 ├── EventClickBlock.ts        # 클릭
 ├── KeypressBlock.ts          # 키보드 입력
 ├── ScrollBlock.ts            # 스크롤
@@ -445,11 +635,16 @@ src/blocks/
 ├── WaitBlock.ts              # 대기
 ├── WaitForConditionBlock.ts  # 조건 대기 (자동/수동)
 ├── NavigateBlock.ts          # URL 이동
-├── SaveAssetsBlock.ts        # 에셋 ��집
+├── MarkBorderBlock.ts        # 요소 하이라이트
+├── SaveAssetsBlock.ts        # 에셋 수집
 ├── FetchApiBlock.ts          # API 호출
+├── NetworkCatchBlock.ts      # 네트워크 캡처
 ├── AiParseDataBlock.ts       # AI 파싱
-├── DataExtractBlock.ts       # 데이터 추출/변환
-├── CheckStatusBlock.ts       # 상태 확인 (Side Panel + CDP Auto-click)
+├── TransformDataBlock.ts     # 데이터 변환
+├── ExportDataBlock.ts        # 데이터 내보내기
+├── ApplyLocaleBlock.ts       # 로컬라이제이션
+├── ExecuteJavascriptBlock.ts # JavaScript 실행
+├── ThrowErrorBlock.ts        # 에러 발생
 ├── types.ts                  # 공통 타입
 └── index.ts                  # BlockHandler + 통합
 ```
@@ -491,8 +686,14 @@ export class BlockHandler {
         return handlerGetText(validateGetTextBlock(block));
       case 'event-click':
         return handlerEventClick(validateEventClickBlock(block));
-      case 'check-status':
-        return handlerCheckStatus(validateCheckStatusBlock(block));
+      case 'mark-border':
+        return handlerMarkBorder(validateMarkBorderBlock(block));
+      case 'network-catch':
+        return handlerNetworkCatch(validateNetworkCatchBlock(block));
+      case 'execute-javascript':
+        return handlerExecuteJavascript(validateExecuteJavascriptBlock(block));
+      case 'throw-error':
+        return handlerThrowError(validateThrowErrorBlock(block));
       // ...
     }
   }
@@ -513,4 +714,5 @@ export class BlockHandler {
 
 - [CLAUDE.md](CLAUDE.md) - 프로젝트 개요 및 아키텍처
 - [WORKFLOW_EXECUTION_ARCHITECTURE.md](WORKFLOW_EXECUTION_ARCHITECTURE.md) - 워크플로우 실행 가이드
+- [EXPORT_DATA_BLOCK_EXAMPLES.md](EXPORT_DATA_BLOCK_EXAMPLES.md) - 데이터 내보내기 예제
 - [README.md](README.md) - 프로젝트 설치 및 실행

@@ -1,7 +1,7 @@
 {
-  "name": "scordi-extension",
+  "name": "SaaS Admin Control Manager",
   "type": "module",
-  "version": "1.19.22",
+  "version": "0.0.1",
   "private": false,
   "main": "./dist/sdk/index.cjs",
   "module": "./dist/sdk/index.js",
