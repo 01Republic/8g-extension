@@ -4,7 +4,9 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import zip from 'vite-plugin-zip-pack';
 import manifest from './manifest.config.js';
-import { name, version } from './package.json';
+import { displayName, name, version } from './package.json';
+
+const extensionName = displayName || name;
 
 export default defineConfig({
   build: {
@@ -18,7 +20,7 @@ export default defineConfig({
   plugins: [
     react(),
     crx({ manifest }) as any,
-    zip({ outDir: 'release', outFileName: `crx-${name}-${version}.zip` }),
+    zip({ outDir: 'release', outFileName: `crx-${extensionName}-${version}.zip` }),
   ],
   server: {
     cors: {
