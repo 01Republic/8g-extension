@@ -9,6 +9,7 @@ import { displayName, name, version } from './package.json';
 const extensionName = displayName || name;
 
 export default defineConfig({
+  envDir: '../../', // 프로젝트 루트의 .env 파일 사용
   build: {
     emptyOutDir: false, // SDK 디렉토리를 보존
   },

@@ -4,6 +4,10 @@ import { InternalMessageHandler } from './handler/InternalMessageHandler';
 import { ExternalMessageHandler } from './handler/ExternalMessageHandler';
 import { ExecutionStatusUIContainer } from './components/ExecutionStatusUI';
 import { refreshLocaleFromBrowser } from '../locales';
+import { initSentry } from '../utils/sentry';
+
+// Initialize Sentry first
+initSentry('content');
 
 // Prevent multiple injections
 (() => {
