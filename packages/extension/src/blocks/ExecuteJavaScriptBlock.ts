@@ -22,6 +22,64 @@ export function validateExecuteJavaScriptBlock(data: unknown): ExecuteJavaScript
   return ExecuteJavaScriptBlockSchema.parse(data);
 }
 
+/**
+ * 사용자 코드에 주입할 글로벌 헬퍼 함수들
+ * - wait(ms): 지정된 밀리초 동안 대기
+ * - waitForElement(selector, options): 요소가 나타날 때까지 대기
+ */
+const HELPER_FUNCTIONS = `
+const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+const waitForElement = (selector, options = {}) => {
+  const { timeout = 10000, interval = 100, visible = false } = options;
+
+  return new Promise((resolve, reject) => {
+    const startTime = Date.now();
+
+    const check = () => {
+      const element = document.querySelector(selector);
+
+      if (element) {
+        if (visible) {
+          const rect = element.getBoundingClientRect();
+          const style = window.getComputedStyle(element);
+          const isVisible = rect.width > 0 && rect.height > 0 &&
+                           style.visibility !== 'hidden' &&
+                           style.display !== 'none' &&
+                           style.opacity !== '0';
+          if (isVisible) {
+            resolve(element);
+            return;
+          }
+        } else {
+          resolve(element);
+          return;
+        }
+      }
+
+      if (Date.now() - startTime >= timeout) {
+        reject(new Error(\`Element "\${selector}" not found within \${timeout}ms\`));
+        return;
+      }
+
+      setTimeout(check, interval);
+    };
+
+    check();
+  });
+};
+`;
+
+/**
+ * 사용자 코드를 헬퍼 함수와 함께 래핑합니다.
+ */
+function wrapCodeWithHelpers(code: string): string {
+  return `(async () => {
+${HELPER_FUNCTIONS}
+${code}
+})()`;
+}
+
 export async function handlerExecuteJavaScript(
   data: ExecuteJavaScriptBlock
 ): Promise<BlockResult<any>> {
@@ -32,11 +90,14 @@ export async function handlerExecuteJavaScript(
       throw new Error('JavaScript code is required');
     }
 
+    // 헬퍼 함수를 포함한 코드로 래핑
+    const wrappedCode = wrapCodeWithHelpers(code);
+
     // Background로 CDP 명령 전송
     const response = await chrome.runtime.sendMessage({
       type: 'CDP_EXECUTE_JAVASCRIPT',
       data: {
-        code,
+        code: wrappedCode,
         returnResult,
         timeout,
       },
