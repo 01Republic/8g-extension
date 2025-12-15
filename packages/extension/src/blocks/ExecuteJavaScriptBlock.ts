@@ -76,7 +76,7 @@ const waitForElement = (selector, options = {}) => {
 function wrapCodeWithHelpers(code: string): string {
   return `(async () => {
 ${HELPER_FUNCTIONS}
-${code}
+return ${code}
 })()`;
 }
 
