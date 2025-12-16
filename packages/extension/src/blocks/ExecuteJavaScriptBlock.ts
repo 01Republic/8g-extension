@@ -72,12 +72,21 @@ const waitForElement = (selector, options = {}) => {
 
 /**
  * 사용자 코드를 헬퍼 함수와 함께 래핑합니다.
+ * 코드에서 헬퍼 함수 사용 여부를 확인하고, 사용하는 경우에만 주입합니다.
  */
 function wrapCodeWithHelpers(code: string): string {
-  return `(async () => {
-${HELPER_FUNCTIONS}
-return ${code}
-})()`;
+  // 코드에서 wait 또는 waitForElement를 사용하는지 확인
+  const usesWait = /\bwait\s*\(/.test(code);
+  const usesWaitForElement = /\bwaitForElement\s*\(/.test(code);
+
+  // 헬퍼 함수를 사용하지 않으면 코드 그대로 반환
+  if (!usesWait && !usesWaitForElement) {
+    return code;
+  }
+
+  // 헬퍼 함수를 사용하면 앞에 추가
+  return `${HELPER_FUNCTIONS}
+${code}`;
 }
 
 export async function handlerExecuteJavaScript(
