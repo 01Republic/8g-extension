@@ -49,7 +49,7 @@ export class ExternalMessageHandler {
     const response: ExtensionResponseMessage = {
       type: '8G_EXTENSION_RESPONSE',
       installed: true,
-      version: '1.0.0',
+      version: chrome.runtime.getManifest().version,
     };
     this.kernel.sendToWebpage(response);
   }
