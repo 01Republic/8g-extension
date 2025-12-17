@@ -370,7 +370,7 @@ export const WorkspaceBillingSchema = z.object({
   // 카드 이름
   cardName: z.string(),
   // 유효기간 (만료일)
-  expireAt: z.string().nullable().optional(),
+  expiry: z.string().nullable().optional(),
 });
 
 export type WorkspaceBillingDto = z.infer<typeof WorkspaceBillingSchema>;
